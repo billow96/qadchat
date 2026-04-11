@@ -811,8 +811,14 @@
 .chat-message-body {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
+
+  > .markdown-body,
+  > .chat-message-tools,
+  > .chat-message-loading-unified {
+    margin: 0;
+  }
 }
 
 .chat-message-tool-call {
@@ -826,6 +832,15 @@
   flex-direction: column;
   gap: 8px;
   width: 100%;
+  margin: 0;
+}
+
+.chat-message-loading-unified {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  color: var(--black);
+  opacity: 0.7;
 }
 
 .chat-message-tools-header {
@@ -846,6 +861,7 @@
   width: 100%;
   max-width: 100%;
   overflow: hidden;
+  margin: 0;
 }
 
 .chat-tool-collapse {
@@ -857,15 +873,22 @@
       border: var(--border-in-light) !important;
       border-radius: 12px !important;
       background-color: var(--white) !important;
+      margin-bottom: 0 !important;
       max-width: 100% !important;
       overflow: hidden !important;
       box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
     }
 
     .ant-collapse-header {
-      padding: 9px 12px !important;
+      color: var(--black) !important;
+      font-weight: 600 !important;
+      padding: 8px 12px !important;
       align-items: center !important;
       max-width: 100% !important;
+
+      .ant-collapse-expand-icon {
+        color: var(--primary) !important;
+      }
     }
 
     .ant-collapse-content {
@@ -874,7 +897,7 @@
       overflow: hidden !important;
 
       .ant-collapse-content-box {
-        padding: 10px 12px !important;
+        padding: 8px 12px !important;
         max-width: 100% !important;
         overflow: hidden !important;
       }
@@ -895,7 +918,7 @@
   align-items: center;
   gap: 8px;
   color: var(--black);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   min-width: 0;
 
@@ -966,7 +989,7 @@
 .chat-tool-body {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
   max-width: 100%;
   overflow: hidden;
@@ -980,6 +1003,10 @@
   max-width: 100%;
   min-width: 0;
   overflow: hidden;
+
+  & + & {
+    margin-top: 2px;
+  }
 }
 
 .chat-tool-section-title {
@@ -993,6 +1020,14 @@
   max-width: 100%;
   min-width: 0;
   overflow-x: auto;
+
+  > :first-child {
+    margin-top: 0 !important;
+  }
+
+  > :last-child {
+    margin-bottom: 0 !important;
+  }
 }
 
 .chat-tool-section :global(pre) {

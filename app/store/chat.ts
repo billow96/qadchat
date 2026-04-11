@@ -493,15 +493,21 @@ function rebuildRoundSegments(
   finalized: boolean = false,
 ) {
   const nextSegments = splitMessageContentIntoSegments(content);
+  const previousTexts = (previousRoundSegments ?? []).filter(
+    (segment) => segment.type === "text",
+  );
   const previousThoughts = (previousRoundSegments ?? []).filter(
     (segment) => segment.type === "thought",
   );
+  let textIndex = 0;
   let thoughtIndex = 0;
 
   return nextSegments.map((segment) => {
     if (segment.type !== "thought") {
+      const previousText = previousTexts[textIndex++];
       return {
         ...segment,
+        id: previousText?.id ?? segment.id,
         streaming: finalized ? false : segment.streaming,
       };
     }
@@ -515,6 +521,7 @@ function rebuildRoundSegments(
 
     return {
       ...segment,
+      id: previousThought?.id ?? segment.id,
       startedAt: previousThought?.startedAt ?? segment.startedAt,
       streaming: finalized ? false : segment.streaming,
       durationMs: segment.streaming ? reasoningLatency : frozenDuration,
@@ -1021,6 +1028,7 @@ export const useChatStore = createPersistStore(
             ChatControllerPool.remove(session.id, botMessage.id);
           },
           onBeforeTool(tool: ChatMessageTool) {
+            streamOptimizer.flushUpdates();
             const enrichedTool = enrichToolWithMetadata(
               tool,
               nativeTools.metadata,
@@ -1052,6 +1060,7 @@ export const useChatStore = createPersistStore(
             );
           },
           onToolCallMessage(toolCallMessage) {
+            streamOptimizer.flushUpdates();
             botMessage.toolCallContent = toolCallMessage.content || "";
             botMessage.segments = appendToolRoundSegments(
               botMessage.segments,
@@ -1074,6 +1083,7 @@ export const useChatStore = createPersistStore(
             });
           },
           onAfterTool(tool: ChatMessageTool) {
+            streamOptimizer.flushUpdates();
             botMessage?.tools?.forEach((t, i, tools) => {
               if (tool.id == t.id) {
                 tools[i] = {
@@ -1280,6 +1290,7 @@ export const useChatStore = createPersistStore(
               ChatControllerPool.remove(session.id, botMessage.id);
             },
             onBeforeTool(tool: ChatMessageTool) {
+              streamOptimizer.flushUpdates();
               const enrichedTool = enrichToolWithMetadata(
                 tool,
                 nativeTools.metadata,
@@ -1311,6 +1322,7 @@ export const useChatStore = createPersistStore(
               );
             },
             onToolCallMessage(toolCallMessage) {
+              streamOptimizer.flushUpdates();
               botMessage.toolCallContent = toolCallMessage.content || "";
               botMessage.segments = appendToolRoundSegments(
                 botMessage.segments,
@@ -1333,6 +1345,7 @@ export const useChatStore = createPersistStore(
               });
             },
             onAfterTool(tool: ChatMessageTool) {
+              streamOptimizer.flushUpdates();
               botMessage?.tools?.forEach((t, i, tools) => {
                 if (tool.id == t.id) {
                   tools[i] = {
@@ -1718,6 +1731,7 @@ export const useChatStore = createPersistStore(
           currentMessage.tools = [];
           currentMessage.toolCallContent = "";
           currentMessage.segments = [];
+          currentMessage.statistic = undefined;
           currentMessage.date = new Date().toLocaleString();
           // 更新消息的模型字段为当前会话的模型配置
           currentMessage.model = session.mask.modelConfig.model;
@@ -1795,6 +1809,7 @@ export const useChatStore = createPersistStore(
               }
             },
             onBeforeTool(tool: ChatMessageTool) {
+              streamOptimizer.flushUpdates();
               get().updateTargetSession(session, (session) => {
                 const currentMessage = session.messages[messageIndex];
                 if (!currentMessage) return;
@@ -1809,6 +1824,7 @@ export const useChatStore = createPersistStore(
               });
             },
             onToolCallMessage(toolCallMessage) {
+              streamOptimizer.flushUpdates();
               get().updateTargetSession(session, (session) => {
                 const currentMessage = session.messages[messageIndex];
                 if (!currentMessage) return;
@@ -1825,6 +1841,7 @@ export const useChatStore = createPersistStore(
               });
             },
             onAfterTool(tool: ChatMessageTool) {
+              streamOptimizer.flushUpdates();
               get().updateTargetSession(session, (session) => {
                 const currentMessage = session.messages[messageIndex];
                 if (!currentMessage?.tools) return;

@@ -149,14 +149,11 @@ import {
   isWebSearchModel,
 } from "../config/model-capabilities";
 import { ProviderIcon } from "./provider-icon";
+import { Markdown, ThoughtSegmentBlock } from "./markdown";
 
 const localStorage = safeLocalStorage();
 
 const ttsPlayer = createTTSPlayer();
-
-const Markdown = dynamic(async () => (await import("./markdown")).Markdown, {
-  loading: () => <LoadingIcon />,
-});
 
 const MCPAction = ({ onTogglePanel }: { onTogglePanel: () => void }) => {
   const [count, setCount] = useState<number>(0);
@@ -276,7 +273,7 @@ function ToolResultCard(props: { tool: any; defaultOpen?: boolean }) {
   return (
     <div className={styles["chat-tool-card"]}>
       <Collapse
-        ghost
+        bordered={false}
         size="small"
         activeKey={activeKeys}
         onChange={(keys) =>
@@ -458,6 +455,191 @@ function getMessageDisplaySegments(message: ChatMessage): ChatMessageSegment[] {
 function getThoughtSegments(message: ChatMessage): ChatMessageSegment[] {
   return getMessageDisplaySegments(message).filter(
     (segment) => segment.type === "thought",
+  );
+}
+
+function getToolsForSegment(
+  message: ChatMessage,
+  segment: ChatMessageSegment,
+): NonNullable<ChatMessage["tools"]> {
+  if (!segment.toolIds?.length) return [];
+
+  const tools = message.tools ?? [];
+  return segment.toolIds
+    .map((toolId) => tools.find((tool) => tool.id === toolId))
+    .filter(Boolean) as NonNullable<ChatMessage["tools"]>;
+}
+
+function getMessageRevealKey(message: ChatMessage) {
+  return `${message.id}:${message.date}:${message.content.length}:${
+    message.tools?.length ?? 0
+  }:${message.segments?.length ?? 0}`;
+}
+
+function getRenderableSegments(message: ChatMessage): ChatMessageSegment[] {
+  if (!message.versions || message.versions.length < 1) {
+    return getMessageDisplaySegments(message);
+  }
+
+  const currentIndex = message.currentVersionIndex ?? 0;
+  if (currentIndex === message.versions.length) {
+    return getMessageDisplaySegments(message);
+  }
+
+  return [];
+}
+
+function AssistantMessageBody(props: {
+  message: ChatMessage & { preview?: boolean };
+  isUser: boolean;
+  isMobileScreen: boolean;
+  fontSize: number;
+  fontFamily: string;
+  scrollRef: RefObject<HTMLDivElement>;
+  defaultShow: boolean;
+  onFillInput: () => void;
+}) {
+  const {
+    message,
+    isUser,
+    isMobileScreen,
+    fontSize,
+    fontFamily,
+    scrollRef,
+    defaultShow,
+    onFillInput,
+  } = props;
+  const renderableSegments = getRenderableSegments(message);
+  const hasTools = renderableSegments.some(
+    (segment) => segment.type === "tool",
+  );
+  const hasThoughts = renderableSegments.some(
+    (segment) =>
+      segment.type === "thought" && segment.content.trim().length > 0,
+  );
+  const hasText = renderableSegments.some(
+    (segment) => segment.type === "text" && segment.content.trim().length > 0,
+  );
+  const [revealReady, setRevealReady] = useState(() => {
+    return message.streaming || !hasTools || renderableSegments.length === 0;
+  });
+
+  useEffect(() => {
+    const shouldDelayReveal =
+      !message.streaming && hasTools && (!hasThoughts || !hasText);
+
+    if (!shouldDelayReveal) {
+      setRevealReady(true);
+      return;
+    }
+
+    setRevealReady(false);
+    const timer = window.setTimeout(() => {
+      setRevealReady(true);
+    }, 120);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    message.streaming,
+    hasTools,
+    hasThoughts,
+    hasText,
+    renderableSegments.length,
+    getMessageRevealKey(message),
+  ]);
+
+  if (!revealReady) {
+    return (
+      <div className={styles["chat-message-loading-unified"]}>
+        <LoadingIcon />
+      </div>
+    );
+  }
+
+  if (renderableSegments.length > 0) {
+    return (
+      <>
+        {renderableSegments.map((segment, segmentIndex) => {
+          if (segment.type === "tool") {
+            const toolsForSegment = getToolsForSegment(message, segment);
+            if (toolsForSegment.length === 0) return null;
+
+            return (
+              <div
+                key={`${message.id}-tool-segment-${segment.id}-${segmentIndex}`}
+                className={styles["chat-message-tools"]}
+              >
+                {toolsForSegment.map((tool, toolIndex) => (
+                  <ToolResultCard
+                    key={tool.id}
+                    tool={tool}
+                    defaultOpen={
+                      tool.isError !== false &&
+                      tool.isError !== true &&
+                      toolIndex === toolsForSegment.length - 1
+                    }
+                  />
+                ))}
+              </div>
+            );
+          }
+
+          if (segment.type === "thought") {
+            return (
+              <ThoughtSegmentBlock
+                key={`${message.id}-thought-segment-${segment.id}-${segmentIndex}`}
+                segment={segment}
+                fontSize={fontSize}
+                fontFamily={fontFamily}
+              />
+            );
+          }
+
+          return (
+            <Markdown
+              key={`${message.id}-text-segment-${segment.id}-${segmentIndex}`}
+              content={segment.content}
+              loading={
+                segmentIndex === 0 &&
+                (message.preview || message.streaming) &&
+                message.content.length === 0 &&
+                !isUser
+              }
+              onDoubleClickCapture={() => {
+                if (!isMobileScreen) return;
+                onFillInput();
+              }}
+              fontSize={fontSize}
+              fontFamily={fontFamily}
+              parentRef={scrollRef}
+              defaultShow={defaultShow}
+              status={message.streaming}
+            />
+          );
+        })}
+      </>
+    );
+  }
+
+  return (
+    <Markdown
+      key={message.streaming ? "loading" : "done"}
+      content={getMessageDisplayContent(message)}
+      loading={
+        (message.preview || message.streaming) &&
+        message.content.length === 0 &&
+        !isUser
+      }
+      onDoubleClickCapture={() => {
+        if (!isMobileScreen) return;
+        onFillInput();
+      }}
+      fontSize={fontSize}
+      fontFamily={fontFamily}
+      parentRef={scrollRef}
+      defaultShow={defaultShow}
+      status={message.streaming}
+    />
   );
 }
 
@@ -3302,63 +3484,17 @@ function ChatInner() {
                           )}
                           <div className={styles["chat-message-item"]}>
                             <div className={styles["chat-message-body"]}>
-                              {/* 当有工具调用时，思考块单独渲染在工具之前 */}
-                              {(message.tools?.length ?? 0) > 0 &&
-                                getThoughtSegments(message).length > 0 && (
-                                  <Markdown
-                                    key={`thinking-${
-                                      message.streaming ? "loading" : "done"
-                                    }`}
-                                    content=""
-                                    loading={false}
-                                    fontSize={fontSize}
-                                    fontFamily={fontFamily}
-                                    parentRef={scrollRef}
-                                    defaultShow={i >= messages.length - 6}
-                                    thinkingSegments={getThoughtSegments(
-                                      message,
-                                    )}
-                                    status={message.streaming}
-                                  />
-                                )}
-                              {(message.tools?.length ?? 0) > 0 && (
-                                <div className={styles["chat-message-tools"]}>
-                                  {message.tools?.map((tool, toolIndex) => (
-                                    <ToolResultCard
-                                      key={tool.id}
-                                      tool={tool}
-                                      defaultOpen={
-                                        tool.isError !== false &&
-                                        tool.isError !== true &&
-                                        toolIndex ===
-                                          (message.tools?.length ?? 0) - 1
-                                      }
-                                    />
-                                  ))}
-                                </div>
-                              )}
-                              <Markdown
-                                key={message.streaming ? "loading" : "done"}
-                                content={getCurrentMessageContent(message)}
-                                loading={
-                                  (message.preview || message.streaming) &&
-                                  message.content.length === 0 &&
-                                  !isUser
-                                }
-                                onDoubleClickCapture={() => {
-                                  if (!isMobileScreen) return;
-                                  setUserInput(getMessageTextContent(message));
-                                }}
+                              <AssistantMessageBody
+                                message={message}
+                                isUser={isUser}
+                                isMobileScreen={isMobileScreen}
                                 fontSize={fontSize}
                                 fontFamily={fontFamily}
-                                parentRef={scrollRef}
+                                scrollRef={scrollRef}
                                 defaultShow={i >= messages.length - 6}
-                                thinkingSegments={
-                                  (message.tools?.length ?? 0) > 0
-                                    ? undefined
-                                    : getThoughtSegments(message)
+                                onFillInput={() =>
+                                  setUserInput(getMessageTextContent(message))
                                 }
-                                status={message.streaming}
                               />
                               {getMessageImages(message).length == 1 && (
                                 <div

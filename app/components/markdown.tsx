@@ -80,6 +80,7 @@ interface ThinkCollapseProps {
   children: React.ReactNode;
   className?: string;
   fontSize?: number;
+  collapseId?: string;
 }
 
 function formatThinkingDurationLabel(durationMs: number) {
@@ -107,33 +108,46 @@ const ThinkCollapse = ({
   children,
   className,
   fontSize,
+  collapseId,
 }: ThinkCollapseProps) => {
   const isSSR = typeof window === "undefined";
+  const isThinking = isThinkingTitle(title as string, Locale.NewChat.Thinking);
   // 如果是 Thinking 状态，默认展开，否则折叠
-  const defaultActive = isThinkingTitle(
-    title as string,
-    Locale.NewChat.Thinking,
-  )
-    ? ["1"]
-    : [];
+  const defaultActive = isThinking ? ["1"] : [];
   // 如果是 NoThink 状态，禁用
   const disabled = title === Locale.NewChat.NoThink;
-  const [activeKeys, setActiveKeys] = useState(defaultActive);
-
-  // 当标题从 Thinking 变为 Think 或 NoThink 时自动折叠
-  useEffect(() => {
-    if (
-      (typeof title === "string" && title.includes(Locale.NewChat.Think)) ||
-      title === Locale.NewChat.NoThink
-    ) {
-      setActiveKeys([]);
-    } else if (isThinkingTitle(title as string, Locale.NewChat.Thinking)) {
-      setActiveKeys(["1"]);
+  const hasManualToggleRef = useRef(false);
+  const [activeKeys, setActiveKeys] = useState<string[]>(() => {
+    if (collapseId && typeof window !== "undefined") {
+      const cached = sessionStorage.getItem(`think-collapse:${collapseId}`);
+      if (cached === "open") return ["1"];
+      if (cached === "closed") return [];
     }
-  }, [title]);
+    return defaultActive;
+  });
+
+  useEffect(() => {
+    if (!collapseId || typeof window === "undefined") return;
+    sessionStorage.setItem(
+      `think-collapse:${collapseId}`,
+      activeKeys.length ? "open" : "closed",
+    );
+  }, [activeKeys, collapseId]);
+
+  useEffect(() => {
+    if (disabled || hasManualToggleRef.current) return;
+
+    if (isThinking) {
+      setActiveKeys(["1"]);
+      return;
+    }
+
+    setActiveKeys([]);
+  }, [disabled, isThinking, collapseId]);
 
   const toggleCollapse = () => {
     if (!disabled) {
+      hasManualToggleRef.current = true;
       setActiveKeys(activeKeys.length ? [] : ["1"]);
     }
   };
@@ -200,7 +214,11 @@ const ThinkCollapse = ({
         className={`${disabled ? "disabled" : ""}`}
         size="small"
         activeKey={activeKeys}
-        onChange={(keys) => !disabled && setActiveKeys(keys as string[])}
+        onChange={(keys) => {
+          if (disabled) return;
+          hasManualToggleRef.current = true;
+          setActiveKeys(keys as string[]);
+        }}
         bordered={false}
         items={[
           {
@@ -665,6 +683,60 @@ function MarkdownContentInner(props: {
 }
 
 export const MarkdownContent = React.memo(MarkdownContentInner);
+
+export function ThoughtSegmentBlock(props: {
+  segment: ChatMessageSegment;
+  fontSize?: number;
+  fontFamily?: string;
+}) {
+  const { segment } = props;
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    if (!segment.streaming) return;
+
+    setNow(Date.now());
+    const timer = window.setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [segment.id, segment.streaming]);
+
+  const title = buildThinkCollapseTitle(segment, now);
+
+  return (
+    <div
+      className={styles["thought-segment"]}
+      style={{
+        fontSize: `${props.fontSize ?? 14}px`,
+        fontFamily: props.fontFamily || "inherit",
+      }}
+      dir="auto"
+    >
+      <ThinkCollapse
+        title={title}
+        fontSize={props.fontSize}
+        collapseId={segment.id}
+      >
+        <div
+          className="markdown-body"
+          style={{
+            fontSize: `${props.fontSize ?? 14}px`,
+            fontFamily: props.fontFamily || "inherit",
+          }}
+          dir="auto"
+        >
+          <MarkdownContent
+            content={segment.content}
+            fontSize={props.fontSize}
+            status={segment.streaming}
+          />
+        </div>
+      </ThinkCollapse>
+    </div>
+  );
+}
 
 export function Markdown(
   props: {
