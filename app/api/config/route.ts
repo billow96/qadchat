@@ -111,10 +111,6 @@ function getServerConfig() {
 // 纯前端应用的默认配置
 const DANGER_CONFIG = getServerConfig();
 
-declare global {
-  type DangerConfig = typeof DANGER_CONFIG;
-}
-
 async function handle() {
   return NextResponse.json(DANGER_CONFIG);
 }

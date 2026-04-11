@@ -1,5 +1,6 @@
 import {
   getMessageTextContent,
+  getMessageTextContentWithoutThinkingFromContent,
   getMessageTextContentWithoutThinking,
   getMessageImages,
   isDalle3,
@@ -18,6 +19,7 @@ import type {
   ClientApi,
   MultimodalContent,
   RequestMessage,
+  RichMessage,
 } from "../client/api";
 import { getClientApi, normalizeProviderName } from "../client/api";
 import { ChatControllerPool } from "../client/controller";
@@ -72,6 +74,17 @@ export type ChatMessageTool = {
   errorMsg?: string;
 };
 
+export type ChatMessageSegmentType = "thought" | "text";
+
+export type ChatMessageSegment = {
+  id: string;
+  type: ChatMessageSegmentType;
+  content: string;
+  streaming?: boolean;
+  durationMs?: number;
+  startedAt?: number;
+};
+
 export type ChatMessage = RequestMessage & {
   date: string;
   streaming?: boolean;
@@ -97,6 +110,8 @@ export type ChatMessage = RequestMessage & {
   // 重试版本管理 - 简化版本
   versions?: string[]; // 存储所有版本的内容
   currentVersionIndex?: number; // 当前显示的版本索引
+  toolCallContent?: string;
+  segments?: ChatMessageSegment[];
 };
 
 export function createMessage(override: Partial<ChatMessage>): ChatMessage {
@@ -146,6 +161,65 @@ export interface ChatSession {
   };
   // 搜索功能状态
   searchEnabled?: boolean;
+}
+
+function getResponseContent(message: string | RichMessage) {
+  if (typeof message === "string") {
+    return message;
+  }
+
+  return message.displayContent ?? message.content;
+}
+
+function getResponseContentWithoutThinking(message: string | RichMessage) {
+  return getMessageTextContentWithoutThinkingFromContent(
+    getResponseContent(message),
+  );
+}
+
+function applyAssistantStatistics(
+  targetMessage: ChatMessage,
+  message: string | RichMessage,
+) {
+  const responseContent = getResponseContent(message);
+  targetMessage.content = responseContent;
+
+  if (typeof message === "string") {
+    if (!targetMessage.statistic?.completionTokens) {
+      targetMessage.statistic = {
+        ...(targetMessage.statistic ?? {}),
+        completionTokens: Math.round(
+          estimateTokenLength(
+            getMessageTextContentWithoutThinkingFromContent(responseContent),
+          ),
+        ),
+      };
+    }
+    return;
+  }
+
+  targetMessage.statistic = {
+    ...(targetMessage.statistic ?? {}),
+    completionTokens:
+      message.usage?.completion_tokens ??
+      targetMessage.statistic?.completionTokens ??
+      Math.round(
+        estimateTokenLength(
+          getMessageTextContentWithoutThinkingFromContent(responseContent),
+        ),
+      ),
+    firstReplyLatency:
+      message.usage?.first_content_latency ??
+      targetMessage.statistic?.firstReplyLatency,
+    totalReplyLatency:
+      message.usage?.total_latency ??
+      targetMessage.statistic?.totalReplyLatency,
+    reasoningLatency:
+      message.usage?.thinking_time ?? targetMessage.statistic?.reasoningLatency,
+    searchingLatency:
+      message.usage?.searching_time ??
+      targetMessage.statistic?.searchingLatency,
+  };
 }
 
 export const DEFAULT_TOPIC = Locale.Store.DefaultTopic;
@@ -294,6 +368,186 @@ function stringifyToolResult(result: any) {
   }
 }
 
+function createMessageSegment(
+  type: ChatMessageSegmentType,
+  content = "",
+  extra?: Partial<ChatMessageSegment>,
+): ChatMessageSegment {
+  return {
+    id: nanoid(),
+    type,
+    content,
+    startedAt: Date.now(),
+    ...extra,
+  };
+}
+
+function cloneMessageSegments(
+  segments?: ChatMessageSegment[],
+): ChatMessageSegment[] | undefined {
+  if (!segments?.length) return undefined;
+  return segments.map((segment) => ({ ...segment }));
+}
+
+function splitMessageContentIntoSegments(
+  content: string,
+): ChatMessageSegment[] {
+  if (!content) return [];
+
+  const segments: ChatMessageSegment[] = [];
+  const pattern = /<think>([\s\S]*?)(?:<\/think>|$)/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(content)) !== null) {
+    const fullMatch = match[0];
+    const thinkContent = match[1] ?? "";
+    const matchIndex = match.index;
+    const before = content.slice(lastIndex, matchIndex);
+    if (before) {
+      segments.push(createMessageSegment("text", before, { streaming: false }));
+    }
+
+    const hasClosingTag = fullMatch.endsWith("</think>");
+    segments.push(
+      createMessageSegment("thought", thinkContent, {
+        streaming: !hasClosingTag,
+      }),
+    );
+
+    lastIndex = matchIndex + fullMatch.length;
+  }
+
+  const remain = content.slice(lastIndex);
+  if (remain) {
+    segments.push(createMessageSegment("text", remain, { streaming: false }));
+  }
+
+  if (segments.length === 0 && content) {
+    segments.push(createMessageSegment("text", content, { streaming: false }));
+  }
+
+  return segments;
+}
+
+function buildMessageSegmentsFromContent(
+  content: string,
+  reasoningLatency?: number,
+): ChatMessageSegment[] | undefined {
+  const segments = splitMessageContentIntoSegments(content);
+  if (!segments.length) return undefined;
+
+  return segments.map((segment) =>
+    segment.type === "thought"
+      ? {
+          ...segment,
+          streaming: false,
+          durationMs: segment.durationMs ?? reasoningLatency,
+        }
+      : {
+          ...segment,
+          streaming: false,
+        },
+  );
+}
+
+function serializeSegmentsToMessageContent(
+  segments?: ChatMessageSegment[],
+): string {
+  if (!segments?.length) return "";
+
+  return segments
+    .map((segment) =>
+      segment.type === "thought"
+        ? `<think>\n${segment.content}${segment.streaming ? "" : "\n</think>"}`
+        : segment.content,
+    )
+    .join("");
+}
+
+function appendMessageSegmentsFromContent(
+  currentSegments: ChatMessageSegment[] | undefined,
+  content: string,
+) {
+  // 先将现有片段标记为已完成，防止后续流式更新覆盖它们
+  const finalizedExisting = (cloneMessageSegments(currentSegments) ?? []).map(
+    (segment) => ({
+      ...segment,
+      streaming: false,
+    }),
+  );
+  return [...finalizedExisting, ...splitMessageContentIntoSegments(content)];
+}
+
+function updateMessageSegmentsFromStream(
+  currentSegments: ChatMessageSegment[] | undefined,
+  content: string,
+  reasoningLatency?: number,
+): ChatMessageSegment[] | undefined {
+  if (!content) return cloneMessageSegments(currentSegments);
+  const nextSegments = splitMessageContentIntoSegments(content);
+  const previousThoughts = (currentSegments ?? []).filter(
+    (segment) => segment.type === "thought",
+  );
+  let thoughtIndex = 0;
+
+  return nextSegments.map((segment) => {
+    if (segment.type !== "thought") {
+      return {
+        ...segment,
+        streaming: false,
+      };
+    }
+
+    const previousThought = previousThoughts[thoughtIndex++];
+    return {
+      ...segment,
+      startedAt: previousThought?.startedAt ?? segment.startedAt,
+      durationMs:
+        segment.streaming === false
+          ? previousThought?.durationMs ?? reasoningLatency
+          : reasoningLatency,
+    };
+  });
+}
+
+function finalizeMessageSegments(
+  segments: ChatMessageSegment[] | undefined,
+  reasoningLatency?: number,
+): ChatMessageSegment[] | undefined {
+  const nextSegments = cloneMessageSegments(segments);
+  if (!nextSegments?.length) return nextSegments;
+
+  return nextSegments.map((segment) => {
+    if (segment.type !== "thought") {
+      return { ...segment, streaming: false };
+    }
+    return {
+      ...segment,
+      streaming: false,
+      durationMs: segment.durationMs ?? reasoningLatency,
+    };
+  });
+}
+
+function resolveFinalMessageSegments(
+  currentSegments: ChatMessageSegment[] | undefined,
+  message: string | RichMessage,
+  reasoningLatency?: number,
+) {
+  const responseContent = getResponseContent(message);
+  const rebuiltSegments = buildMessageSegmentsFromContent(
+    responseContent,
+    reasoningLatency,
+  );
+
+  if (rebuiltSegments?.length) {
+    return rebuiltSegments;
+  }
+
+  return finalizeMessageSegments(currentSegments, reasoningLatency);
+}
+
 function enrichToolWithMetadata(
   tool: ChatMessageTool,
   metadata: Record<
@@ -372,7 +626,7 @@ export const useChatStore = createPersistStore(
                 ...createLightweightMessageUpdate(
                   session,
                   messageIndex,
-                  update.content,
+                  update.changes,
                 ),
               };
               hasChanges = true;
@@ -660,11 +914,20 @@ export const useChatStore = createPersistStore(
             botMessage.streaming = true;
             if (message) {
               botMessage.content = message;
+              botMessage.segments = updateMessageSegmentsFromStream(
+                botMessage.segments,
+                message,
+                botMessage.statistic?.reasoningLatency,
+              );
               // 使用流式优化器进行批量更新，减少存储频率
               streamOptimizer.updateStreamingMessage(
                 session.id,
                 botMessage.id,
-                message,
+                {
+                  content: message,
+                  streaming: true,
+                  segments: cloneMessageSegments(botMessage.segments),
+                },
                 session,
               );
             }
@@ -682,9 +945,18 @@ export const useChatStore = createPersistStore(
                 const finalBotMessage = {
                   ...session.messages[messageIndex],
                   streaming: false,
-                  content: message,
                   date: new Date().toLocaleString(),
                 };
+
+                applyAssistantStatistics(finalBotMessage, message);
+                finalBotMessage.segments = resolveFinalMessageSegments(
+                  finalBotMessage.segments,
+                  message,
+                  finalBotMessage.statistic?.reasoningLatency,
+                );
+                finalBotMessage.content = serializeSegmentsToMessageContent(
+                  finalBotMessage.segments,
+                );
 
                 session.messages[messageIndex] = finalBotMessage;
                 get().onNewMessage(finalBotMessage, session);
@@ -716,9 +988,33 @@ export const useChatStore = createPersistStore(
             streamOptimizer.updateStreamingMessage(
               session.id,
               botMessage.id,
-              getMessageTextContent(botMessage),
+              {
+                content: botMessage.content,
+                tools: botMessage.tools,
+                segments: cloneMessageSegments(botMessage.segments),
+              },
               session,
             );
+          },
+          onToolCallMessage(toolCallMessage) {
+            botMessage.toolCallContent = toolCallMessage.content || "";
+            botMessage.segments = appendMessageSegmentsFromContent(
+              botMessage.segments,
+              toolCallMessage.content || "",
+            );
+            get().updateTargetSession(session, (session) => {
+              const currentMessage = session.messages.find(
+                (m) => m.id === botMessage.id,
+              );
+              if (!currentMessage) return;
+              currentMessage.toolCallContent = toolCallMessage.content || "";
+              currentMessage.segments = cloneMessageSegments(
+                botMessage.segments,
+              );
+              currentMessage.content = serializeSegmentsToMessageContent(
+                currentMessage.segments,
+              );
+            });
           },
           onAfterTool(tool: ChatMessageTool) {
             botMessage?.tools?.forEach((t, i, tools) => {
@@ -750,7 +1046,11 @@ export const useChatStore = createPersistStore(
             streamOptimizer.updateStreamingMessage(
               session.id,
               botMessage.id,
-              getMessageTextContent(botMessage),
+              {
+                content: botMessage.content,
+                tools: botMessage.tools,
+                segments: cloneMessageSegments(botMessage.segments),
+              },
               session,
             );
           },
@@ -880,11 +1180,20 @@ export const useChatStore = createPersistStore(
               botMessage.streaming = true;
               if (message) {
                 botMessage.content = message;
+                botMessage.segments = updateMessageSegmentsFromStream(
+                  botMessage.segments,
+                  message,
+                  botMessage.statistic?.reasoningLatency,
+                );
                 // 多模型模式也使用流式优化器
                 streamOptimizer.updateStreamingMessage(
                   session.id,
                   botMessage.id,
-                  message,
+                  {
+                    content: message,
+                    streaming: true,
+                    segments: cloneMessageSegments(botMessage.segments),
+                  },
                   session,
                 );
               }
@@ -895,8 +1204,16 @@ export const useChatStore = createPersistStore(
 
               botMessage.streaming = false;
               if (message) {
-                botMessage.content = message;
                 botMessage.date = new Date().toLocaleString();
+                applyAssistantStatistics(botMessage, message);
+                botMessage.segments = resolveFinalMessageSegments(
+                  botMessage.segments,
+                  message,
+                  botMessage.statistic?.reasoningLatency,
+                );
+                botMessage.content = serializeSegmentsToMessageContent(
+                  botMessage.segments,
+                );
 
                 // 更新该模型的独立消息历史
                 multiModelMode.modelMessages[modelKey].push(botMessage);
@@ -928,9 +1245,33 @@ export const useChatStore = createPersistStore(
               streamOptimizer.updateStreamingMessage(
                 session.id,
                 botMessage.id,
-                getMessageTextContent(botMessage),
+                {
+                  content: botMessage.content,
+                  tools: botMessage.tools,
+                  segments: cloneMessageSegments(botMessage.segments),
+                },
                 session,
               );
+            },
+            onToolCallMessage(toolCallMessage) {
+              botMessage.toolCallContent = toolCallMessage.content || "";
+              botMessage.segments = appendMessageSegmentsFromContent(
+                botMessage.segments,
+                toolCallMessage.content || "",
+              );
+              get().updateTargetSession(session, (session) => {
+                const currentMessage = session.messages.find(
+                  (m) => m.id === botMessage.id,
+                );
+                if (!currentMessage) return;
+                currentMessage.toolCallContent = toolCallMessage.content || "";
+                currentMessage.segments = cloneMessageSegments(
+                  botMessage.segments,
+                );
+                currentMessage.content = serializeSegmentsToMessageContent(
+                  currentMessage.segments,
+                );
+              });
             },
             onAfterTool(tool: ChatMessageTool) {
               botMessage?.tools?.forEach((t, i, tools) => {
@@ -964,7 +1305,11 @@ export const useChatStore = createPersistStore(
               streamOptimizer.updateStreamingMessage(
                 session.id,
                 botMessage.id,
-                getMessageTextContent(botMessage),
+                {
+                  content: botMessage.content,
+                  tools: botMessage.tools,
+                  segments: cloneMessageSegments(botMessage.segments),
+                },
                 session,
               );
             },
@@ -1168,12 +1513,15 @@ export const useChatStore = createPersistStore(
               providerName,
             },
             onFinish(message, responseRes) {
+              const replyContent = getResponseContentWithoutThinking(message);
               if (responseRes?.status === 200) {
                 get().updateTargetSession(
                   session,
                   (session) =>
                     (session.topic =
-                      message.length > 0 ? trimTopic(message) : DEFAULT_TOPIC),
+                      replyContent.length > 0
+                        ? trimTopic(replyContent)
+                        : DEFAULT_TOPIC),
                 );
               }
             },
@@ -1229,13 +1577,15 @@ export const useChatStore = createPersistStore(
               providerName,
             },
             onUpdate(message) {
-              session.memoryPrompt = message;
+              session.memoryPrompt =
+                getMessageTextContentWithoutThinkingFromContent(message);
             },
             onFinish(message, responseRes) {
               if (responseRes?.status === 200) {
                 get().updateTargetSession(session, (session) => {
                   session.lastSummarizeIndex = lastSummarizeIndex;
-                  session.memoryPrompt = message; // Update the memory prompt for stored it in local storage
+                  session.memoryPrompt =
+                    getResponseContentWithoutThinking(message); // Update the memory prompt for stored it in local storage
                 });
               }
             },
@@ -1307,6 +1657,8 @@ export const useChatStore = createPersistStore(
           currentMessage.content = "";
           currentMessage.streaming = true;
           currentMessage.tools = [];
+          currentMessage.toolCallContent = "";
+          currentMessage.segments = [];
           currentMessage.date = new Date().toLocaleString();
           // 更新消息的模型字段为当前会话的模型配置
           currentMessage.model = session.mask.modelConfig.model;
@@ -1339,11 +1691,20 @@ export const useChatStore = createPersistStore(
                 if (currentMessage) {
                   currentMessage.streaming = true;
                   currentMessage.content = message;
+                  currentMessage.segments = updateMessageSegmentsFromStream(
+                    currentMessage.segments,
+                    message,
+                    currentMessage.statistic?.reasoningLatency,
+                  );
                   // 重试时也使用流式优化器
                   streamOptimizer.updateStreamingMessage(
                     session.id,
                     currentMessage.id,
-                    message,
+                    {
+                      content: message,
+                      streaming: true,
+                      segments: cloneMessageSegments(currentMessage.segments),
+                    },
                     session,
                   );
                 }
@@ -1358,7 +1719,15 @@ export const useChatStore = createPersistStore(
                 const currentMessage = session.messages[messageIndex];
                 if (currentMessage) {
                   currentMessage.streaming = false;
-                  currentMessage.content = message;
+                  applyAssistantStatistics(currentMessage, message);
+                  currentMessage.segments = resolveFinalMessageSegments(
+                    currentMessage.segments,
+                    message,
+                    currentMessage.statistic?.reasoningLatency,
+                  );
+                  currentMessage.content = serializeSegmentsToMessageContent(
+                    currentMessage.segments,
+                  );
                   finishedMessage = currentMessage;
                 }
               });
@@ -1377,6 +1746,20 @@ export const useChatStore = createPersistStore(
                 currentMessage.tools = upsertToolInMessage(
                   currentMessage.tools,
                   enrichedTool,
+                );
+              });
+            },
+            onToolCallMessage(toolCallMessage) {
+              get().updateTargetSession(session, (session) => {
+                const currentMessage = session.messages[messageIndex];
+                if (!currentMessage) return;
+                currentMessage.toolCallContent = toolCallMessage.content || "";
+                currentMessage.segments = appendMessageSegmentsFromContent(
+                  currentMessage.segments,
+                  toolCallMessage.content || "",
+                );
+                currentMessage.content = serializeSegmentsToMessageContent(
+                  currentMessage.segments,
                 );
               });
             },

@@ -78,18 +78,13 @@ function reorder<T>(list: T[], startIndex: number, endIndex: number): T[] {
 }
 
 export function MaskAvatar(props: { avatar: string; model?: ModelType }) {
-  const config = useAppConfig();
+  const isLegacyDefaultAvatar =
+    props.avatar === DEFAULT_MASK_AVATAR || props.avatar === "1f40b";
 
-  // 如果启用了使用模型图标作为头像，优先使用模型图标
-  if (config.useModelIconAsAvatar && props.model) {
-    return <Avatar model={props.model} />;
-  }
-
-  // 否则按原逻辑：如果有自定义头像就用自定义头像，否则用模型图标
-  return props.avatar !== DEFAULT_MASK_AVATAR ? (
+  return !isLegacyDefaultAvatar ? (
     <Avatar avatar={props.avatar} />
   ) : (
-    <Avatar model={props.model} />
+    <Avatar provider={ServiceProvider.OpenAI} />
   );
 }
 

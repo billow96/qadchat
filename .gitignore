@@ -13,6 +13,7 @@
 /out/
 
 # production
+/reference-project
 /build
 
 # misc

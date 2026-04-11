@@ -34,21 +34,22 @@
   }
 }
 
-// Think Collapse styles 
+// Think Collapse styles
 .think-collapse {
   font-size: var(--text-sm);
   :global {
     .ant-collapse-item {
       border: var(--border-in-light) !important;
-      border-radius: 10px !important;
+      border-radius: 12px !important;
       background-color: var(--white) !important;
       margin-bottom: 8px !important;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
     }
 
     .ant-collapse-header {
       color: var(--black) !important;
-      font-weight: bold !important;
-      padding: 6px 12px !important;
+      font-weight: 600 !important;
+      padding: 8px 12px !important;
       align-items: center !important;
       transition: all 0.3s ease !important;
 
@@ -74,30 +75,44 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   width: 100%;
 }
 
 .copy-think-button {
-  font-size: var(--text-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--black);
+  opacity: 0.7;
   cursor: pointer;
-  opacity: 0.6;
-  transition: opacity 0.3s ease;
+  border-radius: 6px;
+  flex-shrink: 0;
+  transition:
+    opacity 0.3s ease,
+    background 0.3s ease;
 
   &:hover {
     opacity: 1;
+    background: rgba(0, 0, 0, 0.05);
   }
 }
 
 .disabled {
   opacity: 0.9;
   pointer-events: none;
-  
+
   :global {
     .ant-collapse-item {
       border: none !important;
       background-color: transparent !important;
     }
-    
+
     .ant-collapse-header {
       padding: 6px 0px !important;
     }

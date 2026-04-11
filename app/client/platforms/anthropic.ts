@@ -338,6 +338,10 @@ export class ClaudeApi implements LLMApi {
         ) => {
           // reset index value
           index = -1;
+          // 从工具调用消息中移除思考内容，不发送给模型
+          const cleanedContent = (toolCallMessage.content || "")
+            .replace(/<think>[\s\S]*?<\/think>/g, "")
+            .trim();
           // @ts-ignore
           requestPayload?.messages?.splice(
             // @ts-ignore
@@ -345,16 +349,19 @@ export class ClaudeApi implements LLMApi {
             0,
             {
               role: "assistant",
-              content: toolCallMessage.tool_calls.map(
-                (tool: ChatMessageTool) => ({
+              content: [
+                ...(cleanedContent
+                  ? [{ type: "text", text: cleanedContent }]
+                  : []),
+                ...toolCallMessage.tool_calls.map((tool: ChatMessageTool) => ({
                   type: "tool_use",
                   id: tool.id,
                   name: tool?.function?.name,
                   input: tool?.function?.arguments
                     ? JSON.parse(tool?.function?.arguments)
                     : {},
-                }),
-              ),
+                })),
+              ],
             },
             // @ts-ignore
             ...toolCallResult.map((result) => ({

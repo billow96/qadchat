@@ -645,6 +645,12 @@ export const MODEL_CAPABILITIES: Record<string, ModelCapabilities> = {
     reasoning: false,
     tools: true,
   },
+  "qwen3.6-plus": {
+    vision: false,
+    web: false,
+    reasoning: true,
+    tools: true,
+  },
   "qwen3-coder-plus": {
     vision: true,
     web: false,

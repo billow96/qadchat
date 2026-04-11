@@ -16,7 +16,7 @@ import {
   SpeechOptions,
 } from "../api";
 
-import { streamWithThink } from "@/app/utils/chat";
+import { streamWithThink, toOpenAICompatibleMessage } from "@/app/utils/chat";
 import { getClientConfig } from "@/app/config/client";
 import { preProcessImageContent } from "@/app/utils/chat";
 import {
@@ -91,7 +91,15 @@ export class DoubaoApi implements LLMApi {
         v.role === "assistant"
           ? getMessageTextContentWithoutThinking(v)
           : await preProcessImageContent(v.content);
-      messages.push({ role: v.role, content });
+      messages.push(
+        toOpenAICompatibleMessage(
+          {
+            ...v,
+            content,
+          },
+          { stripThinkingForAssistant: v.role === "assistant" },
+        ) as any,
+      );
     }
 
     const modelConfig = {
@@ -209,10 +217,17 @@ export class DoubaoApi implements LLMApi {
             toolCallMessage: any,
             toolCallResult: any[],
           ) => {
+            // 从工具调用消息中移除思考内容，不发送给模型
+            const cleanedToolCallMessage = {
+              ...toolCallMessage,
+              content: (toolCallMessage.content || "")
+                .replace(/<think>[\s\S]*?<\/think>/g, "")
+                .trim(),
+            };
             requestPayload?.messages?.splice(
               requestPayload?.messages?.length,
               0,
-              toolCallMessage,
+              cleanedToolCallMessage,
               ...toolCallResult,
             );
           },

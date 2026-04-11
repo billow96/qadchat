@@ -29,6 +29,26 @@ import BotIconQwen from "../icons/llm-icons/qwen.svg";
 import BotIconGrok from "../icons/llm-icons/grok.svg";
 import BotIconDoubao from "../icons/llm-icons/doubao.svg";
 
+export function resolveProviderForModel(
+  provider: ServiceProvider | string,
+  customProviderType?: string,
+): ServiceProvider {
+  if (typeof provider === "string" && provider.startsWith("custom_")) {
+    switch (customProviderType) {
+      case "openai":
+        return ServiceProvider.OpenAI;
+      case "google":
+        return ServiceProvider.Google;
+      case "anthropic":
+        return ServiceProvider.Anthropic;
+      default:
+        return ServiceProvider.OpenAI;
+    }
+  }
+
+  return provider as ServiceProvider;
+}
+
 // 根据模型名称判断应该使用的图标类型
 function getModelIconType(
   provider: ServiceProvider,
@@ -164,25 +184,7 @@ export function ProviderIcon({
   const iconProps = { size };
 
   // 如果是自定义服务商，根据兼容类型确定实际的服务商类型
-  let actualProvider: ServiceProvider;
-  if (typeof provider === "string" && provider.startsWith("custom_")) {
-    // 根据兼容类型映射到对应的内置服务商
-    switch (customProviderType) {
-      case "openai":
-        actualProvider = ServiceProvider.OpenAI;
-        break;
-      case "google":
-        actualProvider = ServiceProvider.Google;
-        break;
-      case "anthropic":
-        actualProvider = ServiceProvider.Anthropic;
-        break;
-      default:
-        actualProvider = ServiceProvider.OpenAI; // 默认使用OpenAI图标
-    }
-  } else {
-    actualProvider = provider as ServiceProvider;
-  }
+  const actualProvider = resolveProviderForModel(provider, customProviderType);
 
   const iconType = getModelIconType(actualProvider, modelName);
 
@@ -278,23 +280,9 @@ export function ProviderIcon({
           return <SiliconCloud.Color {...iconProps} />;
 
         default:
-          // 返回一个通用的AI图标
           return (
-            <div
-              style={{
-                width: size,
-                height: size,
-                borderRadius: "50%",
-                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "white",
-                fontSize: size * 0.6,
-                fontWeight: "bold",
-              }}
-            >
-              AI
+            <div className="no-dark">
+              <BotIconOpenAI width={size} height={size} />
             </div>
           );
       }

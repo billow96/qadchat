@@ -3,7 +3,8 @@ import {
   UPLOAD_URL,
   REQUEST_TIMEOUT_MS,
 } from "@/app/constant";
-import { MultimodalContent, RequestMessage } from "@/app/client/api";
+import { estimateTokenLength } from "@/app/utils/token";
+import type { MultimodalContent, RequestMessage } from "@/app/client/api";
 import Locale from "@/app/locales";
 import {
   EventStreamContentType,
@@ -11,7 +12,15 @@ import {
 } from "@fortaine/fetch-event-source";
 import { prettyObject } from "./format";
 import { fetch as tauriFetch } from "./stream";
-import type { ChatMessageTool } from "../store";
+import { getMessageTextContentWithoutThinkingFromContent } from "../utils";
+import type { ChatMessageSegment, ChatMessageTool } from "../store";
+
+export type OpenAICompatibleRequestMessage = RequestMessage & {
+  role: "developer" | "system" | "user" | "assistant" | "tool";
+  tool_calls?: ChatMessageTool[];
+  tool_call_id?: string;
+  name?: string;
+};
 
 function appendToolCallChunk(runTools: ChatMessageTool[], chunkTools: any[]) {
   for (const partialTool of chunkTools || []) {
@@ -127,10 +136,24 @@ export function expandMessagesWithToolHistory(messages: any[]) {
     const hasToolHistory = message?.role === "assistant" && tools.length > 0;
 
     if (!hasToolHistory) {
-      expanded.push(message);
+      // 对于非工具调用的助手消息，也要移除思考内容
+      if (
+        message?.role === "assistant" &&
+        typeof message?.content === "string"
+      ) {
+        expanded.push({
+          ...message,
+          content: getMessageTextContentWithoutThinkingFromContent(
+            message.content,
+          ),
+        });
+      } else {
+        expanded.push(message);
+      }
       continue;
     }
 
+    // 工具调用的助手消息，content 应为空（不发送思考内容给模型）
     expanded.push({
       role: "assistant",
       content: "",
@@ -164,21 +187,69 @@ export function expandMessagesWithToolHistory(messages: any[]) {
       });
     }
 
-    const hasAssistantContent =
-      typeof message.content === "string"
-        ? message.content.trim().length > 0
-        : Array.isArray(message.content)
-        ? message.content.length > 0
-        : !!message.content;
-    if (hasAssistantContent) {
+    // 最终助手回复内容（移除思考标签后）
+    const rawContent =
+      typeof message.content === "string" ? message.content : "";
+    const cleanContent =
+      getMessageTextContentWithoutThinkingFromContent(rawContent);
+    if (cleanContent.trim().length > 0) {
       expanded.push({
-        ...message,
-        tools: undefined,
+        role: "assistant",
+        content: cleanContent,
       });
     }
   }
 
   return expanded;
+}
+
+export function toOpenAICompatibleMessage(
+  message: Partial<OpenAICompatibleRequestMessage>,
+  options?: {
+    stripThinkingForAssistant?: boolean;
+  },
+): OpenAICompatibleRequestMessage {
+  const stripThinkingForAssistant = !!options?.stripThinkingForAssistant;
+  const baseContent =
+    message?.role === "assistant" && stripThinkingForAssistant
+      ? typeof message?.content === "string"
+        ? getMessageTextContentWithoutThinkingFromContent(message.content)
+        : message.content
+      : message?.content;
+
+  const normalizedMessage: OpenAICompatibleRequestMessage = {
+    role: (message?.role || "user") as OpenAICompatibleRequestMessage["role"],
+    content: baseContent ?? "",
+  };
+
+  if (Array.isArray(message?.tool_calls) && message.tool_calls.length > 0) {
+    normalizedMessage.tool_calls = message.tool_calls.map(
+      (tool: ChatMessageTool, index: number) => ({
+        id: tool?.id,
+        index:
+          typeof tool?.index === "number"
+            ? tool.index
+            : typeof index === "number"
+            ? index
+            : 0,
+        type: tool?.type || "function",
+        function: {
+          name: tool?.function?.name || "",
+          arguments: tool?.function?.arguments || "",
+        },
+      }),
+    );
+  }
+
+  if (typeof message?.tool_call_id === "string" && message.tool_call_id) {
+    normalizedMessage.tool_call_id = message.tool_call_id;
+  }
+
+  if (typeof message?.name === "string" && message.name) {
+    normalizedMessage.name = message.name;
+  }
+
+  return normalizedMessage;
 }
 
 export function compressImage(file: Blob, maxSize: number): Promise<string> {
@@ -357,6 +428,7 @@ export function stream(
   options: any,
 ) {
   let responseText = "";
+  let displayText = "";
   let remainText = "";
   let finished = false;
   let running = false;
@@ -392,9 +464,13 @@ export function stream(
       if (!running && runTools.length > 0) {
         const toolCallMessage = {
           role: "assistant",
+          content: responseText + remainText,
           tool_calls: [...runTools],
         };
+        options?.onToolCallMessage?.(toolCallMessage);
         running = true;
+        responseText = "";
+        remainText = "";
         runTools.splice(0, runTools.length); // empty runTools
         return Promise.all(
           toolCallMessage.tool_calls.map((tool) => {
@@ -593,6 +669,7 @@ export function streamWithThink(
   modelHasReasoningCapability: boolean = false, // 新增参数：模型是否具有推理能力
 ) {
   let responseText = "";
+  let displayText = "";
   let remainText = "";
   let finished = false;
   let running = false;
@@ -601,11 +678,24 @@ export function streamWithThink(
   let isInThinkingMode = false;
   let lastIsThinking = false;
   let lastIsThinkingTagged = false; //between <think> and </think> tags
+  const startRequestTime = Date.now();
+  let firstReplyLatency = 0;
+  let totalThinkingLatency = 0;
+  let totalReplyLatency = 0;
+  let completionTokens = 0;
+
+  const canRenderThinking = (chunkIsThinking: boolean) =>
+    modelHasReasoningCapability || chunkIsThinking || lastIsThinkingTagged;
+
+  const syncDisplayText = () => {
+    displayText = responseText + remainText;
+  };
 
   // animate response to make it looks smooth
   function animateResponseText() {
     if (finished || controller.signal.aborted) {
       responseText += remainText;
+      syncDisplayText();
       if (responseText?.length === 0) {
         options.onError?.(new Error("empty response from server"));
       }
@@ -617,7 +707,8 @@ export function streamWithThink(
       const fetchText = remainText.slice(0, fetchCount);
       responseText += fetchText;
       remainText = remainText.slice(fetchCount);
-      options.onUpdate?.(responseText, fetchText);
+      syncDisplayText();
+      options.onUpdate?.(displayText, fetchText);
     }
 
     requestAnimationFrame(animateResponseText);
@@ -629,11 +720,30 @@ export function streamWithThink(
   const finish = () => {
     if (!finished) {
       if (!running && runTools.length > 0) {
+        // 如果工具调用时还在思考模式，先关闭思考标签
+        if (isInThinkingMode) {
+          remainText += "\n</think>";
+          isInThinkingMode = false;
+        }
+        // 确保所有剩余文本都合并到 responseText
+        responseText += remainText;
+        remainText = "";
+        syncDisplayText();
+
         const toolCallMessage = {
           role: "assistant",
+          content: displayText,
           tool_calls: [...runTools],
         };
+        options?.onToolCallMessage?.(toolCallMessage);
         running = true;
+        responseText = "";
+        displayText = "";
+        remainText = "";
+        // 重置思考状态，为下一轮流式响应做准备
+        isInThinkingMode = false;
+        lastIsThinking = false;
+        lastIsThinkingTagged = false;
         runTools.splice(0, runTools.length); // empty runTools
         return Promise.all(
           toolCallMessage.tool_calls.map((tool) => {
@@ -708,12 +818,41 @@ export function streamWithThink(
       }
 
       // 如果流结束时还在思考模式，添加结束标签
-      if (isInThinkingMode && modelHasReasoningCapability) {
+      if (isInThinkingMode) {
         remainText += "\n</think>";
       }
 
+      if (!totalReplyLatency) {
+        totalReplyLatency = Date.now() - startRequestTime;
+      }
+      if (isInThinkingMode && !totalThinkingLatency) {
+        totalThinkingLatency = Math.max(
+          0,
+          totalReplyLatency - firstReplyLatency,
+        );
+      }
+
+      const finalContent = responseText + remainText;
+      syncDisplayText();
+      if (!completionTokens && finalContent) {
+        completionTokens = Math.round(estimateTokenLength(finalContent));
+      }
+
       finished = true;
-      options.onFinish(responseText + remainText, responseRes);
+      options.onFinish(
+        {
+          content: finalContent,
+          displayContent: displayText,
+          is_stream_request: true,
+          usage: {
+            completion_tokens: completionTokens || undefined,
+            first_content_latency: firstReplyLatency || undefined,
+            thinking_time: totalThinkingLatency || undefined,
+            total_latency: totalReplyLatency || undefined,
+          },
+        },
+        responseRes,
+      );
     }
   };
 
@@ -790,6 +929,20 @@ export function streamWithThink(
         }
         try {
           const chunk = parseSSE(text, runTools);
+          if (!firstReplyLatency) {
+            firstReplyLatency = Date.now() - startRequestTime;
+          }
+          try {
+            const usageJson = JSON.parse(text);
+            const usage = usageJson?.usage;
+            if (usage) {
+              completionTokens =
+                (typeof usage?.total_tokens === "number" &&
+                typeof usage?.prompt_tokens === "number"
+                  ? usage.total_tokens - usage.prompt_tokens
+                  : usage?.completion_tokens) ?? completionTokens;
+            }
+          } catch {}
           if (hasToolCallsFinishReason(text)) {
             finish();
           }
@@ -800,7 +953,7 @@ export function streamWithThink(
 
           // deal with <think> and </think> tags start
           // 只有当模型具有推理能力时才处理思考内容
-          if (modelHasReasoningCapability && !chunk.isThinking) {
+          if (canRenderThinking(chunk.isThinking) && !chunk.isThinking) {
             if (chunk.content.startsWith("<think>")) {
               chunk.isThinking = true;
               chunk.content = chunk.content.slice(7).trim();
@@ -819,8 +972,8 @@ export function streamWithThink(
           const isThinkingChanged = lastIsThinking !== chunk.isThinking;
           lastIsThinking = chunk.isThinking;
 
-          if (modelHasReasoningCapability && chunk.isThinking) {
-            // If in thinking mode and model has reasoning capability
+          if (canRenderThinking(chunk.isThinking) && chunk.isThinking) {
+            // If in thinking mode and the upstream has exposed reasoning chunks
             if (!isInThinkingMode || isThinkingChanged) {
               // If this is a new thinking block or mode changed, add opening tag
               isInThinkingMode = true;
@@ -832,8 +985,9 @@ export function streamWithThink(
               // Continue adding thinking content
               remainText += chunk.content;
             }
+            totalThinkingLatency = Date.now() - startRequestTime;
           } else {
-            // If in normal mode or model doesn't have reasoning capability
+            // If in normal mode, append plain content and close any open think block
             if (isInThinkingMode || isThinkingChanged) {
               // If switching from thinking mode to normal mode, add closing tag
               isInThinkingMode = false;
@@ -842,6 +996,7 @@ export function streamWithThink(
               remainText += chunk.content;
             }
           }
+          syncDisplayText();
         } catch (e) {
           console.error("[Request] parse error", text, msg, e);
           // Don't throw error for parse failures, just log them

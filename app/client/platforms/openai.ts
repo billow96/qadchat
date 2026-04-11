@@ -20,6 +20,7 @@ import {
   uploadImage,
   base64Image2Blob,
   streamWithThink,
+  toOpenAICompatibleMessage,
 } from "@/app/utils/chat";
 import { cloudflareAIGatewayUrl } from "@/app/utils/cloudflare";
 import { ModelSize, DalleQuality, DalleStyle } from "@/app/typing";
@@ -75,6 +76,8 @@ export interface RequestPayload {
     include_usage?: boolean;
   };
 }
+
+export type OpenAICompatibleMessage = RequestPayload["messages"][number];
 
 export interface DalleRequestPayload {
   model: string;
@@ -242,8 +245,14 @@ export class ChatGPTApi implements LLMApi {
         const content = visionModel
           ? await preProcessImageContent(v.content)
           : getMessageTextContent(v);
-        if (!(isO1OrO3 && v.role === "system"))
-          messages.push({ role: v.role, content });
+        if (!(isO1OrO3 && v.role === "system")) {
+          messages.push(
+            toOpenAICompatibleMessage({
+              ...v,
+              content,
+            }),
+          );
+        }
       }
 
       // O1 not support image, tools (plugin in ChatGPTNextWeb) and system, stream, logprobs, temperature, top_p, n, presence_penalty, frequency_penalty yet.
@@ -385,12 +394,19 @@ export class ChatGPTApi implements LLMApi {
             toolCallMessage: any,
             toolCallResult: any[],
           ) => {
+            // 从工具调用消息中移除思考内容，不发送给模型
+            const cleanedToolCallMessage = {
+              ...toolCallMessage,
+              content: (toolCallMessage.content || "")
+                .replace(/<think>[\s\S]*?<\/think>/g, "")
+                .trim(),
+            };
             // @ts-ignore
             requestPayload?.messages?.splice(
               // @ts-ignore
               requestPayload?.messages?.length,
               0,
-              toolCallMessage,
+              cleanedToolCallMessage,
               ...toolCallResult,
             );
           },

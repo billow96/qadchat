@@ -554,6 +554,7 @@
   margin-top: 20px;
   display: flex;
   align-items: center;
+  gap: 10px;
 
   .chat-message-actions {
     display: flex;
@@ -576,10 +577,12 @@
   .chat-model-name {
     font-size: 12px;
     color: var(--black);
-    margin-left: 6px;
+    margin-left: 2px;
     display: flex;
     align-items: center;
     gap: 4px;
+    line-height: 1;
+    white-space: nowrap;
   }
 
   .chat-model-provider {
@@ -748,6 +751,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  gap: 6px;
 
   &:hover {
     .chat-message-edit {
@@ -768,6 +772,7 @@
 
 .chat-message-avatar {
   position: relative;
+  flex-shrink: 0;
 
   .chat-message-edit {
     position: absolute;
@@ -800,14 +805,41 @@
   color: var(--black);
   opacity: 0.6;
   line-height: 1.5;
-  margin-top: 5px;
+  margin-top: 2px;
+}
+
+.chat-message-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.chat-message-tool-call {
+  width: 100%;
+  color: var(--black);
+  padding-bottom: 2px;
 }
 
 .chat-message-tools {
-  margin-top: 5px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  width: 100%;
+}
+
+.chat-message-tools-header {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.04);
+  border: var(--border-in-light);
+  color: var(--black);
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.8;
 }
 
 .chat-tool-card {
@@ -823,14 +855,15 @@
   :global {
     .ant-collapse-item {
       border: var(--border-in-light) !important;
-      border-radius: 10px !important;
+      border-radius: 12px !important;
       background-color: var(--white) !important;
       max-width: 100% !important;
       overflow: hidden !important;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
     }
 
     .ant-collapse-header {
-      padding: 8px 12px !important;
+      padding: 9px 12px !important;
       align-items: center !important;
       max-width: 100% !important;
     }
@@ -922,6 +955,12 @@
   color: var(--black);
   opacity: 0.7;
   cursor: pointer;
+  border-radius: 6px;
+
+  &:hover {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.05);
+  }
 }
 
 .chat-tool-body {
@@ -965,16 +1004,16 @@
 .chat-message-item {
   box-sizing: border-box;
   max-width: 100%;
-  margin-top: 10px;
   border-radius: 10px;
   background-color: rgba(0, 0, 0, 0.05);
-  padding: 10px;
+  padding: 12px;
   font-size: 14px;
   user-select: text;
   word-break: break-word;
   border: var(--border-in-light);
   position: relative;
   transition: all ease 0.3s;
+  width: 100%;
 }
 
 .chat-message-audio {
@@ -1062,14 +1101,16 @@ height: 15vh;
 
 .chat-message-action-date {
   font-size: 12px;
-  opacity: 0.2;
-  white-space: nowrap;
+  opacity: 0.48;
+  white-space: normal;
   transition: all ease 0.6s;
   color: var(--black);
   text-align: right;
   width: 100%;
   box-sizing: border-box;
   padding-right: 10px;
+  margin-top: 8px;
+  line-height: 1.5;
   pointer-events: none;
   z-index: 1;
 }

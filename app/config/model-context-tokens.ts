@@ -482,6 +482,40 @@ export function getModelContextTokens(
   return MODEL_CONTEXT_TOKENS[modelName] || null;
 }
 
+export function getModelContextTokensFromModels(
+  modelName: string,
+  models?: Array<{
+    name: string;
+    contextTokens?: number;
+  }>,
+): ModelContextConfig | null {
+  const exactModel = models?.find((model) => model.name === modelName);
+  if (
+    typeof exactModel?.contextTokens === "number" &&
+    exactModel.contextTokens > 0
+  ) {
+    return { contextTokens: exactModel.contextTokens };
+  }
+
+  const normalizedTarget = modelName.toLowerCase();
+  const fuzzyModel = models?.find((model) => {
+    const normalizedName = model.name.toLowerCase();
+    return (
+      normalizedName === normalizedTarget ||
+      normalizedName.startsWith(`${normalizedTarget}-`) ||
+      normalizedTarget.startsWith(`${normalizedName}-`)
+    );
+  });
+  if (
+    typeof fuzzyModel?.contextTokens === "number" &&
+    fuzzyModel.contextTokens > 0
+  ) {
+    return { contextTokens: fuzzyModel.contextTokens };
+  }
+
+  return getModelContextTokens(modelName);
+}
+
 // 保存自定义上下文Token数配置
 export function saveCustomContextTokens(
   modelName: string,

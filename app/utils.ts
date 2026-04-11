@@ -264,6 +264,27 @@ export function getMessageTextContentWithoutThinking(message: RequestMessage) {
   return content.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
 }
 
+export function getMessageTextContentWithoutThinkingFromContent(
+  content: string,
+) {
+  if (content.startsWith("<think>")) {
+    const pattern = /^<think>[\s\S]*?(<\/think>|$)/;
+    return content.replace(pattern, "").trim();
+  }
+
+  if (content.includes("</think>")) {
+    const pattern = /[\s\S]*?<\/think>/;
+    return content.replace(pattern, "").trim();
+  }
+
+  if (content.startsWith(">")) {
+    const thinkingPattern = /(^>.*(\n(?:>.*|\s*$))*)/m;
+    return content.replace(thinkingPattern, "").trim();
+  }
+
+  return content.trim();
+}
+
 export function getMessageImages(message: RequestMessage): string[] {
   if (typeof message.content === "string") {
     return [];
@@ -492,7 +513,29 @@ export function isThinkingModel(model: string | undefined) {
 }
 
 export function wrapThinkingPart(full_reply: string) {
-  // 现在所有模型都直接生成<think>标签，这个函数主要用于确保兼容性
-  // 直接返回原内容，因为思考内容已经被正确包装
-  return full_reply;
+  const trimmed = full_reply.trimStart();
+
+  if (trimmed.includes("</think>") && !trimmed.startsWith("<think>")) {
+    return `<think>\n${trimmed}`;
+  }
+
+  if (trimmed.includes("<think>") && !trimmed.includes("</think>")) {
+    return `${trimmed}\n</think>`;
+  }
+
+  if (!trimmed.startsWith(">")) {
+    return trimmed;
+  }
+
+  const thinkingPattern = /(^>.*(\n(?:>.*|\s*$))*)/m;
+  const match = trimmed.match(thinkingPattern);
+  if (!match) {
+    return trimmed;
+  }
+
+  const thinkBlock = `<think>\n${match[0]
+    .replace(/^>\s?/gm, "")
+    .trim()}\n</think>\n\n`;
+  const remain = trimmed.slice(match[0].length).trimStart();
+  return `${thinkBlock}${remain}`;
 }

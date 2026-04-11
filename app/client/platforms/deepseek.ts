@@ -13,7 +13,7 @@ import {
   useChatStore,
   ChatMessageTool,
 } from "@/app/store";
-import { streamWithThink } from "@/app/utils/chat";
+import { streamWithThink, toOpenAICompatibleMessage } from "@/app/utils/chat";
 import {
   ChatOptions,
   getHeaders,
@@ -28,7 +28,7 @@ import {
   getTimeoutMSByModel,
 } from "@/app/utils";
 import { getModelCapabilitiesWithCustomConfig } from "@/app/config/model-capabilities";
-import { RequestPayload } from "./openai";
+import { OpenAICompatibleMessage, RequestPayload } from "./openai";
 import { fetch } from "@/app/utils/stream";
 import { collectOpenAIStyleToolCalls } from "@/app/utils/chat";
 
@@ -71,19 +71,32 @@ export class DeepSeekApi implements LLMApi {
   }
 
   async chat(options: ChatOptions) {
-    const messages: ChatOptions["messages"] = [];
+    const messages: OpenAICompatibleMessage[] = [];
     for (const v of options.messages) {
       if (v.role === "assistant") {
         const content = getMessageTextContentWithoutThinking(v);
-        messages.push({ role: v.role, content });
+        messages.push(
+          toOpenAICompatibleMessage(
+            {
+              ...v,
+              content,
+            },
+            { stripThinkingForAssistant: true },
+          ),
+        );
       } else {
         const content = getMessageTextContent(v);
-        messages.push({ role: v.role, content });
+        messages.push(
+          toOpenAICompatibleMessage({
+            ...v,
+            content,
+          }),
+        );
       }
     }
 
     // 检测并修复消息顺序，确保除system外的第一个消息是user
-    const filteredMessages: ChatOptions["messages"] = [];
+    const filteredMessages: OpenAICompatibleMessage[] = [];
     let hasFoundFirstUser = false;
 
     for (const msg of messages) {
@@ -220,12 +233,19 @@ export class DeepSeekApi implements LLMApi {
             toolCallMessage: any,
             toolCallResult: any[],
           ) => {
+            // 从工具调用消息中移除思考内容，不发送给模型
+            const cleanedToolCallMessage = {
+              ...toolCallMessage,
+              content: (toolCallMessage.content || "")
+                .replace(/<think>[\s\S]*?<\/think>/g, "")
+                .trim(),
+            };
             // @ts-ignore
             requestPayload?.messages?.splice(
               // @ts-ignore
               requestPayload?.messages?.length,
               0,
-              toolCallMessage,
+              cleanedToolCallMessage,
               ...toolCallResult,
             );
           },

@@ -7,7 +7,7 @@ export class StreamUpdateOptimizer {
     {
       session: ChatSession;
       messageId: string;
-      content: string;
+      changes: Partial<ChatMessage>;
       lastUpdate: number;
     }
   >();
@@ -21,7 +21,7 @@ export class StreamUpdateOptimizer {
   updateStreamingMessage(
     sessionId: string,
     messageId: string,
-    content: string,
+    changes: Partial<ChatMessage>,
     session: ChatSession,
   ) {
     const key = `${sessionId}-${messageId}`;
@@ -30,18 +30,16 @@ export class StreamUpdateOptimizer {
     this.pendingUpdates.set(key, {
       session,
       messageId,
-      content,
+      changes,
       lastUpdate: Date.now(),
     });
 
-    // 防抖批量更新
-    if (this.updateTimer) {
-      clearTimeout(this.updateTimer);
+    // 使用固定窗口批量刷新，避免高频 token 持续到达时界面一直不更新
+    if (!this.updateTimer) {
+      this.updateTimer = setTimeout(() => {
+        this.flushUpdates();
+      }, this.BATCH_DELAY);
     }
-
-    this.updateTimer = setTimeout(() => {
-      this.flushUpdates();
-    }, this.BATCH_DELAY);
   }
 
   // 立即刷新更新（在流结束时调用）
@@ -70,12 +68,12 @@ export class StreamUpdateOptimizer {
 export function createLightweightMessageUpdate(
   session: ChatSession,
   messageIndex: number,
-  newContent: string,
+  changes: Partial<ChatMessage>,
 ): Partial<ChatSession> {
   // 避免深拷贝，只创建必要的浅拷贝
   const newMessages = [...session.messages];
   const targetMessage = { ...newMessages[messageIndex] };
-  targetMessage.content = newContent;
+  Object.assign(targetMessage, changes);
   newMessages[messageIndex] = targetMessage;
 
   return {

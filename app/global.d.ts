@@ -10,6 +10,29 @@ declare module "*.scss" {
 
 declare module "*.svg";
 
+type DangerConfig = {
+  hideUserApiKey: boolean;
+  disableGPT4: boolean;
+  hideBalanceQuery: boolean;
+  disableFastLink: boolean;
+  customModels: string;
+  defaultModel: string;
+  visionModels: string;
+  hasServerAccessCode: boolean;
+  hasServerProviderConfig: boolean;
+  serverProviders: {
+    openai: { hasApiKey: boolean; hasBaseUrl: boolean };
+    google: { hasApiKey: boolean; hasBaseUrl: boolean };
+    anthropic: { hasApiKey: boolean; hasBaseUrl: boolean };
+    bytedance: { hasApiKey: boolean; hasBaseUrl: boolean };
+    alibaba: { hasApiKey: boolean; hasBaseUrl: boolean };
+    moonshot: { hasApiKey: boolean; hasBaseUrl: boolean };
+    deepseek: { hasApiKey: boolean; hasBaseUrl: boolean };
+    xai: { hasApiKey: boolean; hasBaseUrl: boolean };
+    siliconflow: { hasApiKey: boolean; hasBaseUrl: boolean };
+  };
+};
+
 declare interface Window {
   __TAURI__?: {
     writeText(text: string): Promise<void>;

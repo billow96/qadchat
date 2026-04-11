@@ -40,7 +40,7 @@ export const createDefaultMask = () => {
 
   const defaultMask = {
     id: DEFAULT_MASK_ID,
-    avatar: "1f40b",
+    avatar: DEFAULT_MASK_AVATAR,
     name: "默认助手",
     context: [],
     syncGlobalConfig: false, // 修改为 false，让默认助手也保持自己的配置
@@ -152,7 +152,7 @@ export const useMaskStore = createPersistStore(
   }),
   {
     name: StoreKey.Mask,
-    version: 3.2,
+    version: 3.3,
 
     migrate(state, version) {
       const newState = JSON.parse(JSON.stringify(state)) as MaskState;
@@ -179,6 +179,16 @@ export const useMaskStore = createPersistStore(
           }
         });
       }
+
+      // 统一默认助手头像为默认占位符，交给UI渲染为OpenAI图标
+      Object.values(newState.masks).forEach((m) => {
+        if (
+          m.id === DEFAULT_MASK_ID &&
+          (m.avatar === "1f40b" || !m.avatar || m.avatar === "gpt-bot")
+        ) {
+          m.avatar = DEFAULT_MASK_AVATAR;
+        }
+      });
 
       // 确保默认助手存在
       if (!newState.masks[DEFAULT_MASK_ID]) {

@@ -24,10 +24,13 @@ import {
 import { useChatStore } from "../store";
 import { IconButton } from "./button";
 import { Collapse } from "antd";
+import CopyIcon from "../icons/copy.svg";
 
 import { useAppConfig } from "../store/config";
 import clsx from "clsx";
 import styles from "./markdown.module.scss";
+import type { ChatMessageSegment } from "../store";
+import { isThinkingTitle } from "../utils/thinking";
 
 // 配置安全策略，允许 thinkcollapse 标签，防止html注入造成页面崩溃
 const sanitizeOptions = {
@@ -79,6 +82,26 @@ interface ThinkCollapseProps {
   fontSize?: number;
 }
 
+function formatThinkingDurationLabel(durationMs: number) {
+  return Locale.NewChat.ThinkFormat(durationMs);
+}
+
+function buildThinkCollapseTitle(segment: ChatMessageSegment, now: number) {
+  const content = segment.content.trim();
+  if (!content) {
+    return Locale.NewChat.NoThink;
+  }
+
+  if (segment.streaming) {
+    const duration = Math.max(0, now - (segment.startedAt ?? now));
+    return `${Locale.NewChat.Thinking}${formatThinkingDurationLabel(duration)}`;
+  }
+
+  return `${Locale.NewChat.Think}${formatThinkingDurationLabel(
+    segment.durationMs ?? 0,
+  )}`;
+}
+
 const ThinkCollapse = ({
   title,
   children,
@@ -87,7 +110,12 @@ const ThinkCollapse = ({
 }: ThinkCollapseProps) => {
   const isSSR = typeof window === "undefined";
   // 如果是 Thinking 状态，默认展开，否则折叠
-  const defaultActive = title === Locale.NewChat.Thinking ? ["1"] : [];
+  const defaultActive = isThinkingTitle(
+    title as string,
+    Locale.NewChat.Thinking,
+  )
+    ? ["1"]
+    : [];
   // 如果是 NoThink 状态，禁用
   const disabled = title === Locale.NewChat.NoThink;
   const [activeKeys, setActiveKeys] = useState(defaultActive);
@@ -99,7 +127,7 @@ const ThinkCollapse = ({
       title === Locale.NewChat.NoThink
     ) {
       setActiveKeys([]);
-    } else if (title === Locale.NewChat.Thinking) {
+    } else if (isThinkingTitle(title as string, Locale.NewChat.Thinking)) {
       setActiveKeys(["1"]);
     }
   }, [title]);
@@ -181,13 +209,15 @@ const ThinkCollapse = ({
               <div className={styles["think-collapse-header"]}>
                 <span>{title}</span>
                 {!disabled && (
-                  <span
+                  <button
                     className={styles["copy-think-button"]}
                     onClick={handleCopyContent}
                     title={Locale.Chat.Actions.Copy}
+                    aria-label={Locale.Chat.Actions.Copy}
+                    type="button"
                   >
-                    📋
-                  </span>
+                    <CopyIcon />
+                  </button>
                 )}
               </div>
             ),
@@ -440,61 +470,89 @@ function tryWrapHtmlCode(text: string) {
     );
 }
 
-function formatThinkText(
-  text: string,
-  thinkingTime?: number,
-): {
+function formatThinkText(text: string): {
   thinkText: string;
   remainText: string;
 } {
-  text = text.trimStart();
-  // 检查是否以 <think> 开头但没有结束标签
-  if (text.startsWith("<think>") && !text.includes("</think>")) {
-    // 获取 <think> 后的所有内容
-    const thinkContent = text.slice("<think>".length);
-    // 渲染为"思考中"状态
+  const normalized = text.trimStart();
+
+  if (!normalized.includes("<think>") && !normalized.includes("</think>")) {
+    return { thinkText: "", remainText: text };
+  }
+
+  const startIndex = normalized.indexOf("<think>");
+  if (startIndex >= 0 && !normalized.includes("</think>")) {
+    const prefix = normalized.slice(0, startIndex).trim();
+    const thinkContent = normalized.slice(startIndex + "<think>".length);
     const thinkText = `<thinkcollapse title="${Locale.NewChat.Thinking}">\n${thinkContent}\n\n</thinkcollapse>\n`;
-    const remainText = ""; // 剩余文本为空
+    const remainText = prefix ? `${prefix}\n\n` : "";
     return { thinkText, remainText };
   }
 
-  // 处理完整的 think 标签
-  const pattern = /^<think>([\s\S]*?)<\/think>/;
-  const match = text.match(pattern);
+  const pattern = /<think>([\s\S]*?)<\/think>/;
+  const match = normalized.match(pattern);
   if (match) {
+    const fullMatch = match[0];
     const thinkContent = match[1];
-    let thinkText = "";
-    if (thinkContent.trim() === "") {
-      thinkText = `<thinkcollapse title="${Locale.NewChat.NoThink}">\n\n</thinkcollapse>\n`;
-    } else {
-      thinkText = `<thinkcollapse title="${
-        Locale.NewChat.Think
-      }${Locale.NewChat.ThinkFormat(
-        thinkingTime,
-      )}">\n${thinkContent}\n\n</thinkcollapse>\n`;
-    }
-    const remainText = text.substring(match[0].length); // 提取剩余文本
-    return { thinkText, remainText };
+    const prefix = normalized.slice(0, match.index ?? 0).trim();
+    const suffix = normalized
+      .slice((match.index ?? 0) + fullMatch.length)
+      .trimStart();
+    const thinkText =
+      thinkContent.trim() === ""
+        ? `<thinkcollapse title="${Locale.NewChat.NoThink}">\n\n</thinkcollapse>\n`
+        : `<thinkcollapse title="${Locale.NewChat.Think}">\n${thinkContent}\n\n</thinkcollapse>\n`;
+
+    const remainParts = [prefix, suffix].filter(Boolean);
+    return {
+      thinkText,
+      remainText: remainParts.join("\n\n"),
+    };
   }
 
-  // 没有找到 think 标签
   return { thinkText: "", remainText: text };
 }
 
 function MarkdownContentInner(props: {
   content: string;
-  thinkingTime?: number;
+  thinkingSegments?: ChatMessageSegment[];
   fontSize?: number;
   status?: boolean;
 }) {
+  const [now, setNow] = useState(Date.now());
+  const hasStreamingThought = !!props.thinkingSegments?.some(
+    (segment) => segment.type === "thought" && segment.streaming,
+  );
+
+  useEffect(() => {
+    if (!hasStreamingThought) return;
+
+    setNow(Date.now());
+    const timer = window.setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [hasStreamingThought]);
+
   // 预处理base64图片，将长base64 URL替换为占位符
   const { processedContent, imageMap } = useMemo(() => {
     const originalContent = tryWrapHtmlCode(escapeBrackets(props.content));
-    const { thinkText, remainText } = formatThinkText(
-      originalContent,
-      props.thinkingTime,
-    );
-    let content = thinkText + remainText;
+    let content = originalContent;
+
+    if (props.thinkingSegments?.length) {
+      const thinkText = props.thinkingSegments
+        .map((segment) => {
+          const title = buildThinkCollapseTitle(segment, now);
+          const body = segment.content.trim();
+          return `<thinkcollapse title="${title}">\n${body}\n\n</thinkcollapse>\n`;
+        })
+        .join("\n");
+      content = thinkText + originalContent;
+    } else {
+      const { thinkText, remainText } = formatThinkText(originalContent);
+      content = thinkText + remainText;
+    }
 
     const imageMap = new Map<string, string>();
     let imageCounter = 0;
@@ -516,7 +574,7 @@ function MarkdownContentInner(props: {
     );
 
     return { processedContent: content, imageMap };
-  }, [props.content, props.thinkingTime]);
+  }, [now, props.content, props.thinkingSegments]);
 
   return (
     <ReactMarkdown
@@ -595,7 +653,7 @@ function MarkdownContentInner(props: {
               );
             }
             const isInternal = /^\/#/i.test(href);
-            const target = isInternal ? "_self" : (aProps.target ?? "_blank");
+            const target = isInternal ? "_self" : aProps.target ?? "_blank";
             return <a {...aProps} target={target} />;
           },
         } as any
@@ -616,7 +674,7 @@ export function Markdown(
     fontFamily?: string;
     parentRef?: RefObject<HTMLDivElement>;
     defaultShow?: boolean;
-    thinkingTime?: number;
+    thinkingSegments?: ChatMessageSegment[];
     status?: boolean;
   } & React.DOMAttributes<HTMLDivElement>,
 ) {
@@ -639,7 +697,7 @@ export function Markdown(
       ) : (
         <MarkdownContent
           content={props.content}
-          thinkingTime={props.thinkingTime}
+          thinkingSegments={props.thinkingSegments}
           fontSize={props.fontSize}
           status={props.status}
         />

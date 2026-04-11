@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { ServiceProvider, DEFAULT_MODELS } from "../constant";
 import { useAccessStore } from "../store/access";
-import { LLMModel } from "../client/api";
+import { LLMModel, RichMessage } from "../client/api";
 import { ModelFetcher } from "../client/model-fetcher";
 import { showToast } from "./ui-lib";
 import styles from "./model-manager.module.scss";
@@ -674,10 +674,12 @@ export function ModelManager({ provider, onClose }: ModelManagerProps) {
             providerName: provider,
             temperature: 0.5,
           },
-          onFinish: (message: string, response?: Response) => {
+          onFinish: (message: string | RichMessage, response?: Response) => {
             if (!isResolved) {
               isResolved = true;
               clearTimeout(timeout);
+              const messageText =
+                typeof message === "string" ? message : message.content;
 
               // 检查响应状态
               if (response?.status && response.status >= 400) {
@@ -688,7 +690,7 @@ export function ModelManager({ provider, onClose }: ModelManagerProps) {
                   }`,
                   response,
                 });
-              } else if (message && message.trim().length > 0) {
+              } else if (messageText && messageText.trim().length > 0) {
                 resolve({ success: true, response });
               } else {
                 resolve({ success: false, error: "Empty response received" });

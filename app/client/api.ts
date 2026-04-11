@@ -72,6 +72,22 @@ export interface SpeechOptions {
   onController?: (controller: AbortController) => void;
 }
 
+export interface RichMessage {
+  content: string;
+  displayContent?: string;
+  reasoning_content?: string;
+  is_stream_request?: boolean;
+  usage?: {
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    total_tokens?: number;
+    first_content_latency?: number;
+    thinking_time?: number;
+    searching_time?: number;
+    total_latency?: number;
+  };
+}
+
 export interface ChatOptions {
   messages: RequestMessage[];
   config: LLMConfig;
@@ -83,11 +99,16 @@ export interface ChatOptions {
   };
 
   onUpdate?: (message: string, chunk: string) => void;
-  onFinish: (message: string, responseRes: Response) => void;
+  onFinish: (message: string | RichMessage, responseRes: Response) => void;
   onError?: (err: Error) => void;
   onController?: (controller: AbortController) => void;
   onBeforeTool?: (tool: ChatMessageTool) => void;
   onAfterTool?: (tool: ChatMessageTool) => void;
+  onToolCallMessage?: (message: {
+    role: "assistant";
+    content: string;
+    tool_calls: ChatMessageTool[];
+  }) => void;
 }
 
 export interface LLMUsage {

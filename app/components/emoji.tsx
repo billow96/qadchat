@@ -5,19 +5,8 @@ import EmojiPicker, {
 } from "emoji-picker-react";
 
 import { ModelType } from "../store";
-
-import BotIconDefault from "../icons/llm-icons/default.svg";
-import BotIconOpenAI from "../icons/llm-icons/openai.svg";
-import BotIconGemini from "../icons/llm-icons/gemini.svg";
-import BotIconGemma from "../icons/llm-icons/gemma.svg";
-import BotIconClaude from "../icons/llm-icons/claude.svg";
-import BotIconMeta from "../icons/llm-icons/meta.svg";
-import BotIconMistral from "../icons/llm-icons/mistral.svg";
-import BotIconDeepseek from "../icons/llm-icons/deepseek.svg";
-import BotIconMoonshot from "../icons/llm-icons/moonshot.svg";
-import BotIconQwen from "../icons/llm-icons/qwen.svg";
-import BotIconGrok from "../icons/llm-icons/grok.svg";
-import BotIconDoubao from "../icons/llm-icons/doubao.svg";
+import { ServiceProvider } from "../constant";
+import { ProviderIcon } from "./provider-icon";
 
 export function getEmojiUrl(unified: string, style: EmojiStyle) {
   // Whoever owns this Content Delivery Network (CDN), I am using your CDN to serve emojis
@@ -42,56 +31,92 @@ export function AvatarPicker(props: {
   );
 }
 
-export function Avatar(props: { model?: ModelType; avatar?: string }) {
-  let LlmIcon = BotIconDefault;
+function inferProviderFromModel(model?: string): ServiceProvider {
+  const modelName = model?.toLowerCase() || "";
 
-  if (props.model) {
-    const modelName = props.model.toLowerCase();
+  if (
+    modelName.startsWith("gpt") ||
+    modelName.startsWith("chatgpt") ||
+    modelName.startsWith("dall-e") ||
+    modelName.startsWith("dalle") ||
+    modelName.startsWith("o1") ||
+    modelName.startsWith("o3") ||
+    modelName.startsWith("o4") ||
+    modelName.includes("text-embedding") ||
+    modelName.includes("ada")
+  ) {
+    return ServiceProvider.OpenAI;
+  }
+  if (modelName.startsWith("gemini") || modelName.startsWith("gemma")) {
+    return ServiceProvider.Google;
+  }
+  if (modelName.startsWith("claude")) {
+    return ServiceProvider.Anthropic;
+  }
+  if (modelName.includes("deepseek")) {
+    return ServiceProvider.DeepSeek;
+  }
+  if (
+    modelName.startsWith("moonshot") ||
+    modelName.startsWith("kimi") ||
+    modelName.includes("moonshotai/")
+  ) {
+    return ServiceProvider.Moonshot;
+  }
+  if (
+    modelName.startsWith("qwen") ||
+    modelName.startsWith("qwq") ||
+    modelName.startsWith("qvq")
+  ) {
+    return ServiceProvider.Alibaba;
+  }
+  if (modelName.startsWith("grok")) {
+    return ServiceProvider.XAI;
+  }
+  if (modelName.startsWith("doubao") || modelName.startsWith("ep-")) {
+    return ServiceProvider.ByteDance;
+  }
+  if (modelName.includes("llama")) {
+    return ServiceProvider.SiliconFlow;
+  }
 
-    if (
-      modelName.startsWith("gpt") ||
-      modelName.startsWith("chatgpt") ||
-      modelName.startsWith("dall-e") ||
-      modelName.startsWith("dalle") ||
-      modelName.startsWith("o1") ||
-      modelName.startsWith("o3")
-    ) {
-      LlmIcon = BotIconOpenAI;
-    } else if (modelName.startsWith("gemini")) {
-      LlmIcon = BotIconGemini;
-    } else if (modelName.startsWith("gemma")) {
-      LlmIcon = BotIconGemma;
-    } else if (modelName.startsWith("claude")) {
-      LlmIcon = BotIconClaude;
-    } else if (modelName.includes("llama")) {
-      LlmIcon = BotIconMeta;
-    } else if (
-      modelName.startsWith("mixtral") ||
-      modelName.startsWith("codestral")
-    ) {
-      LlmIcon = BotIconMistral;
-    } else if (modelName.includes("deepseek")) {
-      LlmIcon = BotIconDeepseek;
-    } else if (modelName.startsWith("moonshot")) {
-      LlmIcon = BotIconMoonshot;
-    } else if (modelName.startsWith("qwen")) {
-      LlmIcon = BotIconQwen;
-    } else if (modelName.startsWith("grok")) {
-      LlmIcon = BotIconGrok;
-    } else if (modelName.startsWith("doubao") || modelName.startsWith("ep-")) {
-      LlmIcon = BotIconDoubao;
-    }
+  return ServiceProvider.OpenAI;
+}
 
+export function Avatar(props: {
+  model?: ModelType | string;
+  avatar?: string;
+  provider?: ServiceProvider | string;
+  customProviderType?: string;
+  size?: number;
+}) {
+  const size = props.size ?? 30;
+  const iconSize = Math.max(16, size - 8);
+
+  if (props.model || props.provider) {
     return (
-      <div className="no-dark">
-        <LlmIcon className="user-avatar" width={30} height={30} />
+      <div
+        className="user-avatar no-dark"
+        style={{ width: size, minWidth: size, height: size, minHeight: size }}
+      >
+        <ProviderIcon
+          provider={
+            props.provider || inferProviderFromModel(String(props.model || ""))
+          }
+          customProviderType={props.customProviderType}
+          modelName={props.model ? String(props.model) : undefined}
+          size={iconSize}
+        />
       </div>
     );
   }
 
   return (
-    <div className="user-avatar">
-      {props.avatar && <EmojiAvatar avatar={props.avatar} />}
+    <div
+      className="user-avatar"
+      style={{ width: size, minWidth: size, height: size, minHeight: size }}
+    >
+      {props.avatar && <EmojiAvatar avatar={props.avatar} size={size - 12} />}
     </div>
   );
 }

@@ -56,6 +56,7 @@ import MenuIcon from "../icons/menu.svg";
 import {
   BOT_HELLO,
   ChatMessage,
+  ChatMessageSegment,
   ChatSession,
   createMessage,
   DEFAULT_TOPIC,
@@ -87,9 +88,8 @@ import {
   supportsCustomSize,
   useMobileScreen,
   selectOrCopy,
-  isThinkingModel,
-  wrapThinkingPart,
 } from "../utils";
+import { getTextContentFromSegments } from "../utils/thinking";
 
 import { uploadImage as uploadImageRemote } from "@/app/utils/chat";
 
@@ -374,6 +374,108 @@ function ToolResultCard(props: { tool: any; defaultOpen?: boolean }) {
       />
     </div>
   );
+}
+
+function formatMessageMeta(message: ChatMessage, isMobileScreen: boolean) {
+  const timeText = message.date || "";
+  const statistic = message.statistic;
+
+  if (!statistic) {
+    return isMobileScreen ? [timeText] : timeText;
+  }
+
+  if (message.role === "assistant") {
+    const completionTokens = statistic.completionTokens;
+    const totalReplyLatency = statistic.totalReplyLatency;
+    const firstReplyLatency = statistic.firstReplyLatency;
+
+    if (
+      typeof completionTokens !== "number" ||
+      typeof totalReplyLatency !== "number"
+    ) {
+      return isMobileScreen ? [timeText] : timeText;
+    }
+
+    const statParts = [`${completionTokens} Tokens`];
+    const isStreamingMessage =
+      typeof firstReplyLatency === "number" && firstReplyLatency > 0;
+
+    if (isStreamingMessage) {
+      const activeDuration = Math.max(
+        totalReplyLatency - firstReplyLatency,
+        10,
+      );
+      const speed = ((completionTokens * 1000) / activeDuration).toFixed(2);
+      statParts.push(
+        `⚡ ${speed} T/s`,
+        `⏱️ FT:${(firstReplyLatency / 1000).toFixed(2)}s | TT:${(
+          totalReplyLatency / 1000
+        ).toFixed(2)}s`,
+      );
+    } else {
+      const activeDuration = Math.max(totalReplyLatency, 10);
+      const speed = ((completionTokens * 1000) / activeDuration).toFixed(2);
+      statParts.push(
+        `⚡ ${speed} T/s`,
+        `⏱️ TT:${(totalReplyLatency / 1000).toFixed(2)}s`,
+      );
+    }
+
+    return isMobileScreen
+      ? [timeText, statParts.join(" ")]
+      : `${timeText} - ${statParts.join(" ")}`;
+  }
+
+  if (typeof statistic.singlePromptTokens === "number") {
+    const statText = `${statistic.singlePromptTokens} Tokens`;
+    return isMobileScreen ? [timeText, statText] : `${timeText} - ${statText}`;
+  }
+
+  return isMobileScreen ? [timeText] : timeText;
+}
+
+function getMessageDisplaySegments(message: ChatMessage): ChatMessageSegment[] {
+  if (message.segments?.length) {
+    return message.segments;
+  }
+
+  const content =
+    typeof message.content === "string"
+      ? message.content
+      : getMessageTextContent(message);
+  if (!content) return [];
+
+  return [
+    {
+      id: `${message.id}-content`,
+      type: "text",
+      content,
+      streaming: !!message.streaming,
+    },
+  ];
+}
+
+function getThoughtSegments(message: ChatMessage): ChatMessageSegment[] {
+  return getMessageDisplaySegments(message).filter(
+    (segment) => segment.type === "thought",
+  );
+}
+
+function getMessageDisplayContent(message: ChatMessage): string {
+  const segments = getMessageDisplaySegments(message);
+  const textContent = getTextContentFromSegments(segments);
+
+  if (textContent) {
+    return textContent;
+  }
+
+  if (segments.length > 0) {
+    return "";
+  }
+
+  return typeof message.content === "string"
+    ? message.content
+    : getMessageTextContent(message);
 }
 
 function ThinkingPanel(props: { showPanel: boolean; onClose: () => void }) {
@@ -1159,7 +1261,10 @@ export function TokenCounter(props: {
   const modelConfig = props.session.mask.modelConfig;
   const usedTokens = calculateUsedTokens();
   const contextConfig = getModelContextTokens(props.currentModel);
-  const maxTokens = contextConfig?.contextTokens;
+  const maxTokens =
+    modelConfig.compressMessageLengthThreshold > 0
+      ? modelConfig.compressMessageLengthThreshold
+      : contextConfig?.contextTokens;
 
   // 计算当前上下文数量
   const currentContextCount = props.session.messages.length;
@@ -2374,25 +2479,40 @@ function ChatInner() {
   const getCurrentMessageContent = (message: ChatMessage): string => {
     // 若消息没有版本，优先返回字符串；否则从多模态数组里提取文本
     if (!message.versions || message.versions.length < 1) {
-      return typeof message.content === "string"
-        ? message.content
-        : getMessageTextContent(message);
+      return getMessageDisplayContent(message);
     }
 
     const currentIndex = message.currentVersionIndex ?? 0;
     if (currentIndex === message.versions.length) {
       // 显示最新版本（当前消息内容）
-      return typeof message.content === "string"
-        ? message.content
-        : getMessageTextContent(message);
+      return getMessageDisplayContent(message);
     } else if (currentIndex >= 0 && currentIndex < message.versions.length) {
       // 显示历史版本（字符串）
       return message.versions[currentIndex];
     }
 
-    return typeof message.content === "string"
-      ? message.content
-      : getMessageTextContent(message);
+    return getMessageDisplayContent(message);
+  };
+
+  const renderMessageMeta = (message: ChatMessage, isContext: boolean) => {
+    const meta = isContext
+      ? (Locale.Chat.IsContext as string)
+      : formatMessageMeta(message, isMobileScreen);
+
+    if (Array.isArray(meta)) {
+      return (
+        <>
+          {meta.map((line, index) => (
+            <React.Fragment key={`${message.id}-meta-${index}`}>
+              {index > 0 && <br />}
+              {line}
+            </React.Fragment>
+          ))}
+        </>
+      );
+    }
+
+    return meta;
   };
 
   const onPinMessage = (message: ChatMessage) => {
@@ -3035,8 +3155,7 @@ function ChatInner() {
                                   {["system"].includes(message.role) ? (
                                     <Avatar avatar="2699-fe0f" />
                                   ) : (
-                                    <MaskAvatar
-                                      avatar={session.mask.avatar}
+                                    <Avatar
                                       model={
                                         message.model ||
                                         session.mask.modelConfig.model
@@ -3062,7 +3181,6 @@ function ChatInner() {
                                 )}
                               </div>
                             )}
-
                             {showActions && (
                               <div className={styles["chat-message-actions"]}>
                                 <div className={styles["chat-input-actions"]}>
@@ -3182,119 +3300,128 @@ function ChatInner() {
                               {Locale.Chat.Typing}
                             </div>
                           )}
-                          {(message.tools?.length ?? 0) > 0 && (
-                            <div className={styles["chat-message-tools"]}>
-                              {message.tools?.map((tool, toolIndex) => (
-                                <ToolResultCard
-                                  key={tool.id}
-                                  tool={tool}
-                                  defaultOpen={
-                                    tool.isError !== false &&
-                                    tool.isError !== true &&
-                                    toolIndex ===
-                                      (message.tools?.length ?? 0) - 1
-                                  }
-                                />
-                              ))}
-                            </div>
-                          )}
                           <div className={styles["chat-message-item"]}>
-                            <Markdown
-                              key={message.streaming ? "loading" : "done"}
-                              content={(() => {
-                                // 获取当前显示的消息内容
-                                const messageContent =
-                                  getCurrentMessageContent(message);
-                                const isThinking = isThinkingModel(
-                                  message.model,
-                                );
-                                const shouldWrap =
-                                  !message.streaming && isThinking;
-
-                                if (shouldWrap) {
-                                  const wrappedContent =
-                                    wrapThinkingPart(messageContent);
-                                  return wrappedContent;
+                            <div className={styles["chat-message-body"]}>
+                              {/* 当有工具调用时，思考块单独渲染在工具之前 */}
+                              {(message.tools?.length ?? 0) > 0 &&
+                                getThoughtSegments(message).length > 0 && (
+                                  <Markdown
+                                    key={`thinking-${
+                                      message.streaming ? "loading" : "done"
+                                    }`}
+                                    content=""
+                                    loading={false}
+                                    fontSize={fontSize}
+                                    fontFamily={fontFamily}
+                                    parentRef={scrollRef}
+                                    defaultShow={i >= messages.length - 6}
+                                    thinkingSegments={getThoughtSegments(
+                                      message,
+                                    )}
+                                    status={message.streaming}
+                                  />
+                                )}
+                              {(message.tools?.length ?? 0) > 0 && (
+                                <div className={styles["chat-message-tools"]}>
+                                  {message.tools?.map((tool, toolIndex) => (
+                                    <ToolResultCard
+                                      key={tool.id}
+                                      tool={tool}
+                                      defaultOpen={
+                                        tool.isError !== false &&
+                                        tool.isError !== true &&
+                                        toolIndex ===
+                                          (message.tools?.length ?? 0) - 1
+                                      }
+                                    />
+                                  ))}
+                                </div>
+                              )}
+                              <Markdown
+                                key={message.streaming ? "loading" : "done"}
+                                content={getCurrentMessageContent(message)}
+                                loading={
+                                  (message.preview || message.streaming) &&
+                                  message.content.length === 0 &&
+                                  !isUser
                                 }
-
-                                return messageContent;
-                              })()}
-                              loading={
-                                (message.preview || message.streaming) &&
-                                message.content.length === 0 &&
-                                !isUser
-                              }
-                              //   onContextMenu={(e) => onRightClick(e, message)} // hard to use
-                              onDoubleClickCapture={() => {
-                                if (!isMobileScreen) return;
-                                setUserInput(getMessageTextContent(message));
-                              }}
-                              fontSize={fontSize}
-                              fontFamily={fontFamily}
-                              parentRef={scrollRef}
-                              defaultShow={i >= messages.length - 6}
-                              thinkingTime={message.statistic?.reasoningLatency}
-                              status={message.streaming}
-                            />
-                            {getMessageImages(message).length == 1 && (
-                              <div
-                                className={
-                                  styles["chat-message-item-image-container"]
+                                onDoubleClickCapture={() => {
+                                  if (!isMobileScreen) return;
+                                  setUserInput(getMessageTextContent(message));
+                                }}
+                                fontSize={fontSize}
+                                fontFamily={fontFamily}
+                                parentRef={scrollRef}
+                                defaultShow={i >= messages.length - 6}
+                                thinkingSegments={
+                                  (message.tools?.length ?? 0) > 0
+                                    ? undefined
+                                    : getThoughtSegments(message)
                                 }
-                                style={{ aspectRatio: ratio }}
-                              >
-                                <Image
-                                  className={styles["chat-message-item-image"]}
-                                  src={getMessageImages(message)[0]}
-                                  alt=""
-                                  fill
-                                  unoptimized
-                                  onLoadingComplete={(img) => {
-                                    setRatio(
-                                      img.naturalWidth / img.naturalHeight,
-                                    );
-                                  }}
-                                />
-                              </div>
-                            )}
-                            {getMessageImages(message).length > 1 && (
-                              <div
-                                className={styles["chat-message-item-images"]}
-                                style={
-                                  {
-                                    "--image-count":
-                                      getMessageImages(message).length,
-                                  } as React.CSSProperties
-                                }
-                              >
-                                {getMessageImages(message).map(
-                                  (image, index) => {
-                                    return (
-                                      <div
-                                        className={
-                                          styles[
-                                            "chat-message-item-image-multi-container"
-                                          ]
-                                        }
-                                        key={index}
-                                      >
-                                        <Image
+                                status={message.streaming}
+                              />
+                              {getMessageImages(message).length == 1 && (
+                                <div
+                                  className={
+                                    styles["chat-message-item-image-container"]
+                                  }
+                                  style={{ aspectRatio: ratio }}
+                                >
+                                  <Image
+                                    className={
+                                      styles["chat-message-item-image"]
+                                    }
+                                    src={getMessageImages(message)[0]}
+                                    alt=""
+                                    fill
+                                    unoptimized
+                                    onLoadingComplete={(img) => {
+                                      setRatio(
+                                        img.naturalWidth / img.naturalHeight,
+                                      );
+                                    }}
+                                  />
+                                </div>
+                              )}
+                              {getMessageImages(message).length > 1 && (
+                                <div
+                                  className={styles["chat-message-item-images"]}
+                                  style={
+                                    {
+                                      "--image-count":
+                                        getMessageImages(message).length,
+                                    } as React.CSSProperties
+                                  }
+                                >
+                                  {getMessageImages(message).map(
+                                    (image, index) => {
+                                      return (
+                                        <div
                                           className={
                                             styles[
-                                              "chat-message-item-image-multi"
+                                              "chat-message-item-image-multi-container"
                                             ]
                                           }
-                                          src={image}
-                                          alt=""
-                                          fill
-                                          unoptimized
-                                        />
-                                      </div>
-                                    );
-                                  },
-                                )}
-                              </div>
-                            )}
+                                          key={index}
+                                        >
+                                          <Image
+                                            className={
+                                              styles[
+                                                "chat-message-item-image-multi"
+                                              ]
+                                            }
+                                            src={image}
+                                            alt=""
+                                            fill
+                                            unoptimized
+                                          />
+                                        </div>
+                                      );
+                                    },
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           </div>
                           {message?.audio_url && (
                             <div className={styles["chat-message-audio"]}>
@@ -3314,9 +3441,7 @@ function ChatInner() {
                                   {(message.versions?.length ?? 0) + 1}
                                 </span>
                               )}
-                            {isContext
-                              ? Locale.Chat.IsContext
-                              : message.date.toLocaleString()}
+                            {renderMessageMeta(message, isContext)}
                           </div>
                         </div>
                       </div>

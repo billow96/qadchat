@@ -9,6 +9,7 @@ import {
 import {
   preProcessImageContentForAlibabaDashScope,
   streamWithThink,
+  toOpenAICompatibleMessage,
 } from "@/app/utils/chat";
 import {
   ChatOptions,
@@ -117,7 +118,15 @@ export class QwenApi implements LLMApi {
           : getMessageTextContent(v)
       ) as any;
 
-      messages.push({ role: v.role, content });
+      messages.push(
+        toOpenAICompatibleMessage(
+          {
+            ...v,
+            content,
+          },
+          { stripThinkingForAssistant: v.role === "assistant" },
+        ) as any,
+      );
     }
 
     const shouldStream = !!options.config.stream;
@@ -251,10 +260,17 @@ export class QwenApi implements LLMApi {
             toolCallMessage: any,
             toolCallResult: any[],
           ) => {
+            // 从工具调用消息中移除思考内容，不发送给模型
+            const cleanedToolCallMessage = {
+              ...toolCallMessage,
+              content: (toolCallMessage.content || "")
+                .replace(/<think>[\s\S]*?<\/think>/g, "")
+                .trim(),
+            };
             requestPayload?.input?.messages?.splice(
               requestPayload?.input?.messages?.length,
               0,
-              toolCallMessage,
+              cleanedToolCallMessage,
               ...toolCallResult,
             );
           },
