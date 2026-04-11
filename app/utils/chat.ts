@@ -62,6 +62,125 @@ export function collectOpenAIStyleToolCalls(
   appendToolCallChunk(runTools, chunkTools);
 }
 
+function formatToolResponseContent(response: any): string {
+  const raw =
+    response?.content ?? response?.data ?? response?.statusText ?? response;
+
+  if (
+    Array.isArray(raw) &&
+    raw.length === 1 &&
+    raw[0]?.type === "text" &&
+    typeof raw[0]?.text === "string"
+  ) {
+    try {
+      return JSON.stringify(JSON.parse(raw[0].text), null, 2);
+    } catch {
+      return raw[0].text;
+    }
+  }
+
+  if (typeof raw === "string") {
+    try {
+      return JSON.stringify(JSON.parse(raw), null, 2);
+    } catch {
+      return raw;
+    }
+  }
+
+  try {
+    return JSON.stringify(raw, null, 2);
+  } catch {
+    return String(raw);
+  }
+}
+
+function hasToolCallsFinishReason(text: string) {
+  try {
+    const json = JSON.parse(text);
+    const openAIChoices = Array.isArray(json?.choices) ? json.choices : [];
+    if (
+      openAIChoices.some(
+        (choice: any) => choice?.finish_reason === "tool_calls",
+      )
+    ) {
+      return true;
+    }
+
+    const qwenChoices = Array.isArray(json?.output?.choices)
+      ? json.output.choices
+      : [];
+    if (
+      qwenChoices.some((choice: any) => choice?.finish_reason === "tool_calls")
+    ) {
+      return true;
+    }
+  } catch {}
+
+  return false;
+}
+
+export function expandMessagesWithToolHistory(messages: any[]) {
+  const expanded: any[] = [];
+
+  for (const message of messages) {
+    const tools = Array.isArray(message?.tools) ? message.tools : [];
+    const hasToolHistory = message?.role === "assistant" && tools.length > 0;
+
+    if (!hasToolHistory) {
+      expanded.push(message);
+      continue;
+    }
+
+    expanded.push({
+      role: "assistant",
+      content: "",
+      tool_calls: tools.map((tool: ChatMessageTool, index: number) => ({
+        id: tool.id,
+        index,
+        type: tool.type || "function",
+        function: {
+          name: tool?.function?.name || "",
+          arguments:
+            tool?.function?.arguments ||
+            JSON.stringify(tool.argumentsObj || {}),
+        },
+      })),
+    });
+
+    for (const tool of tools) {
+      const toolContent =
+        tool.content ??
+        (tool.response
+          ? formatToolResponseContent(tool.response)
+          : undefined) ??
+        tool.errorMsg;
+      if (!toolContent) continue;
+
+      expanded.push({
+        role: "tool",
+        content: toolContent,
+        tool_call_id: tool.id,
+        name: tool?.function?.name,
+      });
+    }
+
+    const hasAssistantContent =
+      typeof message.content === "string"
+        ? message.content.trim().length > 0
+        : Array.isArray(message.content)
+        ? message.content.length > 0
+        : !!message.content;
+    if (hasAssistantContent) {
+      expanded.push({
+        ...message,
+        tools: undefined,
+      });
+    }
+  }
+
+  return expanded;
+}
+
 export function compressImage(file: Blob, maxSize: number): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -294,13 +413,7 @@ export function stream(
                   typeof res === "string"
                     ? { content: res, data: res, status: 200 }
                     : res;
-                let content =
-                  response?.content ?? response?.data ?? response?.statusText;
-                // hotfix #5614
-                content =
-                  typeof content === "string"
-                    ? content
-                    : JSON.stringify(content, null, 2);
+                const content = formatToolResponseContent(response);
                 if ((response?.status ?? 200) >= 300) {
                   return Promise.reject(content);
                 }
@@ -436,6 +549,9 @@ export function stream(
           if (chunk) {
             remainText += chunk;
           }
+          if (hasToolCallsFinishReason(text)) {
+            finish();
+          }
         } catch (e) {
           console.error("[Request] parse error", text, msg, e);
         }
@@ -536,13 +652,7 @@ export function streamWithThink(
                   typeof res === "string"
                     ? { content: res, data: res, status: 200 }
                     : res;
-                let content =
-                  response?.content ?? response?.data ?? response?.statusText;
-                // hotfix #5614
-                content =
-                  typeof content === "string"
-                    ? content
-                    : JSON.stringify(content, null, 2);
+                const content = formatToolResponseContent(response);
                 if ((response?.status ?? 200) >= 300) {
                   return Promise.reject(content);
                 }
@@ -680,6 +790,9 @@ export function streamWithThink(
         }
         try {
           const chunk = parseSSE(text, runTools);
+          if (hasToolCallsFinishReason(text)) {
+            finish();
+          }
           // Skip if content is empty
           if (!chunk?.content || chunk.content.length === 0) {
             return;

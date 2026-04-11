@@ -212,6 +212,14 @@ interface MCPClient {
 function ToolResultCard(props: { tool: any; defaultOpen?: boolean }) {
   const { tool, defaultOpen } = props;
   const isRunning = tool.isError !== true && tool.isError !== false;
+  const [activeKeys, setActiveKeys] = useState<string[]>(
+    defaultOpen ? ["tool"] : [],
+  );
+
+  useEffect(() => {
+    setActiveKeys(defaultOpen ? ["tool"] : []);
+  }, [defaultOpen, tool.id, tool.isError]);
+
   const statusText = isRunning
     ? Locale.Chat.MCP.Running
     : tool.isError
@@ -224,7 +232,34 @@ function ToolResultCard(props: { tool: any; defaultOpen?: boolean }) {
     tool.argumentsObj && Object.keys(tool.argumentsObj).length > 0
       ? JSON.stringify(tool.argumentsObj, null, 2)
       : Locale.Chat.MCP.EmptyArguments;
-  const responseText = tool.errorMsg || tool.content || "";
+  const getReadableResponse = () => {
+    const raw = tool.response ?? tool.content ?? tool.errorMsg ?? "";
+    if (Array.isArray(raw)) {
+      if (raw.length === 1 && raw[0]?.type === "text" && raw[0]?.text) {
+        return raw[0].text;
+      }
+      return JSON.stringify(raw, null, 2);
+    }
+    if (
+      raw &&
+      typeof raw === "object" &&
+      Array.isArray(raw.content) &&
+      raw.content.length === 1 &&
+      raw.content[0]?.type === "text" &&
+      raw.content[0]?.text
+    ) {
+      return raw.content[0].text;
+    }
+    if (typeof raw === "string") {
+      return raw;
+    }
+    try {
+      return JSON.stringify(raw, null, 2);
+    } catch {
+      return String(raw);
+    }
+  };
+  const responseText = getReadableResponse();
   const formatBlock = (value: string) => {
     if (!value) return value;
     try {
@@ -243,7 +278,16 @@ function ToolResultCard(props: { tool: any; defaultOpen?: boolean }) {
       <Collapse
         ghost
         size="small"
-        defaultActiveKey={defaultOpen ? ["tool"] : []}
+        activeKey={activeKeys}
+        onChange={(keys) =>
+          setActiveKeys(
+            Array.isArray(keys)
+              ? (keys as string[])
+              : keys
+              ? [keys as string]
+              : [],
+          )
+        }
         className={styles["chat-tool-collapse"]}
         items={[
           {
@@ -3145,8 +3189,10 @@ function ChatInner() {
                                   key={tool.id}
                                   tool={tool}
                                   defaultOpen={
+                                    tool.isError !== false &&
+                                    tool.isError !== true &&
                                     toolIndex ===
-                                    (message.tools?.length ?? 0) - 1
+                                      (message.tools?.length ?? 0) - 1
                                   }
                                 />
                               ))}

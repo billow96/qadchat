@@ -8,6 +8,7 @@ import {
 } from "../utils";
 
 import { indexedDBStorage } from "@/app/utils/indexedDB-storage";
+import { expandMessagesWithToolHistory } from "@/app/utils/chat";
 import {
   StreamUpdateOptimizer,
   createLightweightMessageUpdate,
@@ -317,6 +318,23 @@ function enrichToolWithMetadata(
     displayName: getOriginalToolNameByName(metadata as any, toolName),
     argumentsObj: parsedArguments,
   };
+}
+
+function upsertToolInMessage(
+  currentTools: ChatMessageTool[] | undefined,
+  tool: ChatMessageTool,
+) {
+  const tools = currentTools ? [...currentTools] : [];
+  const index = tools.findIndex((item) => item.id === tool.id);
+  if (index >= 0) {
+    tools[index] = {
+      ...tools[index],
+      ...tool,
+    };
+  } else {
+    tools.push(tool);
+  }
+  return tools;
 }
 
 const DEFAULT_CHAT_STATE = {
@@ -680,7 +698,20 @@ export const useChatStore = createPersistStore(
               tool,
               nativeTools.metadata,
             );
-            (botMessage.tools = botMessage?.tools || []).push(enrichedTool);
+            botMessage.tools = upsertToolInMessage(
+              botMessage.tools,
+              enrichedTool,
+            );
+            get().updateTargetSession(session, (session) => {
+              const currentMessage = session.messages.find(
+                (m) => m.id === botMessage.id,
+              );
+              if (!currentMessage) return;
+              currentMessage.tools = upsertToolInMessage(
+                currentMessage.tools,
+                enrichedTool,
+              );
+            });
             // 工具调用时也使用优化更新
             streamOptimizer.updateStreamingMessage(
               session.id,
@@ -695,11 +726,25 @@ export const useChatStore = createPersistStore(
                 tools[i] = {
                   ...tools[i],
                   ...enrichToolWithMetadata(tool, nativeTools.metadata),
+                  response: tool.response,
                   content:
                     tool.content ??
                     (tool.response ? stringifyToolResult(tool.response) : ""),
                 };
               }
+            });
+            get().updateTargetSession(session, (session) => {
+              const currentMessage = session.messages.find(
+                (m) => m.id === botMessage.id,
+              );
+              if (!currentMessage) return;
+              currentMessage.tools = upsertToolInMessage(currentMessage.tools, {
+                ...enrichToolWithMetadata(tool, nativeTools.metadata),
+                response: tool.response,
+                content:
+                  tool.content ??
+                  (tool.response ? stringifyToolResult(tool.response) : ""),
+              });
             });
             // 工具完成时使用优化更新
             streamOptimizer.updateStreamingMessage(
@@ -865,7 +910,20 @@ export const useChatStore = createPersistStore(
                 tool,
                 nativeTools.metadata,
               );
-              (botMessage.tools = botMessage?.tools || []).push(enrichedTool);
+              botMessage.tools = upsertToolInMessage(
+                botMessage.tools,
+                enrichedTool,
+              );
+              get().updateTargetSession(session, (session) => {
+                const currentMessage = session.messages.find(
+                  (m) => m.id === botMessage.id,
+                );
+                if (!currentMessage) return;
+                currentMessage.tools = upsertToolInMessage(
+                  currentMessage.tools,
+                  enrichedTool,
+                );
+              });
               // 多模型工具调用也使用优化更新
               streamOptimizer.updateStreamingMessage(
                 session.id,
@@ -880,11 +938,28 @@ export const useChatStore = createPersistStore(
                   tools[i] = {
                     ...tools[i],
                     ...enrichToolWithMetadata(tool, nativeTools.metadata),
+                    response: tool.response,
                     content:
                       tool.content ??
                       (tool.response ? stringifyToolResult(tool.response) : ""),
                   };
                 }
+              });
+              get().updateTargetSession(session, (session) => {
+                const currentMessage = session.messages.find(
+                  (m) => m.id === botMessage.id,
+                );
+                if (!currentMessage) return;
+                currentMessage.tools = upsertToolInMessage(
+                  currentMessage.tools,
+                  {
+                    ...enrichToolWithMetadata(tool, nativeTools.metadata),
+                    response: tool.response,
+                    content:
+                      tool.content ??
+                      (tool.response ? stringifyToolResult(tool.response) : ""),
+                  },
+                );
               });
               streamOptimizer.updateStreamingMessage(
                 session.id,
@@ -1006,7 +1081,7 @@ export const useChatStore = createPersistStore(
           ...reversedRecentMessages.reverse(),
         ];
 
-        return recentMessages;
+        return expandMessagesWithToolHistory(recentMessages);
       },
 
       updateMessage(
@@ -1231,6 +1306,7 @@ export const useChatStore = createPersistStore(
           // 重置消息状态，准备接收新回复
           currentMessage.content = "";
           currentMessage.streaming = true;
+          currentMessage.tools = [];
           currentMessage.date = new Date().toLocaleString();
           // 更新消息的模型字段为当前会话的模型配置
           currentMessage.model = session.mask.modelConfig.model;
@@ -1298,26 +1374,25 @@ export const useChatStore = createPersistStore(
                   tool,
                   nativeTools.metadata,
                 );
-                currentMessage.tools = currentMessage.tools || [];
-                currentMessage.tools.push(enrichedTool);
+                currentMessage.tools = upsertToolInMessage(
+                  currentMessage.tools,
+                  enrichedTool,
+                );
               });
             },
             onAfterTool(tool: ChatMessageTool) {
               get().updateTargetSession(session, (session) => {
                 const currentMessage = session.messages[messageIndex];
                 if (!currentMessage?.tools) return;
-                currentMessage.tools = currentMessage.tools.map((savedTool) =>
-                  savedTool.id === tool.id
-                    ? {
-                        ...savedTool,
-                        ...enrichToolWithMetadata(tool, nativeTools.metadata),
-                        content:
-                          tool.content ??
-                          (tool.response
-                            ? stringifyToolResult(tool.response)
-                            : ""),
-                      }
-                    : savedTool,
+                currentMessage.tools = upsertToolInMessage(
+                  currentMessage.tools,
+                  {
+                    ...enrichToolWithMetadata(tool, nativeTools.metadata),
+                    response: tool.response,
+                    content:
+                      tool.content ??
+                      (tool.response ? stringifyToolResult(tool.response) : ""),
+                  },
                 );
               });
             },

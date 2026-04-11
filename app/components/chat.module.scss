@@ -812,26 +812,38 @@
 
 .chat-tool-card {
   width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .chat-tool-collapse {
+  width: 100%;
+  max-width: 100%;
+
   :global {
     .ant-collapse-item {
       border: var(--border-in-light) !important;
       border-radius: 10px !important;
       background-color: var(--white) !important;
+      max-width: 100% !important;
+      overflow: hidden !important;
     }
 
     .ant-collapse-header {
       padding: 8px 12px !important;
       align-items: center !important;
+      max-width: 100% !important;
     }
 
     .ant-collapse-content {
       border-top: 1px solid var(--border-in-light) !important;
+      max-width: 100% !important;
+      overflow: hidden !important;
 
       .ant-collapse-content-box {
         padding: 10px 12px !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
       }
     }
   }
@@ -916,12 +928,19 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .chat-tool-section {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .chat-tool-section-title {
@@ -929,6 +948,18 @@
   font-weight: 600;
   color: var(--black);
   opacity: 0.8;
+}
+
+.chat-tool-section :global(.markdown-body) {
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.chat-tool-section :global(pre) {
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: pre;
 }
 
 .chat-message-item {
