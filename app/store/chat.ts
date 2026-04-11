@@ -74,7 +74,7 @@ export type ChatMessageTool = {
   errorMsg?: string;
 };
 
-export type ChatMessageSegmentType = "thought" | "text";
+export type ChatMessageSegmentType = "thought" | "text" | "tool";
 
 export type ChatMessageSegment = {
   id: string;
@@ -83,6 +83,7 @@ export type ChatMessageSegment = {
   streaming?: boolean;
   durationMs?: number;
   startedAt?: number;
+  toolIds?: string[];
 };
 
 export type ChatMessage = RequestMessage & {
@@ -460,33 +461,39 @@ function serializeSegmentsToMessageContent(
     .map((segment) =>
       segment.type === "thought"
         ? `<think>\n${segment.content}${segment.streaming ? "" : "\n</think>"}`
-        : segment.content,
+        : segment.type === "text"
+        ? segment.content
+        : "",
     )
     .join("");
 }
 
-function appendMessageSegmentsFromContent(
+function splitSegmentsByLastTool(
   currentSegments: ChatMessageSegment[] | undefined,
-  content: string,
 ) {
-  // 先将现有片段标记为已完成，防止后续流式更新覆盖它们
-  const finalizedExisting = (cloneMessageSegments(currentSegments) ?? []).map(
-    (segment) => ({
-      ...segment,
-      streaming: false,
-    }),
-  );
-  return [...finalizedExisting, ...splitMessageContentIntoSegments(content)];
+  const segments = cloneMessageSegments(currentSegments) ?? [];
+  const lastToolIndex = [...segments]
+    .map((segment) => segment.type)
+    .lastIndexOf("tool");
+
+  return {
+    prefix:
+      lastToolIndex >= 0
+        ? segments.slice(0, lastToolIndex + 1)
+        : ([] as ChatMessageSegment[]),
+    currentRound:
+      lastToolIndex >= 0 ? segments.slice(lastToolIndex + 1) : segments,
+  };
 }
 
-function updateMessageSegmentsFromStream(
-  currentSegments: ChatMessageSegment[] | undefined,
+function rebuildRoundSegments(
+  previousRoundSegments: ChatMessageSegment[] | undefined,
   content: string,
   reasoningLatency?: number,
-): ChatMessageSegment[] | undefined {
-  if (!content) return cloneMessageSegments(currentSegments);
+  finalized: boolean = false,
+) {
   const nextSegments = splitMessageContentIntoSegments(content);
-  const previousThoughts = (currentSegments ?? []).filter(
+  const previousThoughts = (previousRoundSegments ?? []).filter(
     (segment) => segment.type === "thought",
   );
   let thoughtIndex = 0;
@@ -495,20 +502,65 @@ function updateMessageSegmentsFromStream(
     if (segment.type !== "thought") {
       return {
         ...segment,
-        streaming: false,
+        streaming: finalized ? false : segment.streaming,
       };
     }
 
     const previousThought = previousThoughts[thoughtIndex++];
+    const frozenDuration =
+      previousThought?.durationMs ??
+      (previousThought?.startedAt
+        ? Math.max(0, Date.now() - previousThought.startedAt)
+        : reasoningLatency);
+
     return {
       ...segment,
       startedAt: previousThought?.startedAt ?? segment.startedAt,
-      durationMs:
-        segment.streaming === false
-          ? previousThought?.durationMs ?? reasoningLatency
-          : reasoningLatency,
+      streaming: finalized ? false : segment.streaming,
+      durationMs: segment.streaming ? reasoningLatency : frozenDuration,
     };
   });
+}
+
+function appendToolRoundSegments(
+  currentSegments: ChatMessageSegment[] | undefined,
+  content: string,
+  toolIds: string[],
+  reasoningLatency?: number,
+) {
+  const { prefix, currentRound } = splitSegmentsByLastTool(currentSegments);
+  const finalizedRound = rebuildRoundSegments(
+    currentRound,
+    content,
+    reasoningLatency,
+    true,
+  );
+
+  return [
+    ...prefix,
+    ...finalizedRound,
+    createMessageSegment("tool", "", {
+      streaming: false,
+      toolIds,
+    }),
+  ];
+}
+
+function updateMessageSegmentsFromStream(
+  currentSegments: ChatMessageSegment[] | undefined,
+  content: string,
+  reasoningLatency?: number,
+): ChatMessageSegment[] | undefined {
+  if (!content) return cloneMessageSegments(currentSegments);
+  const { prefix, currentRound } = splitSegmentsByLastTool(currentSegments);
+  const rebuiltRound = rebuildRoundSegments(
+    currentRound,
+    content,
+    reasoningLatency,
+    false,
+  );
+
+  return [...prefix, ...rebuiltRound];
 }
 
 function finalizeMessageSegments(
@@ -536,13 +588,16 @@ function resolveFinalMessageSegments(
   reasoningLatency?: number,
 ) {
   const responseContent = getResponseContent(message);
-  const rebuiltSegments = buildMessageSegmentsFromContent(
+  const { prefix, currentRound } = splitSegmentsByLastTool(currentSegments);
+  const rebuiltSegments = rebuildRoundSegments(
+    currentRound,
     responseContent,
     reasoningLatency,
+    true,
   );
 
   if (rebuiltSegments?.length) {
-    return rebuiltSegments;
+    return [...prefix, ...rebuiltSegments];
   }
 
   return finalizeMessageSegments(currentSegments, reasoningLatency);
@@ -998,9 +1053,11 @@ export const useChatStore = createPersistStore(
           },
           onToolCallMessage(toolCallMessage) {
             botMessage.toolCallContent = toolCallMessage.content || "";
-            botMessage.segments = appendMessageSegmentsFromContent(
+            botMessage.segments = appendToolRoundSegments(
               botMessage.segments,
               toolCallMessage.content || "",
+              toolCallMessage.tool_calls?.map((tool) => tool.id) ?? [],
+              botMessage.statistic?.reasoningLatency,
             );
             get().updateTargetSession(session, (session) => {
               const currentMessage = session.messages.find(
@@ -1255,9 +1312,11 @@ export const useChatStore = createPersistStore(
             },
             onToolCallMessage(toolCallMessage) {
               botMessage.toolCallContent = toolCallMessage.content || "";
-              botMessage.segments = appendMessageSegmentsFromContent(
+              botMessage.segments = appendToolRoundSegments(
                 botMessage.segments,
                 toolCallMessage.content || "",
+                toolCallMessage.tool_calls?.map((tool) => tool.id) ?? [],
+                botMessage.statistic?.reasoningLatency,
               );
               get().updateTargetSession(session, (session) => {
                 const currentMessage = session.messages.find(
@@ -1754,9 +1813,11 @@ export const useChatStore = createPersistStore(
                 const currentMessage = session.messages[messageIndex];
                 if (!currentMessage) return;
                 currentMessage.toolCallContent = toolCallMessage.content || "";
-                currentMessage.segments = appendMessageSegmentsFromContent(
+                currentMessage.segments = appendToolRoundSegments(
                   currentMessage.segments,
                   toolCallMessage.content || "",
+                  toolCallMessage.tool_calls?.map((tool) => tool.id) ?? [],
+                  currentMessage.statistic?.reasoningLatency,
                 );
                 currentMessage.content = serializeSegmentsToMessageContent(
                   currentMessage.segments,

@@ -15,6 +15,7 @@
 # production
 /reference-project
 /build
+/.kilo
 
 # misc
 .DS_Store
