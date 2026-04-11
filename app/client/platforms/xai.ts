@@ -21,6 +21,7 @@ import { getModelCapabilitiesWithCustomConfig } from "@/app/config/model-capabil
 import { preProcessImageContent } from "@/app/utils/chat";
 import { RequestPayload } from "./openai";
 import { fetch } from "@/app/utils/stream";
+import { collectOpenAIStyleToolCalls } from "@/app/utils/chat";
 
 export class XAIApi implements LLMApi {
   private disableListModels = true;
@@ -113,8 +114,14 @@ export class XAIApi implements LLMApi {
       );
 
       if (shouldStream) {
-        const tools: any[] = [];
-        const funcs: Record<string, Function> = {};
+        const tools =
+          options.nativeTools?.provider === "openai"
+            ? options.nativeTools.tools
+            : [];
+        const funcs =
+          options.nativeTools?.provider === "openai"
+            ? options.nativeTools.funcs
+            : {};
         const modelCapabilities = getModelCapabilitiesWithCustomConfig(
           options.config.model,
         );
@@ -140,22 +147,7 @@ export class XAIApi implements LLMApi {
             }>;
             const tool_calls = choices[0]?.delta?.tool_calls;
             if (tool_calls?.length > 0) {
-              const index = tool_calls[0]?.index;
-              const id = tool_calls[0]?.id;
-              const args = tool_calls[0]?.function?.arguments;
-              if (id) {
-                runTools.push({
-                  id,
-                  type: tool_calls[0]?.type,
-                  function: {
-                    name: tool_calls[0]?.function?.name as string,
-                    arguments: args,
-                  },
-                });
-              } else {
-                // @ts-ignore
-                runTools[index]["function"]["arguments"] += args;
-              }
+              collectOpenAIStyleToolCalls(runTools, tool_calls);
             }
             return {
               isThinking: false,

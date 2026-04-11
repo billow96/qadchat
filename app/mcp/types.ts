@@ -65,12 +65,12 @@ export const McpNotificationsSchema: z.ZodType<McpNotifications> = z.object({
 // Next Chat
 ////////////
 export interface ListToolsResponse {
-  tools: {
+  tools: Array<{
     name?: string;
     description?: string;
     inputSchema?: object;
     [key: string]: any;
-  };
+  }>;
 }
 
 export type McpClientData =

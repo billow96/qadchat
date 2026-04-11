@@ -28,6 +28,7 @@ import {
 } from "@/app/utils";
 import { getModelCapabilitiesWithCustomConfig } from "@/app/config/model-capabilities";
 import { fetch } from "@/app/utils/stream";
+import { collectOpenAIStyleToolCalls } from "@/app/utils/chat";
 
 export interface OpenAIListModelResponse {
   object: string;
@@ -51,6 +52,7 @@ interface RequestParam {
   repetition_penalty?: number;
   top_p: number;
   max_tokens?: number;
+  tools?: any[];
 }
 interface RequestPayload {
   model: string;
@@ -130,6 +132,10 @@ export class QwenApi implements LLMApi {
         temperature: modelConfig.temperature,
         // max_tokens: modelConfig.max_tokens,
         top_p: modelConfig.top_p === 1 ? 0.99 : modelConfig.top_p, // qwen top_p is should be < 1
+        ...(options.nativeTools?.provider === "openai" &&
+        options.nativeTools.tools.length > 0
+          ? { tools: options.nativeTools.tools }
+          : {}),
       },
     };
 
@@ -169,8 +175,14 @@ export class QwenApi implements LLMApi {
       );
 
       if (shouldStream) {
-        const tools: any[] = [];
-        const funcs: Record<string, Function> = {};
+        const tools =
+          options.nativeTools?.provider === "openai"
+            ? options.nativeTools.tools
+            : [];
+        const funcs =
+          options.nativeTools?.provider === "openai"
+            ? options.nativeTools.funcs
+            : {};
         const modelCapabilities = getModelCapabilitiesWithCustomConfig(
           options.config.model,
         );
@@ -197,22 +209,7 @@ export class QwenApi implements LLMApi {
 
             const tool_calls = choices[0]?.message?.tool_calls;
             if (tool_calls?.length > 0) {
-              const index = tool_calls[0]?.index;
-              const id = tool_calls[0]?.id;
-              const args = tool_calls[0]?.function?.arguments;
-              if (id) {
-                runTools.push({
-                  id,
-                  type: tool_calls[0]?.type,
-                  function: {
-                    name: tool_calls[0]?.function?.name as string,
-                    arguments: args,
-                  },
-                });
-              } else {
-                // @ts-ignore
-                runTools[index]["function"]["arguments"] += args;
-              }
+              collectOpenAIStyleToolCalls(runTools, tool_calls);
             }
 
             const reasoning = choices[0]?.message?.reasoning_content;

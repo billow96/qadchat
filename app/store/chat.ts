@@ -18,7 +18,7 @@ import type {
   MultimodalContent,
   RequestMessage,
 } from "../client/api";
-import { getClientApi } from "../client/api";
+import { getClientApi, normalizeProviderName } from "../client/api";
 import { ChatControllerPool } from "../client/controller";
 import { showToast } from "../components/ui-lib";
 import {
@@ -27,8 +27,6 @@ import {
   GEMINI_SUMMARIZE_MODEL,
   DEEPSEEK_SUMMARIZE_MODEL,
   KnowledgeCutOffDate,
-  MCP_SYSTEM_TEMPLATE,
-  MCP_TOOLS_TEMPLATE,
   ServiceProvider,
   StoreKey,
   SUMMARIZE_MODEL,
@@ -47,8 +45,12 @@ import { getModelCompressThreshold } from "../config/model-context-tokens";
 import { useAccessStore } from "./access";
 import { collectModelsWithDefaultModel } from "../utils/model";
 import { createDefaultMask, Mask } from "./mask";
-import { executeMcpAction, getAllTools } from "../mcp/actions";
-import { extractMcpJson, isMcpJson } from "../mcp/utils";
+import {
+  getEnabledMcpNativeTools,
+  getOriginalToolNameByName,
+  getToolClientIdByName,
+  type NativeToolProvider,
+} from "../mcp/native-tools";
 
 const localStorage = safeLocalStorage();
 
@@ -56,11 +58,15 @@ export type ChatMessageTool = {
   id: string;
   index?: number;
   type?: string;
+  clientId?: string;
+  displayName?: string;
+  argumentsObj?: Record<string, unknown>;
   function?: {
     name: string;
     arguments?: string;
   };
   content?: string;
+  response?: any;
   isError?: boolean;
   errorMsg?: string;
 };
@@ -73,7 +79,6 @@ export type ChatMessage = RequestMessage & {
   model?: ModelType;
   tools?: ChatMessageTool[];
   audio_url?: string;
-  isMcpResponse?: boolean;
   // 多模型模式下的模型标识
   modelKey?: string; // 格式: "model@provider"
   // 是否为多模型模式下的消息
@@ -258,52 +263,60 @@ function fillTemplateWith(input: string, modelConfig: ModelConfig) {
   return output;
 }
 
-async function getMcpSystemPrompt(
-  mcpEnabled: boolean = false,
-  enabledClients?: Record<string, boolean>,
-): Promise<string> {
-  // 如果 MCP 功能未启用，返回空字符串
-  if (!mcpEnabled) {
-    return "";
+function resolveNativeToolProvider(providerName?: string): NativeToolProvider {
+  const normalizedProvider = providerName
+    ? normalizeProviderName(providerName)
+    : ServiceProvider.OpenAI;
+  switch (normalizedProvider) {
+    case ServiceProvider.Anthropic:
+      return "anthropic";
+    case ServiceProvider.Google:
+      return "gemini";
+    case ServiceProvider.OpenAI:
+    case ServiceProvider.ByteDance:
+    case ServiceProvider.Alibaba:
+    case ServiceProvider.Moonshot:
+    case ServiceProvider.DeepSeek:
+    case ServiceProvider.XAI:
+    case ServiceProvider.SiliconFlow:
+    default:
+      return "openai";
   }
+}
 
-  const tools = await getAllTools();
+function stringifyToolResult(result: any) {
+  if (typeof result === "string") return result;
+  try {
+    return JSON.stringify(result, null, 2);
+  } catch {
+    return String(result);
+  }
+}
 
-  let toolsStr = "";
-  let totalToolCount = 0;
-
-  tools.forEach((i) => {
-    // error client has no tools
-    if (!i.tools) return;
-
-    // 如果提供了启用状态配置，则检查该客户端是否启用
-    if (enabledClients && enabledClients[i.clientId] === false) {
-      return;
+function enrichToolWithMetadata(
+  tool: ChatMessageTool,
+  metadata: Record<
+    string,
+    {
+      clientId: string;
+      originalName: string;
     }
-
-    // 统计工具数量
-    totalToolCount += i.tools.tools.length;
-
-    toolsStr += MCP_TOOLS_TEMPLATE.replace(
-      /\{\{ clientId \}\}/g,
-      i.clientId,
-    ).replace(
-      "{{ tools }}",
-      i.tools.tools.map((p: object) => JSON.stringify(p, null, 2)).join("\n"),
-    );
-  });
-
-  // 根据工具数量决定是否使用强化模式
-  let systemTemplate = MCP_SYSTEM_TEMPLATE;
-  if (totalToolCount > 0) {
-    // 对于少量工具，使用更强化的提示词
-    systemTemplate = systemTemplate.replace(
-      "## Tool Use Rules",
-      `## Tool Use Rules (${totalToolCount} tools available)\n**IMPORTANT: You have ${totalToolCount} powerful tools available. Use them actively to help users!**`,
-    );
+  >,
+): ChatMessageTool {
+  const toolName = tool?.function?.name || "";
+  let parsedArguments: Record<string, unknown> | undefined;
+  if (tool?.function?.arguments) {
+    try {
+      parsedArguments = JSON.parse(tool.function.arguments);
+    } catch {}
   }
 
-  return systemTemplate.replace("{{ MCP_TOOLS }}", toolsStr);
+  return {
+    ...tool,
+    clientId: getToolClientIdByName(metadata as any, toolName),
+    displayName: getOriginalToolNameByName(metadata as any, toolName),
+    argumentsObj: parsedArguments,
+  };
 }
 
 const DEFAULT_CHAT_STATE = {
@@ -553,16 +566,10 @@ export const useChatStore = createPersistStore(
 
         get().updateStat(message, targetSession);
 
-        get().checkMcpJson(message);
-
         get().summarizeSession(false, targetSession);
       },
 
-      async onUserInput(
-        content: string,
-        attachImages?: string[],
-        isMcpResponse?: boolean,
-      ) {
+      async onUserInput(content: string, attachImages?: string[]) {
         const session = get().currentSession();
 
         // 检查是否为多模型模式
@@ -570,21 +577,17 @@ export const useChatStore = createPersistStore(
           session.multiModelMode?.enabled &&
           session.multiModelMode.selectedModels.length > 1
         ) {
-          return get().onMultiModelUserInput(
-            content,
-            attachImages,
-            isMcpResponse,
-          );
+          return get().onMultiModelUserInput(content, attachImages);
         }
 
         const modelConfig = session.mask.modelConfig;
 
-        // MCP Response no need to fill template
-        let mContent: string | MultimodalContent[] = isMcpResponse
-          ? content
-          : fillTemplateWith(content, modelConfig);
+        let mContent: string | MultimodalContent[] = fillTemplateWith(
+          content,
+          modelConfig,
+        );
 
-        if (!isMcpResponse && attachImages && attachImages.length > 0) {
+        if (attachImages && attachImages.length > 0) {
           mContent = [
             ...(content ? [{ type: "text" as const, text: content }] : []),
             ...attachImages.map((url) => ({
@@ -597,7 +600,6 @@ export const useChatStore = createPersistStore(
         let userMessage: ChatMessage = createMessage({
           role: "user",
           content: mContent,
-          isMcpResponse,
         });
 
         const botMessage: ChatMessage = createMessage({
@@ -624,11 +626,18 @@ export const useChatStore = createPersistStore(
         });
 
         const api: ClientApi = getClientApi(modelConfig.providerName);
+        const nativeTools = await getEnabledMcpNativeTools(
+          modelConfig.model,
+          session.mcpEnabled ?? false,
+          session.mcpEnabledClients,
+          resolveNativeToolProvider(modelConfig.providerName),
+        );
 
         // make request
         api.llm.chat({
           messages: sendMessages,
           config: { ...modelConfig, stream: true },
+          nativeTools,
           onUpdate(message) {
             botMessage.streaming = true;
             if (message) {
@@ -667,7 +676,11 @@ export const useChatStore = createPersistStore(
             ChatControllerPool.remove(session.id, botMessage.id);
           },
           onBeforeTool(tool: ChatMessageTool) {
-            (botMessage.tools = botMessage?.tools || []).push(tool);
+            const enrichedTool = enrichToolWithMetadata(
+              tool,
+              nativeTools.metadata,
+            );
+            (botMessage.tools = botMessage?.tools || []).push(enrichedTool);
             // 工具调用时也使用优化更新
             streamOptimizer.updateStreamingMessage(
               session.id,
@@ -679,7 +692,13 @@ export const useChatStore = createPersistStore(
           onAfterTool(tool: ChatMessageTool) {
             botMessage?.tools?.forEach((t, i, tools) => {
               if (tool.id == t.id) {
-                tools[i] = { ...tool };
+                tools[i] = {
+                  ...tools[i],
+                  ...enrichToolWithMetadata(tool, nativeTools.metadata),
+                  content:
+                    tool.content ??
+                    (tool.response ? stringifyToolResult(tool.response) : ""),
+                };
               }
             });
             // 工具完成时使用优化更新
@@ -720,20 +739,17 @@ export const useChatStore = createPersistStore(
         });
       },
 
-      async onMultiModelUserInput(
-        content: string,
-        attachImages?: string[],
-        isMcpResponse?: boolean,
-      ) {
+      async onMultiModelUserInput(content: string, attachImages?: string[]) {
         const session = get().currentSession();
         const multiModelMode = session.multiModelMode!;
 
         // 准备用户消息内容
-        let mContent: string | MultimodalContent[] = isMcpResponse
-          ? content
-          : fillTemplateWith(content, session.mask.modelConfig);
+        let mContent: string | MultimodalContent[] = fillTemplateWith(
+          content,
+          session.mask.modelConfig,
+        );
 
-        if (!isMcpResponse && attachImages && attachImages.length > 0) {
+        if (attachImages && attachImages.length > 0) {
           mContent = [
             ...(content ? [{ type: "text" as const, text: content }] : []),
             ...attachImages.map((url) => ({
@@ -747,7 +763,6 @@ export const useChatStore = createPersistStore(
         const userMessage: ChatMessage = createMessage({
           role: "user",
           content: mContent,
-          isMcpResponse,
           isMultiModel: true,
         });
 
@@ -805,10 +820,17 @@ export const useChatStore = createPersistStore(
           multiModelMode.modelMessages[modelKey] = recentMessages;
 
           const api: ClientApi = getClientApi(modelConfig.providerName);
+          const nativeTools = await getEnabledMcpNativeTools(
+            modelConfig.model,
+            session.mcpEnabled ?? false,
+            session.mcpEnabledClients,
+            resolveNativeToolProvider(modelConfig.providerName),
+          );
 
           return api.llm.chat({
             messages: recentMessages,
             config: { ...modelConfig, stream: true },
+            nativeTools,
             onUpdate(message) {
               botMessage.streaming = true;
               if (message) {
@@ -839,8 +861,31 @@ export const useChatStore = createPersistStore(
               ChatControllerPool.remove(session.id, botMessage.id);
             },
             onBeforeTool(tool: ChatMessageTool) {
-              (botMessage.tools = botMessage?.tools || []).push(tool);
+              const enrichedTool = enrichToolWithMetadata(
+                tool,
+                nativeTools.metadata,
+              );
+              (botMessage.tools = botMessage?.tools || []).push(enrichedTool);
               // 多模型工具调用也使用优化更新
+              streamOptimizer.updateStreamingMessage(
+                session.id,
+                botMessage.id,
+                getMessageTextContent(botMessage),
+                session,
+              );
+            },
+            onAfterTool(tool: ChatMessageTool) {
+              botMessage?.tools?.forEach((t, i, tools) => {
+                if (tool.id == t.id) {
+                  tools[i] = {
+                    ...tools[i],
+                    ...enrichToolWithMetadata(tool, nativeTools.metadata),
+                    content:
+                      tool.content ??
+                      (tool.response ? stringifyToolResult(tool.response) : ""),
+                  };
+                }
+              });
               streamOptimizer.updateStreamingMessage(
                 session.id,
                 botMessage.id,
@@ -883,33 +928,7 @@ export const useChatStore = createPersistStore(
 
         // in-context prompts
         const contextPrompts = session.mask.context.slice();
-
-        const mcpSystemPrompt = await getMcpSystemPrompt(
-          session.mcpEnabled ?? false,
-          session.mcpEnabledClients,
-        );
-
-        var systemPrompts: ChatMessage[] = [];
-
-        if (mcpSystemPrompt) {
-          // 只在 mcpSystemPrompt 不為空時才創建 system message
-          systemPrompts = [
-            createMessage({
-              role: "system",
-              content: mcpSystemPrompt,
-            }),
-          ];
-        }
-        // 如果兩者都沒有，systemPrompts 保持為空數組
-
-        if (mcpSystemPrompt) {
-          if (process.env.NODE_ENV === "development") {
-            console.log(
-              "[Global System Prompt] ",
-              systemPrompts.at(0)?.content ?? "empty",
-            );
-          }
-        }
+        const systemPrompts: ChatMessage[] = [];
         const memoryPrompt = get().getMemoryPrompt();
         // long term memory
         const shouldSendLongTermMemory =
@@ -1225,12 +1244,19 @@ export const useChatStore = createPersistStore(
 
         const modelConfig = session.mask.modelConfig;
         const api: ClientApi = getClientApi(modelConfig.providerName);
+        const nativeTools = await getEnabledMcpNativeTools(
+          modelConfig.model,
+          session.mcpEnabled ?? false,
+          session.mcpEnabledClients,
+          resolveNativeToolProvider(modelConfig.providerName),
+        );
 
         // 发送请求
         try {
           await api.llm.chat({
             messages: sendMessages,
             config: { ...modelConfig, stream: true },
+            nativeTools,
             onUpdate(message) {
               get().updateTargetSession(session, (session) => {
                 const currentMessage = session.messages[messageIndex];
@@ -1263,6 +1289,37 @@ export const useChatStore = createPersistStore(
               if (finishedMessage) {
                 get().onNewMessage(finishedMessage, session);
               }
+            },
+            onBeforeTool(tool: ChatMessageTool) {
+              get().updateTargetSession(session, (session) => {
+                const currentMessage = session.messages[messageIndex];
+                if (!currentMessage) return;
+                const enrichedTool = enrichToolWithMetadata(
+                  tool,
+                  nativeTools.metadata,
+                );
+                currentMessage.tools = currentMessage.tools || [];
+                currentMessage.tools.push(enrichedTool);
+              });
+            },
+            onAfterTool(tool: ChatMessageTool) {
+              get().updateTargetSession(session, (session) => {
+                const currentMessage = session.messages[messageIndex];
+                if (!currentMessage?.tools) return;
+                currentMessage.tools = currentMessage.tools.map((savedTool) =>
+                  savedTool.id === tool.id
+                    ? {
+                        ...savedTool,
+                        ...enrichToolWithMetadata(tool, nativeTools.metadata),
+                        content:
+                          tool.content ??
+                          (tool.response
+                            ? stringifyToolResult(tool.response)
+                            : ""),
+                      }
+                    : savedTool,
+                );
+              });
             },
             onError(error) {
               const isAborted = error.message.includes("aborted");
@@ -1297,35 +1354,6 @@ export const useChatStore = createPersistStore(
           });
         } catch (error) {
           console.error("[Chat] Error in retryBotMessage", error);
-        }
-      },
-
-      /** check if the message contains MCP JSON and execute the MCP action */
-      checkMcpJson(message: ChatMessage) {
-        const content = getMessageTextContent(message);
-        if (isMcpJson(content)) {
-          try {
-            const mcpRequest = extractMcpJson(content);
-            if (mcpRequest) {
-              executeMcpAction(mcpRequest.clientId, mcpRequest.mcp)
-                .then((result: any) => {
-                  const mcpResponse =
-                    typeof result === "object"
-                      ? JSON.stringify(result)
-                      : String(result);
-                  get().onUserInput(
-                    `\`\`\`json:mcp-response:${mcpRequest.clientId}\n${mcpResponse}\n\`\`\``,
-                    [],
-                    true,
-                  );
-                })
-                .catch((error: any) =>
-                  showToast("MCP execution failed", error),
-                );
-            }
-          } catch (error) {
-            // MCP JSON 检查失败，静默处理
-          }
         }
       },
 

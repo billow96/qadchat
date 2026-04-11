@@ -43,6 +43,7 @@ import {
   getTimeoutMSByModel,
 } from "@/app/utils";
 import { fetch } from "@/app/utils/stream";
+import { collectOpenAIStyleToolCalls } from "@/app/utils/chat";
 
 export interface OpenAIListModelResponse {
   object: string;
@@ -55,8 +56,11 @@ export interface OpenAIListModelResponse {
 
 export interface RequestPayload {
   messages: {
-    role: "developer" | "system" | "user" | "assistant";
+    role: "developer" | "system" | "user" | "assistant" | "tool";
     content: string | MultimodalContent[];
+    tool_calls?: ChatMessageTool[];
+    tool_call_id?: string;
+    name?: string;
   }[];
   stream?: boolean;
   model: string;
@@ -66,6 +70,10 @@ export interface RequestPayload {
   top_p: number;
   max_tokens?: number;
   max_completion_tokens?: number;
+  tool_choice?: "auto";
+  stream_options?: {
+    include_usage?: boolean;
+  };
 }
 
 export interface DalleRequestPayload {
@@ -270,6 +278,14 @@ export class ChatGPTApi implements LLMApi {
       if (!isO1OrO3 && modelConfig.max_tokens > 0) {
         requestPayload["max_tokens"] = modelConfig.max_tokens;
       }
+
+      if (
+        options.nativeTools?.provider === "openai" &&
+        options.nativeTools.tools.length > 0
+      ) {
+        requestPayload["tool_choice"] = "auto";
+        requestPayload["stream_options"] = { include_usage: true };
+      }
     }
 
     const shouldStream = !isDalle3 && !!options.config.stream;
@@ -285,9 +301,14 @@ export class ChatGPTApi implements LLMApi {
           model: options.config.model,
           providerName: options.config.providerName,
         });
-        let index = -1;
-        const tools: any[] = [];
-        const funcs: Record<string, Function> = {};
+        const tools =
+          options.nativeTools?.provider === "openai"
+            ? options.nativeTools.tools
+            : [];
+        const funcs =
+          options.nativeTools?.provider === "openai"
+            ? options.nativeTools.funcs
+            : {};
         const modelCapabilities = getModelCapabilitiesWithCustomConfig(
           options.config.model,
         );
@@ -319,22 +340,7 @@ export class ChatGPTApi implements LLMApi {
               | ChatMessageTool[]
               | undefined;
             if (tool_calls && tool_calls.length > 0) {
-              const id = tool_calls[0]?.id;
-              const args = tool_calls[0]?.function?.arguments;
-              if (id) {
-                index += 1;
-                runTools.push({
-                  id,
-                  type: tool_calls[0]?.type,
-                  function: {
-                    name: tool_calls[0]?.function?.name as string,
-                    arguments: args,
-                  },
-                });
-              } else {
-                // @ts-ignore
-                runTools[index]["function"]["arguments"] += args;
-              }
+              collectOpenAIStyleToolCalls(runTools, tool_calls);
             }
 
             const reasoning =
@@ -379,8 +385,6 @@ export class ChatGPTApi implements LLMApi {
             toolCallMessage: any,
             toolCallResult: any[],
           ) => {
-            // reset index value
-            index = -1;
             // @ts-ignore
             requestPayload?.messages?.splice(
               // @ts-ignore

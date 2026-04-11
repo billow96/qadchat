@@ -94,6 +94,7 @@ import {
 import { uploadImage as uploadImageRemote } from "@/app/utils/chat";
 
 import dynamic from "next/dynamic";
+import { Collapse } from "antd";
 
 import { ChatControllerPool } from "../client/controller";
 import { DalleQuality, DalleStyle, ModelSize } from "../typing";
@@ -206,6 +207,129 @@ const MultiModelAction = ({ onToggle }: { onToggle: () => void }) => {
 interface MCPClient {
   clientId: string;
   tools: any;
+}
+
+function ToolResultCard(props: { tool: any; defaultOpen?: boolean }) {
+  const { tool, defaultOpen } = props;
+  const isRunning = tool.isError !== true && tool.isError !== false;
+  const statusText = isRunning
+    ? Locale.Chat.MCP.Running
+    : tool.isError
+    ? Locale.Chat.MCP.Failed
+    : Locale.Chat.MCP.Done;
+  const headerTitle = `${tool.clientId || "mcp"} : ${
+    tool.displayName || tool?.function?.name || ""
+  }`;
+  const argsText =
+    tool.argumentsObj && Object.keys(tool.argumentsObj).length > 0
+      ? JSON.stringify(tool.argumentsObj, null, 2)
+      : Locale.Chat.MCP.EmptyArguments;
+  const responseText = tool.errorMsg || tool.content || "";
+  const formatBlock = (value: string) => {
+    if (!value) return value;
+    try {
+      return `\`\`\`json\n${JSON.stringify(
+        JSON.parse(value),
+        null,
+        2,
+      )}\n\`\`\``;
+    } catch {
+      return `\`\`\`\n${value}\n\`\`\``;
+    }
+  };
+
+  return (
+    <div className={styles["chat-tool-card"]}>
+      <Collapse
+        ghost
+        size="small"
+        defaultActiveKey={defaultOpen ? ["tool"] : []}
+        className={styles["chat-tool-collapse"]}
+        items={[
+          {
+            key: "tool",
+            label: (
+              <div className={styles["chat-tool-header"]}>
+                <div className={styles["chat-tool-title"]}>
+                  <span>{headerTitle}</span>
+                  <span
+                    className={clsx(styles["chat-tool-status-icon"], {
+                      [styles["success"]]: tool.isError === false,
+                      [styles["error"]]: tool.isError === true,
+                    })}
+                  >
+                    {tool.isError === false ? (
+                      <ConfirmIcon />
+                    ) : tool.isError === true ? (
+                      <CloseIcon />
+                    ) : (
+                      <LoadingButtonIcon />
+                    )}
+                  </span>
+                </div>
+                <div className={styles["chat-tool-actions"]}>
+                  <span
+                    className={clsx(styles["chat-tool-status"], {
+                      [styles["success"]]: tool.isError === false,
+                      [styles["error"]]: tool.isError === true,
+                    })}
+                  >
+                    {statusText}
+                  </span>
+                  <button
+                    className={styles["chat-tool-copy"]}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      copyToClipboard(responseText || argsText);
+                    }}
+                    aria-label={Locale.Chat.Actions.Copy}
+                    type="button"
+                  >
+                    <CopyIcon />
+                  </button>
+                </div>
+              </div>
+            ),
+            children: (
+              <div className={styles["chat-tool-body"]}>
+                <div className={styles["chat-tool-section"]}>
+                  <div className={styles["chat-tool-section-title"]}>
+                    {Locale.Chat.MCP.Arguments}
+                  </div>
+                  <Markdown
+                    content={formatBlock(argsText)}
+                    loading={false}
+                    fontSize={14}
+                    fontFamily="inherit"
+                    defaultShow={true}
+                    status={false}
+                  />
+                </div>
+                <div className={styles["chat-tool-section"]}>
+                  <div className={styles["chat-tool-section-title"]}>
+                    {Locale.Chat.MCP.Response}
+                  </div>
+                  <Markdown
+                    content={
+                      responseText
+                        ? formatBlock(responseText)
+                        : Locale.Chat.MCP.Running
+                    }
+                    loading={false}
+                    fontSize={14}
+                    fontFamily="inherit"
+                    defaultShow={true}
+                    status={false}
+                  />
+                </div>
+              </div>
+            ),
+          },
+        ]}
+      />
+    </div>
+  );
 }
 
 function ThinkingPanel(props: { showPanel: boolean; onClose: () => void }) {
@@ -3009,29 +3133,22 @@ function ChatInner() {
                               </div>
                             )}
                           </div>
-                          {message?.tools?.length == 0 && showTyping && (
+                          {(message.tools?.length ?? 0) === 0 && showTyping && (
                             <div className={styles["chat-message-status"]}>
                               {Locale.Chat.Typing}
                             </div>
                           )}
-                          {/*@ts-ignore*/}
-                          {message?.tools?.length > 0 && (
+                          {(message.tools?.length ?? 0) > 0 && (
                             <div className={styles["chat-message-tools"]}>
-                              {message?.tools?.map((tool) => (
-                                <div
+                              {message.tools?.map((tool, toolIndex) => (
+                                <ToolResultCard
                                   key={tool.id}
-                                  title={tool?.errorMsg}
-                                  className={styles["chat-message-tool"]}
-                                >
-                                  {tool.isError === false ? (
-                                    <ConfirmIcon />
-                                  ) : tool.isError === true ? (
-                                    <CloseIcon />
-                                  ) : (
-                                    <LoadingButtonIcon />
-                                  )}
-                                  <span>{tool?.function?.name}</span>
-                                </div>
+                                  tool={tool}
+                                  defaultOpen={
+                                    toolIndex ===
+                                    (message.tools?.length ?? 0) - 1
+                                  }
+                                />
                               ))}
                             </div>
                           )}

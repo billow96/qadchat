@@ -110,6 +110,9 @@ export class GoogleApi implements LLMApi {
         enableWebSearch:
           useChatStore.getState().currentSession().searchEnabled ?? false,
       });
+      if (options.nativeTools?.provider === "gemini") {
+        tools.push(...options.nativeTools.tools);
+      }
 
       // 生成配置（仅适配 Google 支持的键）
       const generationConfig: any = {
@@ -150,6 +153,16 @@ export class GoogleApi implements LLMApi {
       const requestPayload: any = {
         contents: messages,
         ...(tools.length > 0 ? { tools } : {}),
+        ...(options.nativeTools?.provider === "gemini" &&
+        options.nativeTools.tools.length > 0
+          ? {
+              toolConfig: {
+                functionCallingConfig: {
+                  mode: "AUTO",
+                },
+              },
+            }
+          : {}),
         ...(safetySettings?.length ? { safetySettings } : {}),
         ...(generationConfig ? { generationConfig } : {}),
       };
@@ -166,11 +179,15 @@ export class GoogleApi implements LLMApi {
         chatPath,
         requestPayload,
         headers,
-        [] as any[],
-        {},
+        options.nativeTools?.provider === "gemini"
+          ? options.nativeTools.tools
+          : ([] as any[]),
+        options.nativeTools?.provider === "gemini"
+          ? options.nativeTools.funcs
+          : {},
         controller,
         // parse Google SSE
-        (text: string) => {
+        (text: string, runTools: any[]) => {
           try {
             const json = JSON.parse(text);
             const candidates = json?.candidates;
@@ -183,6 +200,19 @@ export class GoogleApi implements LLMApi {
             }
             const parts = candidates[0]?.content?.parts ?? [];
             for (const p of parts) {
+              if ((p as any)?.functionCall) {
+                const call = (p as any).functionCall;
+                runTools.push({
+                  id: call.id || `${call.name}_${runTools.length}`,
+                  index: runTools.length,
+                  type: "function",
+                  function: {
+                    name: call.name,
+                    arguments: JSON.stringify(call.args || {}),
+                  },
+                });
+                continue;
+              }
               // 思考内容：优先识别带有 thought 标识的分片
               if ((p as any)?.thought && (p as any)?.text) {
                 return { isThinking: true, content: (p as any).text };
@@ -199,8 +229,39 @@ export class GoogleApi implements LLMApi {
           } catch (e) {}
           return { isThinking: false, content: "" };
         },
-        // Google 暂无工具调用的统一格式，这里不处理工具回调
-        () => {},
+        (requestPayload: any, toolCallMessage: any, toolCallResult: any[]) => {
+          const assistantParts = toolCallMessage.tool_calls.map(
+            (tool: any) => ({
+              functionCall: {
+                id: tool.id,
+                name: tool?.function?.name,
+                args: tool?.function?.arguments
+                  ? JSON.parse(tool.function.arguments)
+                  : {},
+              },
+            }),
+          );
+          const functionResponseParts = toolCallResult.map((result: any) => ({
+            functionResponse: {
+              id: result.tool_call_id,
+              name: result.name,
+              response: {
+                output: result.content,
+              },
+            },
+          }));
+
+          requestPayload.contents.push(
+            {
+              role: "model",
+              parts: assistantParts,
+            },
+            {
+              role: "user",
+              parts: functionResponseParts,
+            },
+          );
+        },
         options,
         !!cap?.reasoning,
       );

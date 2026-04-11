@@ -20,6 +20,10 @@ import { MoonshotApi } from "./platforms/moonshot";
 import { DeepSeekApi } from "./platforms/deepseek";
 import { XAIApi } from "./platforms/xai";
 import { SiliconflowApi } from "./platforms/siliconflow";
+import type {
+  NativeToolDefinition,
+  NativeToolProvider,
+} from "../mcp/native-tools";
 
 export const ROLES = ["system", "user", "assistant"] as const;
 export type MessageRole = (typeof ROLES)[number];
@@ -71,6 +75,12 @@ export interface SpeechOptions {
 export interface ChatOptions {
   messages: RequestMessage[];
   config: LLMConfig;
+  nativeTools?: {
+    provider: NativeToolProvider;
+    tools: any[];
+    funcs: Record<string, Function>;
+    metadata: Record<string, NativeToolDefinition>;
+  };
 
   onUpdate?: (message: string, chunk: string) => void;
   onFinish: (message: string, responseRes: Response) => void;
@@ -268,22 +278,22 @@ export function getHeaders(
       isCustomProvider && customProvider
         ? customProvider.apiKey
         : isGoogle
-          ? accessStore.googleApiKey
-          : isAnthropic
-            ? accessStore.anthropicApiKey
-            : isByteDance
-              ? accessStore.bytedanceApiKey
-              : isAlibaba
-                ? accessStore.alibabaApiKey
-                : isMoonshot
-                  ? accessStore.moonshotApiKey
-                  : isXAI
-                    ? accessStore.xaiApiKey
-                    : isDeepSeek
-                      ? accessStore.deepseekApiKey
-                      : isSiliconFlow
-                        ? accessStore.siliconflowApiKey
-                        : accessStore.openaiApiKey;
+        ? accessStore.googleApiKey
+        : isAnthropic
+        ? accessStore.anthropicApiKey
+        : isByteDance
+        ? accessStore.bytedanceApiKey
+        : isAlibaba
+        ? accessStore.alibabaApiKey
+        : isMoonshot
+        ? accessStore.moonshotApiKey
+        : isXAI
+        ? accessStore.xaiApiKey
+        : isDeepSeek
+        ? accessStore.deepseekApiKey
+        : isSiliconFlow
+        ? accessStore.siliconflowApiKey
+        : accessStore.openaiApiKey;
 
     return {
       isGoogle,
@@ -305,8 +315,8 @@ export function getHeaders(
     return isAnthropic
       ? "x-api-key"
       : isGoogle
-        ? "x-goog-api-key"
-        : "Authorization";
+      ? "x-goog-api-key"
+      : "Authorization";
   }
 
   const {

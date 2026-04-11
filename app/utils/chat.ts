@@ -11,6 +11,56 @@ import {
 } from "@fortaine/fetch-event-source";
 import { prettyObject } from "./format";
 import { fetch as tauriFetch } from "./stream";
+import type { ChatMessageTool } from "../store";
+
+function appendToolCallChunk(runTools: ChatMessageTool[], chunkTools: any[]) {
+  for (const partialTool of chunkTools || []) {
+    const toolIndex =
+      typeof partialTool?.index === "number"
+        ? partialTool.index
+        : runTools.length > 0
+        ? runTools.length - 1
+        : 0;
+
+    if (!runTools[toolIndex]) {
+      runTools[toolIndex] = {
+        id: partialTool?.id || `tool_${toolIndex}`,
+        index: toolIndex,
+        type: partialTool?.type,
+        function: {
+          name: partialTool?.function?.name || "",
+          arguments: partialTool?.function?.arguments || "",
+        },
+      };
+      continue;
+    }
+
+    const current = runTools[toolIndex];
+    if (partialTool?.id) {
+      current.id = partialTool.id;
+    }
+    if (typeof partialTool?.type === "string") {
+      current.type = partialTool.type;
+    }
+    current.index = toolIndex;
+    current.function = current.function || { name: "", arguments: "" };
+    if (typeof partialTool?.function?.name === "string") {
+      current.function.name += partialTool.function.name;
+    }
+    if (typeof partialTool?.function?.arguments === "string") {
+      current.function.arguments =
+        (current.function.arguments || "") + partialTool.function.arguments;
+    }
+  }
+}
+
+export function collectOpenAIStyleToolCalls(
+  runTools: ChatMessageTool[],
+  chunkTools?: ChatMessageTool[],
+) {
+  if (!chunkTools?.length) return;
+  appendToolCallChunk(runTools, chunkTools);
+}
 
 export function compressImage(file: Blob, maxSize: number): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -240,24 +290,30 @@ export function stream(
               ),
             )
               .then((res) => {
-                let content = res.data || res?.statusText;
+                const response =
+                  typeof res === "string"
+                    ? { content: res, data: res, status: 200 }
+                    : res;
+                let content =
+                  response?.content ?? response?.data ?? response?.statusText;
                 // hotfix #5614
                 content =
                   typeof content === "string"
                     ? content
-                    : JSON.stringify(content);
-                if (res.status >= 300) {
+                    : JSON.stringify(content, null, 2);
+                if ((response?.status ?? 200) >= 300) {
                   return Promise.reject(content);
                 }
-                return content;
+                return { content, response };
               })
-              .then((content) => {
+              .then(({ content, response }) => {
                 options?.onAfterTool?.({
                   ...tool,
                   content,
+                  response,
                   isError: false,
                 });
-                return content;
+                return { content, response };
               })
               .catch((e) => {
                 options?.onAfterTool?.({
@@ -267,12 +323,22 @@ export function stream(
                 });
                 return e.toString();
               })
-              .then((content) => ({
-                name: tool.function.name,
-                role: "tool",
-                content,
-                tool_call_id: tool.id,
-              }));
+              .then((result) =>
+                typeof result === "string"
+                  ? {
+                      name: tool.function.name,
+                      role: "tool",
+                      content: result,
+                      tool_call_id: tool.id,
+                    }
+                  : {
+                      name: tool.function.name,
+                      role: "tool",
+                      content: result.content,
+                      tool_call_id: tool.id,
+                      response: result.response,
+                    },
+              );
           }),
         ).then((toolCallResult) => {
           processToolMessage(requestPayload, toolCallMessage, toolCallResult);
@@ -466,24 +532,30 @@ export function streamWithThink(
               ),
             )
               .then((res) => {
-                let content = res.data || res?.statusText;
+                const response =
+                  typeof res === "string"
+                    ? { content: res, data: res, status: 200 }
+                    : res;
+                let content =
+                  response?.content ?? response?.data ?? response?.statusText;
                 // hotfix #5614
                 content =
                   typeof content === "string"
                     ? content
-                    : JSON.stringify(content);
-                if (res.status >= 300) {
+                    : JSON.stringify(content, null, 2);
+                if ((response?.status ?? 200) >= 300) {
                   return Promise.reject(content);
                 }
-                return content;
+                return { content, response };
               })
-              .then((content) => {
+              .then(({ content, response }) => {
                 options?.onAfterTool?.({
                   ...tool,
                   content,
+                  response,
                   isError: false,
                 });
-                return content;
+                return { content, response };
               })
               .catch((e) => {
                 options?.onAfterTool?.({
@@ -493,12 +565,22 @@ export function streamWithThink(
                 });
                 return e.toString();
               })
-              .then((content) => ({
-                name: tool.function.name,
-                role: "tool",
-                content,
-                tool_call_id: tool.id,
-              }));
+              .then((result) =>
+                typeof result === "string"
+                  ? {
+                      name: tool.function.name,
+                      role: "tool",
+                      content: result,
+                      tool_call_id: tool.id,
+                    }
+                  : {
+                      name: tool.function.name,
+                      role: "tool",
+                      content: result.content,
+                      tool_call_id: tool.id,
+                      response: result.response,
+                    },
+              );
           }),
         ).then((toolCallResult) => {
           processToolMessage(requestPayload, toolCallMessage, toolCallResult);

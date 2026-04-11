@@ -49,6 +49,11 @@ export interface AnthropicChatRequest {
     type: "enabled";
     budget_tokens: number;
   }; // Extended thinking configuration for Claude models.
+  tools?: Array<{
+    name: string;
+    description?: string;
+    input_schema?: Record<string, unknown>;
+  }>;
 }
 
 export interface ChatRequest {
@@ -206,6 +211,9 @@ export class ClaudeApi implements LLMApi {
       // top_k: modelConfig.top_k,
       top_k: 5,
     };
+    if (options.nativeTools?.provider === "anthropic") {
+      requestBody.tools = options.nativeTools.tools;
+    }
 
     // 如果模型具有推理能力且是Claude类型，添加thinking配置
     if (
@@ -230,8 +238,14 @@ export class ClaudeApi implements LLMApi {
 
     if (shouldStream) {
       let index = -1;
-      const tools: any[] = [];
-      const funcs: Record<string, Function> = {};
+      const tools =
+        options.nativeTools?.provider === "anthropic"
+          ? options.nativeTools.tools
+          : [];
+      const funcs =
+        options.nativeTools?.provider === "anthropic"
+          ? options.nativeTools.funcs
+          : {};
       const modelCapabilities = getModelCapabilitiesWithCustomConfig(
         options.config.model,
       );
@@ -239,15 +253,13 @@ export class ClaudeApi implements LLMApi {
         path,
         requestBody,
         {
-          ...getHeaders(),
+          ...getHeaders(false, {
+            model: options.config.model,
+            providerName: options.config.providerName,
+          }),
           "anthropic-version": accessStore.anthropicApiVersion,
         },
-        // @ts-ignore
-        tools.map((tool) => ({
-          name: tool?.function?.name,
-          description: tool?.function?.description,
-          input_schema: tool?.function?.parameters,
-        })),
+        tools,
         funcs,
         controller,
         // parseSSE
