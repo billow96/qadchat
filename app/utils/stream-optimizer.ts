@@ -25,12 +25,16 @@ export class StreamUpdateOptimizer {
     session: ChatSession,
   ) {
     const key = `${sessionId}-${messageId}`;
+    const previous = this.pendingUpdates.get(key);
 
-    // 缓存更新
+    // 合并同一消息在一个批次窗口内的多次更新，避免后到的工具事件覆盖掉更早的 streaming/content 状态
     this.pendingUpdates.set(key, {
       session,
       messageId,
-      changes,
+      changes: {
+        ...(previous?.changes ?? {}),
+        ...changes,
+      },
       lastUpdate: Date.now(),
     });
 

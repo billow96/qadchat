@@ -212,6 +212,14 @@ const tw = {
       Title: "包含角色範本上下文",
       SubTitle: "是否在訊息中顯示角色範本上下文",
     },
+    ShowHeader: {
+      Title: "顯示頭部資訊",
+      SubTitle: "是否在匯出預覽中顯示聊天頭部資訊",
+    },
+    ShowDetailedToken: {
+      Title: "顯示詳細 Token 資訊",
+      SubTitle: "開啟後顯示時間、Tokens、T/s、FT 與 TT；關閉時僅顯示時間",
+    },
     Steps: {
       Select: "選取",
       Preview: "預覽",

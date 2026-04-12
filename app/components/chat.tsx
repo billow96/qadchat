@@ -579,13 +579,30 @@ function AssistantMessageBody(props: {
   const hasText = renderableSegments.some(
     (segment) => segment.type === "text" && segment.content.trim().length > 0,
   );
+  const hasRenderableContent =
+    renderableSegments.length > 0 &&
+    renderableSegments.some((segment) => {
+      if (segment.type === "tool") {
+        return getToolsForSegment(message, segment).length > 0;
+      }
+
+      return segment.content.trim().length > 0;
+    });
   const [revealReady, setRevealReady] = useState(() => {
-    return message.streaming || !hasTools || renderableSegments.length === 0;
+    return (
+      message.streaming ||
+      !hasTools ||
+      renderableSegments.length === 0 ||
+      hasRenderableContent
+    );
   });
 
   useEffect(() => {
     const shouldDelayReveal =
-      !message.streaming && hasTools && (!hasThoughts || !hasText);
+      !message.streaming &&
+      hasTools &&
+      !hasRenderableContent &&
+      (!hasThoughts || !hasText);
 
     if (!shouldDelayReveal) {
       setRevealReady(true);
@@ -601,6 +618,7 @@ function AssistantMessageBody(props: {
   }, [
     message.streaming,
     hasTools,
+    hasRenderableContent,
     hasThoughts,
     hasText,
     renderableSegments.length,

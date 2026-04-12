@@ -104,15 +104,29 @@
 .image-previewer {
   .preview-body {
     border-radius: 10px;
-    padding: 20px;
+    padding: 24px;
     box-shadow: var(--card-shadow) inset;
     background-color: var(--gray);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+
+    :global(.user-avatar) {
+      box-shadow: none;
+    }
+
+    :global(.markdown-body) {
+      background: transparent;
+    }
+
+    :global(.ant-collapse) {
+      background: transparent;
+    }
 
     .chat-info {
       background-color: var(--second);
       padding: 20px;
       border-radius: 10px;
-      margin-bottom: 20px;
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
@@ -171,101 +185,81 @@
         }
       }
     }
+  }
 
-    .message {
-      margin-bottom: 20px;
-      display: flex;
+  .default-theme {
+    :global(.chat-message) {
+      margin: 0;
+    }
 
-      .avatar {
-        margin-right: 10px;
+    :global(.chat-message-container) {
+      max-width: 100%;
+      width: 100%;
+      gap: 8px;
+    }
+
+    :global(.chat-message-header) {
+      margin-top: 0;
+      min-height: 30px;
+    }
+
+    :global(.chat-message-item) {
+      background-color: var(--white);
+      box-shadow: var(--card-shadow);
+    }
+
+    :global(.chat-message-user > .chat-message-container > .chat-message-item) {
+      background-color: var(--second);
+    }
+
+    :global(.chat-message-action-date) {
+      padding-right: 0;
+      margin-top: 0;
+    }
+
+    :global(.chat-message-item-image-container) {
+      width: min(360px, 100%);
+      height: auto;
+      aspect-ratio: 4 / 3;
+    }
+
+    :global(.chat-message-item-images) {
+      display: grid;
+      justify-content: flex-start;
+      grid-gap: 10px;
+      grid-template-columns: repeat(var(--image-count), auto);
+      border: none;
+      margin-top: 2px;
+    }
+
+    :global(.chat-message-item-image-multi) {
+      width: min(180px, 28vw);
+      height: min(180px, 28vw);
+    }
+
+    @media screen and (max-width: 600px) {
+      padding: 16px;
+
+      .chat-info {
+        margin-bottom: 0;
       }
 
-      .body {
-        border-radius: 10px;
-        padding: 8px 10px;
-        max-width: calc(100% - 104px);
-        box-shadow: var(--card-shadow);
-        border: var(--border-in-light);
-
-        code,
-        pre {
-          overflow: hidden;
-        }
-
-        .message-image {
-          width: 100%;
-          margin-top: 10px;
-        }
-
-        .message-images {
-          display: grid;
-          justify-content: left;
-          grid-gap: 10px;
-          grid-template-columns: repeat(var(--image-count), auto);
-          margin-top: 10px;
-        }
-
-        @media screen and (max-width: 600px) {
-          $image-width: calc(calc(100vw/2)/var(--image-count));
-
-          .message-image-multi {
-            width: $image-width;
-            height: $image-width;
-          }
-
-          .message-image {
-            max-width: calc(100vw/3*2);
-          }
-        }
-
-        @media screen and (min-width: 600px) {
-          $max-image-width: calc(900px/3*2/var(--image-count));
-          $image-width: calc(80vw/3*2/var(--image-count));
-
-          .message-image-multi {
-            width: $image-width;
-            height: $image-width;
-            max-width: $max-image-width;
-            max-height: $max-image-width;
-          }
-
-          .message-image {
-            max-width: calc(100vw/3*2);
-          }
-        }
-
-        .message-image-multi {
-          object-fit: cover;
-        }
-
-        .message-image,
-        .message-image-multi {
-          box-sizing: border-box;
-          border-radius: 10px;
-          border: rgba($color: #888, $alpha: 0.2) 1px solid;
-        }
+      :global(.chat-model-name) {
+        max-width: calc(100vw - 120px);
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
-      &-assistant {
-        .body {
-          background-color: var(--white);
-        }
-      }
-
-      &-user {
-        flex-direction: row-reverse;
-
-        .avatar {
-          margin-right: 0;
-        }
-
-        .body {
-          background-color: var(--second);
-          margin-right: 10px;
-        }
+      :global(.chat-message-item-image-multi) {
+        width: min(120px, 28vw);
+        height: min(120px, 28vw);
       }
     }
   }
+}
 
-  .default-theme {}
+.message-image-multi-container {
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
 }

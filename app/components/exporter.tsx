@@ -1,5 +1,11 @@
 /* eslint-disable @next/next/no-img-element */
-import { ChatMessage, useAppConfig, useChatStore } from "../store";
+import {
+  ChatMessage,
+  ChatMessageSegment,
+  ChatMessageTool,
+  useAppConfig,
+  useChatStore,
+} from "../store";
 import Locale from "../locales";
 import styles from "./exporter.module.scss";
 import Image from "next/image";
@@ -17,16 +23,21 @@ import {
   copyToClipboard,
   downloadAs,
   getMessageImages,
+  getMessageTextContentWithoutThinkingFromContent,
   useMobileScreen,
 } from "../utils";
 
 import CopyIcon from "../icons/copy.svg";
 import LoadingIcon from "../icons/three-dots.svg";
+import LoadingButtonIcon from "../icons/loading.svg";
 import ChatGptIcon from "../icons/chatgpt.png";
 import ShareIcon from "../icons/share.svg";
+import ConfirmIcon from "../icons/confirm.svg";
+import CloseIcon from "../icons/close.svg";
 
 import DownloadIcon from "../icons/download.svg";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Collapse } from "antd";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { MessageSelector, useMessageSelector } from "./message-selector";
 import { Avatar } from "./emoji";
 import dynamic from "next/dynamic";
@@ -42,13 +53,20 @@ import {
   getMessageTextContent,
   getMessageTextContentWithoutThinking,
 } from "../utils";
-import { MaskAvatar } from "./mask";
 import { getMaskEffectiveModel } from "../utils/model-resolver";
 import clsx from "clsx";
+import chatStyles from "./chat.module.scss";
+import markdownStyles from "./markdown.module.scss";
 
 const Markdown = dynamic(async () => (await import("./markdown")).Markdown, {
   loading: () => <LoadingIcon />,
 });
+const ThoughtSegmentBlock = dynamic(
+  async () => (await import("./markdown")).ThoughtSegmentBlock,
+  {
+    loading: () => <LoadingIcon />,
+  },
+);
 
 export function ExportMessageModal(props: { onClose: () => void }) {
   return (
@@ -161,6 +179,8 @@ export function MessageExporter() {
   const [exportConfig, setExportConfig] = useState({
     format: "image" as ExportFormat,
     includeContext: true,
+    showHeader: true,
+    showDetailedToken: true,
   });
 
   function updateExportConfig(updater: (config: typeof exportConfig) => void) {
@@ -196,7 +216,12 @@ export function MessageExporter() {
       );
     } else {
       return (
-        <ImagePreviewer messages={selectedMessages} topic={session.topic} />
+        <ImagePreviewer
+          messages={selectedMessages}
+          topic={session.topic}
+          showHeader={exportConfig.showHeader}
+          showDetailedToken={exportConfig.showDetailedToken}
+        />
       );
     }
   }
@@ -246,6 +271,35 @@ export function MessageExporter() {
               }}
             ></input>
           </ListItem>
+          <ListItem
+            title={Locale.Export.ShowHeader.Title}
+            subTitle={Locale.Export.ShowHeader.SubTitle}
+          >
+            <input
+              type="checkbox"
+              checked={exportConfig.showHeader}
+              onChange={(e) => {
+                updateExportConfig(
+                  (config) => (config.showHeader = e.currentTarget.checked),
+                );
+              }}
+            ></input>
+          </ListItem>
+          <ListItem
+            title={Locale.Export.ShowDetailedToken.Title}
+            subTitle={Locale.Export.ShowDetailedToken.SubTitle}
+          >
+            <input
+              type="checkbox"
+              checked={exportConfig.showDetailedToken}
+              onChange={(e) => {
+                updateExportConfig(
+                  (config) =>
+                    (config.showDetailedToken = e.currentTarget.checked),
+                );
+              }}
+            ></input>
+          </ListItem>
         </List>
         <MessageSelector
           selection={selection}
@@ -260,11 +314,458 @@ export function MessageExporter() {
   );
 }
 
+function formatMessageMetaForExport(
+  message: ChatMessage,
+  showDetailedToken: boolean,
+) {
+  const timeText = message.date || "";
+  const statistic = message.statistic;
+
+  if (!statistic) {
+    return timeText;
+  }
+
+  if (message.role === "assistant") {
+    if (!showDetailedToken) {
+      return timeText;
+    }
+
+    const completionTokens = statistic.completionTokens;
+    const totalReplyLatency = statistic.totalReplyLatency;
+    const firstReplyLatency = statistic.firstReplyLatency;
+
+    if (
+      typeof completionTokens !== "number" ||
+      typeof totalReplyLatency !== "number"
+    ) {
+      return timeText;
+    }
+
+    const statParts = [`${completionTokens} Tokens`];
+    const isStreamingMessage =
+      typeof firstReplyLatency === "number" && firstReplyLatency > 0;
+
+    if (isStreamingMessage) {
+      const activeDuration = Math.max(
+        totalReplyLatency - firstReplyLatency,
+        10,
+      );
+      const speed = ((completionTokens * 1000) / activeDuration).toFixed(2);
+      statParts.push(
+        `⚡ ${speed} T/s`,
+        `⏱️ FT:${(firstReplyLatency / 1000).toFixed(2)}s | TT:${(
+          totalReplyLatency / 1000
+        ).toFixed(2)}s`,
+      );
+    } else {
+      const activeDuration = Math.max(totalReplyLatency, 10);
+      const speed = ((completionTokens * 1000) / activeDuration).toFixed(2);
+      statParts.push(
+        `⚡ ${speed} T/s`,
+        `⏱️ TT:${(totalReplyLatency / 1000).toFixed(2)}s`,
+      );
+    }
+
+    return timeText
+      ? `${timeText} - ${statParts.join(" ")}`
+      : statParts.join(" ");
+  }
+
+  if (showDetailedToken && typeof statistic.singlePromptTokens === "number") {
+    const statText = `${statistic.singlePromptTokens} Tokens`;
+    return timeText ? `${timeText} - ${statText}` : statText;
+  }
+
+  return timeText;
+}
+
+function getMessageDisplaySegmentsForExport(
+  message: ChatMessage,
+): ChatMessageSegment[] {
+  if (
+    message.versions &&
+    message.versions.length > 0 &&
+    (message.currentVersionIndex ?? 0) < message.versions.length
+  ) {
+    return [
+      {
+        id: `${message.id}-history-version`,
+        type: "text",
+        content: message.versions[message.currentVersionIndex ?? 0] ?? "",
+      },
+    ];
+  }
+
+  if (message.segments?.length) {
+    return message.segments;
+  }
+
+  const content =
+    typeof message.content === "string"
+      ? message.content
+      : getMessageTextContent(message);
+  if (!content) return [];
+
+  return [
+    {
+      id: `${message.id}-content`,
+      type: "text",
+      content,
+      streaming: !!message.streaming,
+    },
+  ];
+}
+
+function getToolsForSegmentForExport(
+  message: ChatMessage,
+  segment: ChatMessageSegment,
+): NonNullable<ChatMessage["tools"]> {
+  if (!segment.toolIds?.length) return [];
+
+  const tools = message.tools ?? [];
+  return segment.toolIds
+    .map((toolId) => tools.find((tool) => tool.id === toolId))
+    .filter(Boolean) as NonNullable<ChatMessage["tools"]>;
+}
+
+function getReadableToolResponse(tool: ChatMessageTool) {
+  const raw = tool.response ?? tool.content ?? tool.errorMsg ?? "";
+  if (Array.isArray(raw)) {
+    if (raw.length === 1 && raw[0]?.type === "text" && raw[0]?.text) {
+      return raw[0].text;
+    }
+    return JSON.stringify(raw, null, 2);
+  }
+  if (
+    raw &&
+    typeof raw === "object" &&
+    Array.isArray((raw as any).content) &&
+    (raw as any).content.length === 1 &&
+    (raw as any).content[0]?.type === "text" &&
+    (raw as any).content[0]?.text
+  ) {
+    return (raw as any).content[0].text;
+  }
+  if (typeof raw === "string") {
+    return raw;
+  }
+  try {
+    return JSON.stringify(raw, null, 2);
+  } catch {
+    return String(raw);
+  }
+}
+
+function formatToolBlock(value: string) {
+  if (!value) return value;
+  try {
+    return `\`\`\`json\n${JSON.stringify(JSON.parse(value), null, 2)}\n\`\`\``;
+  } catch {
+    return `\`\`\`\n${value}\n\`\`\``;
+  }
+}
+
+function ExportToolResultCard(props: { tool: ChatMessageTool }) {
+  const { tool } = props;
+  const statusText =
+    tool.isError !== true && tool.isError !== false
+      ? Locale.Chat.MCP.Running
+      : tool.isError
+      ? Locale.Chat.MCP.Failed
+      : Locale.Chat.MCP.Done;
+  const headerTitle = `${tool.clientId || "mcp"} : ${
+    tool.displayName || tool?.function?.name || ""
+  }`;
+  const argsText =
+    tool.argumentsObj && Object.keys(tool.argumentsObj).length > 0
+      ? JSON.stringify(tool.argumentsObj, null, 2)
+      : Locale.Chat.MCP.EmptyArguments;
+  const responseText = getReadableToolResponse(tool);
+
+  return (
+    <div className={chatStyles["chat-tool-card"]}>
+      <Collapse
+        bordered={false}
+        size="small"
+        defaultActiveKey={[]}
+        className={chatStyles["chat-tool-collapse"]}
+        items={[
+          {
+            key: "tool",
+            label: (
+              <div className={chatStyles["chat-tool-header"]}>
+                <div className={chatStyles["chat-tool-title"]}>
+                  <span>{headerTitle}</span>
+                  <span
+                    className={clsx(chatStyles["chat-tool-status-icon"], {
+                      [chatStyles["success"]]: tool.isError === false,
+                      [chatStyles["error"]]: tool.isError === true,
+                    })}
+                  >
+                    {tool.isError === false ? (
+                      <ConfirmIcon />
+                    ) : tool.isError === true ? (
+                      <CloseIcon />
+                    ) : (
+                      <LoadingButtonIcon />
+                    )}
+                  </span>
+                </div>
+                <div className={chatStyles["chat-tool-actions"]}>
+                  <span
+                    className={clsx(chatStyles["chat-tool-status"], {
+                      [chatStyles["success"]]: tool.isError === false,
+                      [chatStyles["error"]]: tool.isError === true,
+                    })}
+                  >
+                    {statusText}
+                  </span>
+                </div>
+              </div>
+            ),
+            children: (
+              <div className={chatStyles["chat-tool-body"]}>
+                <div className={chatStyles["chat-tool-section"]}>
+                  <div className={chatStyles["chat-tool-section-title"]}>
+                    {Locale.Chat.MCP.Arguments}
+                  </div>
+                  <Markdown
+                    content={formatToolBlock(argsText)}
+                    loading={false}
+                    fontSize={14}
+                    fontFamily="inherit"
+                    defaultShow
+                    status={false}
+                  />
+                </div>
+                <div className={chatStyles["chat-tool-section"]}>
+                  <div className={chatStyles["chat-tool-section-title"]}>
+                    {Locale.Chat.MCP.Response}
+                  </div>
+                  <Markdown
+                    content={
+                      responseText
+                        ? formatToolBlock(responseText)
+                        : Locale.Chat.MCP.Running
+                    }
+                    loading={false}
+                    fontSize={14}
+                    fontFamily="inherit"
+                    defaultShow
+                    status={false}
+                  />
+                </div>
+              </div>
+            ),
+          },
+        ]}
+      />
+    </div>
+  );
+}
+
+function ExportMessageBody(props: {
+  message: ChatMessage;
+  fontSize: number;
+  fontFamily: string;
+}) {
+  const segments = getMessageDisplaySegmentsForExport(props.message);
+
+  if (segments.length === 0) {
+    return (
+      <Markdown
+        content={
+          props.message.role === "user"
+            ? getMessageTextContent(props.message)
+            : getMessageTextContentWithoutThinking(props.message)
+        }
+        fontSize={props.fontSize}
+        fontFamily={props.fontFamily}
+        defaultShow
+        status={false}
+      />
+    );
+  }
+
+  return (
+    <>
+      {segments.map((segment, index) => {
+        if (segment.type === "tool") {
+          const tools = getToolsForSegmentForExport(props.message, segment);
+          if (tools.length === 0) return null;
+
+          return (
+            <div
+              key={`${props.message.id}-tool-${segment.id}-${index}`}
+              className={chatStyles["chat-message-tools"]}
+            >
+              {tools.map((tool) => (
+                <ExportToolResultCard key={tool.id} tool={tool} />
+              ))}
+            </div>
+          );
+        }
+
+        if (segment.type === "thought") {
+          return (
+            <div
+              key={`${props.message.id}-thought-${segment.id}-${index}`}
+              className={markdownStyles["thought-segment"]}
+            >
+              <ThoughtSegmentBlock
+                segment={{ ...segment, streaming: false }}
+                fontSize={props.fontSize}
+                fontFamily={props.fontFamily}
+              />
+            </div>
+          );
+        }
+
+        return (
+          <Markdown
+            key={`${props.message.id}-text-${segment.id}-${index}`}
+            content={segment.content}
+            fontSize={props.fontSize}
+            fontFamily={props.fontFamily}
+            defaultShow
+            status={false}
+          />
+        );
+      })}
+    </>
+  );
+}
+
+function ExportMessageImages(props: { message: ChatMessage }) {
+  const images = getMessageImages(props.message);
+
+  if (images.length === 0) {
+    return null;
+  }
+
+  if (images.length === 1) {
+    return (
+      <div className={chatStyles["chat-message-item-image-container"]}>
+        <Image
+          src={images[0]}
+          alt="message"
+          className={chatStyles["chat-message-item-image"]}
+          fill
+          unoptimized
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={chatStyles["chat-message-item-images"]}
+      style={
+        {
+          "--image-count": images.length,
+        } as React.CSSProperties
+      }
+    >
+      {images.map((image, index) => (
+        <div
+          key={`${props.message.id}-image-${index}`}
+          className={styles["message-image-multi-container"]}
+        >
+          <Image
+            className={chatStyles["chat-message-item-image-multi"]}
+            src={image}
+            alt=""
+            fill
+            unoptimized
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ExportMessageRow(props: {
+  message: ChatMessage;
+  userAvatar: string;
+  fallbackModel: string;
+  fontSize: number;
+  fontFamily: string;
+  showDetailedToken: boolean;
+  isContext?: boolean;
+}) {
+  const { message } = props;
+  const isUser = message.role === "user";
+  const isSystem = message.role === "system";
+  const displayModel =
+    message.model ||
+    (message.isMultiModel && message.modelKey
+      ? message.modelKey.split("@")[0]
+      : props.fallbackModel);
+  const provider =
+    message.isMultiModel && message.modelKey
+      ? message.modelKey.split("@")[1]
+      : undefined;
+
+  return (
+    <div
+      className={clsx(chatStyles["chat-message"], {
+        [chatStyles["chat-message-user"]]: isUser,
+      })}
+    >
+      <div className={chatStyles["chat-message-container"]}>
+        <div className={chatStyles["chat-message-header"]}>
+          <div className={chatStyles["chat-message-avatar"]}>
+            {isUser ? (
+              <Avatar avatar={props.userAvatar} />
+            ) : isSystem ? (
+              <Avatar avatar="2699-fe0f" />
+            ) : (
+              <Avatar model={displayModel} provider={provider} size={30} />
+            )}
+          </div>
+          {!isUser && !isSystem && (
+            <div className={chatStyles["chat-model-name"]}>
+              {message.isMultiModel && message.modelKey ? (
+                <>
+                  {displayModel}
+                  <span className={chatStyles["chat-model-provider"]}>
+                    @{provider}
+                  </span>
+                </>
+              ) : (
+                displayModel
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className={chatStyles["chat-message-item"]}>
+          <div className={chatStyles["chat-message-body"]}>
+            <ExportMessageBody
+              message={message}
+              fontSize={props.fontSize}
+              fontFamily={props.fontFamily}
+            />
+            <ExportMessageImages message={message} />
+          </div>
+        </div>
+
+        <div className={chatStyles["chat-message-action-date"]}>
+          {props.isContext
+            ? (Locale.Chat.IsContext as string)
+            : formatMessageMetaForExport(message, props.showDetailedToken)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function RenderExport(props: {
   messages: ChatMessage[];
   onRender: (messages: ChatMessage[]) => void;
 }) {
   const domRef = useRef<HTMLDivElement>(null);
+  const config = useAppConfig();
 
   useEffect(() => {
     if (!domRef.current) return;
@@ -299,14 +800,12 @@ export function RenderExport(props: {
           id={`${m.role}:${i}`}
           className={EXPORT_MESSAGE_CLASS_NAME}
         >
-          <Markdown
-            content={
-              m.role === "user"
-                ? getMessageTextContent(m)
-                : getMessageTextContentWithoutThinking(m)
-            }
-            defaultShow
+          <ExportMessageBody
+            message={m}
+            fontSize={config.fontSize}
+            fontFamily={config.fontFamily}
           />
+          <ExportMessageImages message={m} />
         </div>
       ))}
     </div>
@@ -421,6 +920,8 @@ export function PreviewActions(props: {
 export function ImagePreviewer(props: {
   messages: ChatMessage[];
   topic: string;
+  showHeader: boolean;
+  showDetailedToken: boolean;
 }) {
   const chatStore = useChatStore();
   const session = chatStore.currentSession();
@@ -525,117 +1026,59 @@ export function ImagePreviewer(props: {
         className={clsx(styles["preview-body"], styles["default-theme"])}
         ref={previewRef}
       >
-        <div className={styles["chat-info"]}>
-          <div className={clsx(styles["logo"], "no-dark")}>
-            <NextImage
-              src={ChatGptIcon.src}
-              alt="logo"
-              width={50}
-              height={50}
-            />
-          </div>
-
-          <div>
-            <div className={styles["main-title"]}>QADChat</div>
-            <div className={styles["sub-title"]}>
-              github.com/MoonWeSif/qadchat
-            </div>
-            <div className={styles["icons"]}>
-              <MaskAvatar avatar={config.avatar} />
-              <span className={styles["icon-space"]}>&</span>
-              <MaskAvatar
-                avatar={mask.avatar}
-                model={getMaskEffectiveModel(session.mask) as any}
+        {props.showHeader && (
+          <div className={styles["chat-info"]}>
+            <div className={clsx(styles["logo"], "no-dark")}>
+              <NextImage
+                src={ChatGptIcon.src}
+                alt="logo"
+                width={50}
+                height={50}
               />
             </div>
-          </div>
-          <div>
-            <div className={styles["chat-info-item"]}>
-              {Locale.Exporter.Model}: {getMaskEffectiveModel(mask)}
-            </div>
-            <div className={styles["chat-info-item"]}>
-              {Locale.Exporter.Messages}: {props.messages.length}
-            </div>
-            <div className={styles["chat-info-item"]}>
-              {Locale.Exporter.Topic}: {session.topic}
-            </div>
-            <div className={styles["chat-info-item"]}>
-              {Locale.Exporter.Time}:{" "}
-              {new Date(
-                props.messages.at(-1)?.date ?? Date.now(),
-              ).toLocaleString()}
-            </div>
-          </div>
-        </div>
-        {props.messages.map((m, i) => {
-          return (
-            <div
-              className={clsx(styles["message"], styles["message-" + m.role])}
-              key={i}
-            >
-              <div className={styles["avatar"]}>
-                {m.role === "user" ? (
-                  <Avatar avatar={config.avatar}></Avatar>
-                ) : (
-                  <MaskAvatar
-                    avatar={session.mask.avatar}
-                    model={
-                      m.model || (getMaskEffectiveModel(session.mask) as any)
-                    }
-                  />
-                )}
-              </div>
 
-              <div className={styles["body"]}>
-                <Markdown
-                  content={
-                    m.role === "user"
-                      ? getMessageTextContent(m)
-                      : getMessageTextContentWithoutThinking(m)
-                  }
-                  fontSize={config.fontSize}
-                  fontFamily={config.fontFamily}
-                  defaultShow
-                />
-                {getMessageImages(m).length == 1 && (
-                  <div className={styles["message-image-container"]}>
-                    <Image
-                      key={i}
-                      src={getMessageImages(m)[0]}
-                      alt="message"
-                      className={styles["message-image"]}
-                      fill
-                      unoptimized
-                    />
-                  </div>
-                )}
-                {getMessageImages(m).length > 1 && (
-                  <div
-                    className={styles["message-images"]}
-                    style={
-                      {
-                        "--image-count": getMessageImages(m).length,
-                      } as React.CSSProperties
-                    }
-                  >
-                    {getMessageImages(m).map((src, i) => (
-                      <div
-                        key={i}
-                        className={styles["message-image-multi-container"]}
-                      >
-                        <Image
-                          src={src}
-                          alt="message"
-                          className={styles["message-image-multi"]}
-                          fill
-                          unoptimized
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )}
+            <div>
+              <div className={styles["main-title"]}>QADChat</div>
+              <div className={styles["sub-title"]}>
+                github.com/MoonWeSif/qadchat
+              </div>
+              <div className={styles["icons"]}>
+                <Avatar avatar={config.avatar} />
+                <span className={styles["icon-space"]}>&</span>
+                <Avatar model={getMaskEffectiveModel(session.mask)} />
               </div>
             </div>
+            <div>
+              <div className={styles["chat-info-item"]}>
+                {Locale.Exporter.Model}: {getMaskEffectiveModel(mask)}
+              </div>
+              <div className={styles["chat-info-item"]}>
+                {Locale.Exporter.Messages}: {props.messages.length}
+              </div>
+              <div className={styles["chat-info-item"]}>
+                {Locale.Exporter.Topic}: {session.topic}
+              </div>
+              <div className={styles["chat-info-item"]}>
+                {Locale.Exporter.Time}:{" "}
+                {props.messages.at(-1)?.date || new Date().toLocaleString()}
+              </div>
+            </div>
+          </div>
+        )}
+        {props.messages.map((m, i) => {
+          const isContext = session.mask.context.some((ctx) => ctx.id === m.id);
+
+          return (
+            <ExportMessageRow
+              key={i}
+              message={m}
+              userAvatar={config.avatar}
+              fallbackModel={getMaskEffectiveModel(session.mask)}
+              fontSize={config.fontSize}
+              fontFamily={config.fontFamily}
+              showDetailedToken={props.showDetailedToken}
+              isContext={isContext}
+            />
           );
         })}
       </div>
@@ -655,7 +1098,9 @@ export function MarkdownPreviewer(props: {
           ? `## ${Locale.Export.MessageFromYou}:\n${getMessageTextContent(m)}`
           : `## ${
               Locale.Export.MessageFromChatGPT
-            }:\n${getMessageTextContentWithoutThinking(m).trim()}`;
+            }:\n${getMessageTextContentWithoutThinkingFromContent(
+              getMessageTextContent(m),
+            ).trim()}`;
       })
       .join("\n\n");
 

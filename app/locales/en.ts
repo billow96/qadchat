@@ -217,6 +217,15 @@ const en: LocaleType = {
       Title: "Including Context",
       SubTitle: "Export context prompts in assistant or not",
     },
+    ShowHeader: {
+      Title: "Show Header Info",
+      SubTitle: "Display chat header information in the export preview",
+    },
+    ShowDetailedToken: {
+      Title: "Show Detailed Token Info",
+      SubTitle:
+        "When enabled, show time, tokens, T/s, FT and TT; otherwise show only time",
+    },
     Steps: {
       Select: "Select",
       Preview: "Preview",

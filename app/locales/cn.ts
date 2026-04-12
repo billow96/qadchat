@@ -212,6 +212,14 @@ const cn = {
       Title: "包含助手上下文",
       SubTitle: "是否在消息中展示助手上下文",
     },
+    ShowHeader: {
+      Title: "显示头部信息",
+      SubTitle: "是否在导出预览中显示聊天头部信息",
+    },
+    ShowDetailedToken: {
+      Title: "显示详细Token信息",
+      SubTitle: "开启后显示时间、Tokens、T/s、FT 和 TT；关闭时仅显示时间",
+    },
     Steps: {
       Select: "选取",
       Preview: "预览",
