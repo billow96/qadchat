@@ -13,7 +13,7 @@ export class StreamUpdateOptimizer {
   >();
 
   private updateTimer: NodeJS.Timeout | null = null;
-  private readonly BATCH_DELAY = 100; // 100ms 批量更新延迟
+  private readonly BATCH_DELAY = 33; // 更接近逐帧的批量窗口，提升流式显示连贯性
 
   constructor(private onBatchUpdate: (updates: Map<string, any>) => void) {}
 

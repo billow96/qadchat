@@ -594,88 +594,150 @@ function MarkdownContentInner(props: {
     return { processedContent: content, imageMap };
   }, [now, props.content, props.thinkingSegments]);
 
+  const isStreaming = !!props.status;
+  const remarkPlugins = useMemo(
+    () => [RemarkMath, RemarkGfm, RemarkBreaks],
+    [],
+  );
+  const rehypePlugins = useMemo(
+    () => [
+      RehypeRaw,
+      RehypeKatex as any,
+      [rehypeSanitize, sanitizeOptions],
+      [
+        RehypeHighlight,
+        {
+          detect: false,
+          ignoreMissing: true,
+        },
+      ],
+    ],
+    [],
+  );
+
+  const components = useMemo(() => {
+    if (isStreaming) {
+      return {
+        // 流式阶段走轻量渲染，避免复杂代码块/预览逻辑拖慢逐字更新。
+        pre: (preProps: any) => <pre {...preProps} />,
+        code: ({ className, children, ...rest }: any) => (
+          <code className={className} {...rest}>
+            {children}
+          </code>
+        ),
+        p: (pProps: any) => <p {...pProps} dir="auto" />,
+        img: (imgProps: any) => {
+          const { src, alt, ...otherProps } = imgProps;
+          const actualSrc = src && imageMap.has(src) ? imageMap.get(src) : src;
+
+          if (actualSrc) {
+            return (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                {...otherProps}
+                src={actualSrc}
+                alt={alt || "image"}
+                style={{
+                  maxWidth: "100%",
+                  height: "auto",
+                  borderRadius: "8px",
+                }}
+              />
+            );
+          }
+
+          return <span>{alt || "[Image]"}</span>;
+        },
+        a: (aProps: any) => {
+          const href = aProps.href || "";
+          const isInternal = /^\/#/i.test(href);
+          const target = isInternal ? "_self" : aProps.target ?? "_blank";
+          return <a {...aProps} target={target} />;
+        },
+        thinkcollapse: ({
+          title,
+          children,
+        }: {
+          title: string;
+          children: React.ReactNode;
+        }) => (
+          <ThinkCollapse title={title} fontSize={props.fontSize}>
+            {children}
+          </ThinkCollapse>
+        ),
+      } as const;
+    }
+
+    return {
+      pre: PreCode,
+      code: CustomCode,
+      p: (pProps: any) => <p {...pProps} dir="auto" />,
+      img: (imgProps: any) => {
+        const { src, alt, ...otherProps } = imgProps;
+
+        let actualSrc = src;
+        if (src && imageMap.has(src)) {
+          actualSrc = imageMap.get(src);
+        }
+
+        if (actualSrc) {
+          return (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              {...otherProps}
+              src={actualSrc}
+              alt={alt || "image"}
+              style={{
+                maxWidth: "100%",
+                height: "auto",
+                borderRadius: "8px",
+                cursor: "pointer",
+              }}
+              onClick={() => showImageModal(actualSrc)}
+            />
+          );
+        }
+        return <span>{alt || "[Image]"}</span>;
+      },
+      thinkcollapse: ({
+        title,
+        children,
+      }: {
+        title: string;
+        children: React.ReactNode;
+      }) => (
+        <ThinkCollapse title={title} fontSize={props.fontSize}>
+          {children}
+        </ThinkCollapse>
+      ),
+      a: (aProps: any) => {
+        const href = aProps.href || "";
+        if (/\.(aac|mp3|opus|wav)$/.test(href)) {
+          return (
+            <figure>
+              <audio controls src={href}></audio>
+            </figure>
+          );
+        }
+        if (/\.(3gp|3g2|webm|ogv|mpeg|mp4|avi)$/.test(href)) {
+          return (
+            <video controls width="99.9%">
+              <source src={href} />
+            </video>
+          );
+        }
+        const isInternal = /^\/#/i.test(href);
+        const target = isInternal ? "_self" : aProps.target ?? "_blank";
+        return <a {...aProps} target={target} />;
+      },
+    } as const;
+  }, [imageMap, isStreaming, props.fontSize]);
+
   return (
     <ReactMarkdown
-      remarkPlugins={[RemarkMath, RemarkGfm, RemarkBreaks]}
-      rehypePlugins={[
-        RehypeRaw,
-        RehypeKatex as any,
-        [rehypeSanitize, sanitizeOptions],
-        [
-          RehypeHighlight,
-          {
-            detect: false,
-            ignoreMissing: true,
-          },
-        ],
-      ]}
-      components={
-        {
-          pre: PreCode,
-          code: CustomCode,
-          p: (pProps: any) => <p {...pProps} dir="auto" />,
-          img: (imgProps: any) => {
-            const { src, alt, ...otherProps } = imgProps;
-
-            // 检查是否是我们的占位符
-            let actualSrc = src;
-            if (src && imageMap.has(src)) {
-              actualSrc = imageMap.get(src);
-            }
-
-            // 处理base64图片或普通图片URL
-            if (actualSrc) {
-              return (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  {...otherProps}
-                  src={actualSrc}
-                  alt={alt || "image"}
-                  style={{
-                    maxWidth: "100%",
-                    height: "auto",
-                    borderRadius: "8px",
-                    cursor: "pointer",
-                  }}
-                  onClick={() => showImageModal(actualSrc)}
-                />
-              );
-            }
-            return <span>{alt || "[Image]"}</span>;
-          },
-          thinkcollapse: ({
-            title,
-            children,
-          }: {
-            title: string;
-            children: React.ReactNode;
-          }) => (
-            <ThinkCollapse title={title} fontSize={props.fontSize}>
-              {children}
-            </ThinkCollapse>
-          ),
-          a: (aProps: any) => {
-            const href = aProps.href || "";
-            if (/\.(aac|mp3|opus|wav)$/.test(href)) {
-              return (
-                <figure>
-                  <audio controls src={href}></audio>
-                </figure>
-              );
-            }
-            if (/\.(3gp|3g2|webm|ogv|mpeg|mp4|avi)$/.test(href)) {
-              return (
-                <video controls width="99.9%">
-                  <source src={href} />
-                </video>
-              );
-            }
-            const isInternal = /^\/#/i.test(href);
-            const target = isInternal ? "_self" : aProps.target ?? "_blank";
-            return <a {...aProps} target={target} />;
-          },
-        } as any
-      }
+      remarkPlugins={remarkPlugins as any}
+      rehypePlugins={rehypePlugins as any}
+      components={components as any}
     >
       {processedContent}
     </ReactMarkdown>

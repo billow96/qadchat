@@ -1,3 +1,4 @@
+import { jest } from "@jest/globals";
 import type { ChatSession, ChatMessage } from "../store/chat";
 import { StreamUpdateOptimizer } from "./stream-optimizer";
 
@@ -27,7 +28,7 @@ function createMockSession(): ChatSession {
       lang: "cn",
       builtin: false,
       createdAt: 0,
-    } as ChatSession["mask"],
+    } as unknown as ChatSession["mask"],
     mcpEnabledClients: {},
     multiModelMode: {
       enabled: false,
@@ -91,5 +92,33 @@ describe("StreamUpdateOptimizer", () => {
       streaming: true,
       tools,
     });
+  });
+
+  it("flushes batched updates within one animation-like window", () => {
+    jest.useFakeTimers();
+
+    const onBatchUpdate = jest.fn();
+    const optimizer = new StreamUpdateOptimizer(onBatchUpdate);
+    const session = createMockSession();
+
+    optimizer.updateStreamingMessage(
+      session.id,
+      "message-2",
+      {
+        content: "hello",
+        streaming: true,
+      },
+      session,
+    );
+
+    expect(onBatchUpdate).not.toHaveBeenCalled();
+
+    jest.advanceTimersByTime(32);
+    expect(onBatchUpdate).not.toHaveBeenCalled();
+
+    jest.advanceTimersByTime(1);
+    expect(onBatchUpdate).toHaveBeenCalledTimes(1);
+
+    jest.useRealTimers();
   });
 });

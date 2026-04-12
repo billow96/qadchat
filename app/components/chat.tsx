@@ -588,6 +588,7 @@ function AssistantMessageBody(props: {
 
       return segment.content.trim().length > 0;
     });
+  const revealKey = getMessageRevealKey(message);
   const [revealReady, setRevealReady] = useState(() => {
     return (
       message.streaming ||
@@ -622,7 +623,7 @@ function AssistantMessageBody(props: {
     hasThoughts,
     hasText,
     renderableSegments.length,
-    getMessageRevealKey(message),
+    revealKey,
   ]);
 
   if (!revealReady) {
