@@ -15,6 +15,20 @@ import {
   StreamUpdateOptimizer,
   createLightweightMessageUpdate,
 } from "@/app/utils/stream-optimizer";
+import {
+  createMessageSegment,
+  cloneMessageSegments,
+  contentStartsWithThink,
+  splitMessageContentIntoSegments,
+  splitSegmentsByLastTool,
+  rebuildRoundSegments,
+  appendToolRoundSegments,
+  isCurrentRoundStable,
+  updateMessageSegmentsFromStream,
+  serializeSegmentsToMessageContent,
+  buildMessageSegmentsFromContent,
+  finalizeMessageSegments,
+} from "@/app/utils/segment-parser";
 import { nanoid } from "nanoid";
 import type {
   ChatAttachment,
@@ -366,226 +380,6 @@ function stringifyToolResult(result: any) {
   } catch {
     return String(result);
   }
-}
-
-function createMessageSegment(
-  type: ChatMessageSegmentType,
-  content = "",
-  extra?: Partial<ChatMessageSegment>,
-): ChatMessageSegment {
-  return {
-    id: nanoid(),
-    type,
-    content,
-    startedAt: Date.now(),
-    ...extra,
-  };
-}
-
-function cloneMessageSegments(
-  segments?: ChatMessageSegment[],
-): ChatMessageSegment[] | undefined {
-  if (!segments?.length) return undefined;
-  return segments.map((segment) => ({ ...segment }));
-}
-
-function splitMessageContentIntoSegments(
-  content: string,
-): ChatMessageSegment[] {
-  if (!content) return [];
-
-  const segments: ChatMessageSegment[] = [];
-  const pattern = /<think>([\s\S]*?)(?:<\/think>|$)/g;
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
-
-  while ((match = pattern.exec(content)) !== null) {
-    const fullMatch = match[0];
-    const thinkContent = match[1] ?? "";
-    const matchIndex = match.index;
-    const before = content.slice(lastIndex, matchIndex);
-    if (before) {
-      segments.push(createMessageSegment("text", before, { streaming: false }));
-    }
-
-    const hasClosingTag = fullMatch.endsWith("</think>");
-    segments.push(
-      createMessageSegment("thought", thinkContent, {
-        streaming: !hasClosingTag,
-      }),
-    );
-
-    lastIndex = matchIndex + fullMatch.length;
-  }
-
-  const remain = content.slice(lastIndex);
-  if (remain) {
-    segments.push(createMessageSegment("text", remain, { streaming: false }));
-  }
-
-  if (segments.length === 0 && content) {
-    segments.push(createMessageSegment("text", content, { streaming: false }));
-  }
-
-  return segments;
-}
-
-function buildMessageSegmentsFromContent(
-  content: string,
-  reasoningLatency?: number,
-): ChatMessageSegment[] | undefined {
-  const segments = splitMessageContentIntoSegments(content);
-  if (!segments.length) return undefined;
-
-  return segments.map((segment) =>
-    segment.type === "thought"
-      ? {
-          ...segment,
-          streaming: false,
-          durationMs: segment.durationMs ?? reasoningLatency,
-        }
-      : {
-          ...segment,
-          streaming: false,
-        },
-  );
-}
-
-function serializeSegmentsToMessageContent(
-  segments?: ChatMessageSegment[],
-): string {
-  if (!segments?.length) return "";
-
-  return segments
-    .map((segment) =>
-      segment.type === "thought"
-        ? `<think>\n${segment.content}${segment.streaming ? "" : "\n</think>"}`
-        : segment.type === "text"
-        ? segment.content
-        : "",
-    )
-    .join("");
-}
-
-function splitSegmentsByLastTool(
-  currentSegments: ChatMessageSegment[] | undefined,
-) {
-  const segments = cloneMessageSegments(currentSegments) ?? [];
-  const lastToolIndex = [...segments]
-    .map((segment) => segment.type)
-    .lastIndexOf("tool");
-
-  return {
-    prefix:
-      lastToolIndex >= 0
-        ? segments.slice(0, lastToolIndex + 1)
-        : ([] as ChatMessageSegment[]),
-    currentRound:
-      lastToolIndex >= 0 ? segments.slice(lastToolIndex + 1) : segments,
-  };
-}
-
-function rebuildRoundSegments(
-  previousRoundSegments: ChatMessageSegment[] | undefined,
-  content: string,
-  reasoningLatency?: number,
-  finalized: boolean = false,
-) {
-  const nextSegments = splitMessageContentIntoSegments(content);
-  const previousTexts = (previousRoundSegments ?? []).filter(
-    (segment) => segment.type === "text",
-  );
-  const previousThoughts = (previousRoundSegments ?? []).filter(
-    (segment) => segment.type === "thought",
-  );
-  let textIndex = 0;
-  let thoughtIndex = 0;
-
-  return nextSegments.map((segment) => {
-    if (segment.type !== "thought") {
-      const previousText = previousTexts[textIndex++];
-      return {
-        ...segment,
-        id: previousText?.id ?? segment.id,
-        streaming: finalized ? false : segment.streaming,
-      };
-    }
-
-    const previousThought = previousThoughts[thoughtIndex++];
-    const frozenDuration =
-      previousThought?.durationMs ??
-      (previousThought?.startedAt
-        ? Math.max(0, Date.now() - previousThought.startedAt)
-        : reasoningLatency);
-
-    return {
-      ...segment,
-      id: previousThought?.id ?? segment.id,
-      startedAt: previousThought?.startedAt ?? segment.startedAt,
-      streaming: finalized ? false : segment.streaming,
-      durationMs: segment.streaming ? reasoningLatency : frozenDuration,
-    };
-  });
-}
-
-function appendToolRoundSegments(
-  currentSegments: ChatMessageSegment[] | undefined,
-  content: string,
-  toolIds: string[],
-  reasoningLatency?: number,
-) {
-  const { prefix, currentRound } = splitSegmentsByLastTool(currentSegments);
-  const finalizedRound = rebuildRoundSegments(
-    currentRound,
-    content,
-    reasoningLatency,
-    true,
-  );
-
-  return [
-    ...prefix,
-    ...finalizedRound,
-    createMessageSegment("tool", "", {
-      streaming: false,
-      toolIds,
-    }),
-  ];
-}
-
-function updateMessageSegmentsFromStream(
-  currentSegments: ChatMessageSegment[] | undefined,
-  content: string,
-  reasoningLatency?: number,
-): ChatMessageSegment[] | undefined {
-  if (!content) return cloneMessageSegments(currentSegments);
-  const { prefix, currentRound } = splitSegmentsByLastTool(currentSegments);
-  const rebuiltRound = rebuildRoundSegments(
-    currentRound,
-    content,
-    reasoningLatency,
-    false,
-  );
-
-  return [...prefix, ...rebuiltRound];
-}
-
-function finalizeMessageSegments(
-  segments: ChatMessageSegment[] | undefined,
-  reasoningLatency?: number,
-): ChatMessageSegment[] | undefined {
-  const nextSegments = cloneMessageSegments(segments);
-  if (!nextSegments?.length) return nextSegments;
-
-  return nextSegments.map((segment) => {
-    if (segment.type !== "thought") {
-      return { ...segment, streaming: false };
-    }
-    return {
-      ...segment,
-      streaming: false,
-      durationMs: segment.durationMs ?? reasoningLatency,
-    };
-  });
 }
 
 function resolveFinalMessageSegments(
