@@ -40,6 +40,15 @@ export interface MultimodalContent {
   };
 }
 
+export interface ChatAttachment {
+  id: string;
+  type: "image" | "text";
+  name: string;
+  mimeType: string;
+  data: string;
+  previewUrl?: string;
+}
+
 export interface MultimodalContentForAlibaba {
   text?: string;
   image?: string;

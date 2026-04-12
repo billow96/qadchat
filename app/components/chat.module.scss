@@ -5,18 +5,22 @@
   left: 30px;
   bottom: 32px;
   display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  max-width: calc(100% - 120px);
 }
 
-.attach-image {
+.attach-item {
   cursor: default;
   width: 64px;
   height: 64px;
   border: rgba($color: #888, $alpha: 0.2) 1px solid;
   border-radius: 5px;
-  margin-right: 10px;
   background-size: cover;
   background-position: center;
   background-color: var(--white);
+  overflow: hidden;
+  position: relative;
 
   .attach-image-mask {
     width: 100%;
@@ -40,6 +44,41 @@
     float: right;
     background-color: var(--white);
   }
+}
+
+.attach-file {
+  width: 180px;
+  padding: 10px;
+  display: flex;
+  align-items: stretch;
+  background: var(--white);
+}
+
+.attach-file-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+}
+
+.attach-file-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--black);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.attach-file-type {
+  font-size: 10px;
+  color: var(--black);
+  opacity: 0.6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .chat-input-actions {

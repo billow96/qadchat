@@ -1,4 +1,5 @@
 import {
+  createAttachmentTextSegment,
   getMessageTextContent,
   getMessageTextContentWithoutThinkingFromContent,
   getMessageTextContentWithoutThinking,
@@ -16,6 +17,7 @@ import {
 } from "@/app/utils/stream-optimizer";
 import { nanoid } from "nanoid";
 import type {
+  ChatAttachment,
   ClientApi,
   MultimodalContent,
   RequestMessage,
@@ -27,12 +29,9 @@ import { showToast } from "../components/ui-lib";
 import {
   DEFAULT_INPUT_TEMPLATE,
   DEFAULT_MODELS,
-  GEMINI_SUMMARIZE_MODEL,
-  DEEPSEEK_SUMMARIZE_MODEL,
   KnowledgeCutOffDate,
   ServiceProvider,
   StoreKey,
-  SUMMARIZE_MODEL,
 } from "../constant";
 import Locale, { getLang } from "../locales";
 import { prettyObject } from "../utils/format";
@@ -45,8 +44,6 @@ import {
   getSessionCompressModelConfig,
 } from "../utils/model-resolver";
 import { getModelCompressThreshold } from "../config/model-context-tokens";
-import { useAccessStore } from "./access";
-import { collectModelsWithDefaultModel } from "../utils/model";
 import { createDefaultMask, Mask } from "./mask";
 import {
   getEnabledMcpNativeTools,
@@ -256,36 +253,38 @@ function createEmptySession(): ChatSession {
   };
 }
 
-function getSummarizeModel(
-  currentModel: string,
-  providerName: string,
-): string[] {
-  // if it is using gpt-* models, force to use 4o-mini to summarize
-  if (currentModel.startsWith("gpt") || currentModel.startsWith("chatgpt")) {
-    const configStore = useAppConfig.getState();
-    const accessStore = useAccessStore.getState();
-    const allModel = collectModelsWithDefaultModel(
-      configStore.models,
-      [configStore.customModels, accessStore.customModels].join(","),
-      accessStore.defaultModel,
-    );
-    const summarizeModel = allModel.find(
-      (m) => m.name === SUMMARIZE_MODEL && m.available,
-    );
-    if (summarizeModel) {
-      return [
-        summarizeModel.name,
-        summarizeModel.provider?.providerName as string,
-      ];
-    }
-  }
-  if (currentModel.startsWith("gemini")) {
-    return [GEMINI_SUMMARIZE_MODEL, ServiceProvider.Google];
-  } else if (currentModel.startsWith("deepseek-")) {
-    return [DEEPSEEK_SUMMARIZE_MODEL, ServiceProvider.DeepSeek];
+function buildUserMessageContent(
+  content: string,
+  attachments?: ChatAttachment[],
+): string | MultimodalContent[] {
+  if (!attachments || attachments.length === 0) {
+    return content;
   }
 
-  return [currentModel, providerName];
+  const multimodalContent: MultimodalContent[] = [];
+
+  if (content.trim().length > 0) {
+    multimodalContent.push({
+      type: "text",
+      text: content,
+    });
+  }
+
+  for (const attachment of attachments) {
+    if (attachment.type === "image") {
+      multimodalContent.push({
+        type: "image_url",
+        image_url: { url: attachment.data },
+      });
+    } else {
+      multimodalContent.push({
+        type: "text",
+        text: createAttachmentTextSegment(attachment.name, attachment.data),
+      });
+    }
+  }
+
+  return multimodalContent;
 }
 
 function countMessages(msgs: ChatMessage[]) {
@@ -903,7 +902,7 @@ export const useChatStore = createPersistStore(
         get().summarizeSession(false, targetSession);
       },
 
-      async onUserInput(content: string, attachImages?: string[]) {
+      async onUserInput(content: string, attachments?: ChatAttachment[]) {
         const session = get().currentSession();
 
         // 检查是否为多模型模式
@@ -911,7 +910,7 @@ export const useChatStore = createPersistStore(
           session.multiModelMode?.enabled &&
           session.multiModelMode.selectedModels.length > 1
         ) {
-          return get().onMultiModelUserInput(content, attachImages);
+          return get().onMultiModelUserInput(content, attachments);
         }
 
         const modelConfig = session.mask.modelConfig;
@@ -921,14 +920,8 @@ export const useChatStore = createPersistStore(
           modelConfig,
         );
 
-        if (attachImages && attachImages.length > 0) {
-          mContent = [
-            ...(content ? [{ type: "text" as const, text: content }] : []),
-            ...attachImages.map((url) => ({
-              type: "image_url" as const,
-              image_url: { url },
-            })),
-          ];
+        if (attachments && attachments.length > 0) {
+          mContent = buildUserMessageContent(content, attachments);
         }
 
         let userMessage: ChatMessage = createMessage({
@@ -1151,7 +1144,10 @@ export const useChatStore = createPersistStore(
         });
       },
 
-      async onMultiModelUserInput(content: string, attachImages?: string[]) {
+      async onMultiModelUserInput(
+        content: string,
+        attachments?: ChatAttachment[],
+      ) {
         const session = get().currentSession();
         const multiModelMode = session.multiModelMode!;
 
@@ -1161,14 +1157,8 @@ export const useChatStore = createPersistStore(
           session.mask.modelConfig,
         );
 
-        if (attachImages && attachImages.length > 0) {
-          mContent = [
-            ...(content ? [{ type: "text" as const, text: content }] : []),
-            ...attachImages.map((url) => ({
-              type: "image_url" as const,
-              image_url: { url },
-            })),
-          ];
+        if (attachments && attachments.length > 0) {
+          mContent = buildUserMessageContent(content, attachments);
         }
 
         // 创建用户消息

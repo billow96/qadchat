@@ -207,13 +207,15 @@ export class ChatGPTApi implements LLMApi {
   }
 
   async chat(options: ChatOptions) {
+    const sessionModelConfig = useChatStore.getState().currentSession()
+      .mask.modelConfig;
     const modelConfig = {
       ...useAppConfig.getState().modelConfig,
-      ...useChatStore.getState().currentSession().mask.modelConfig,
-      ...{
-        model: options.config.model,
-        providerName: options.config.providerName,
-      },
+      ...sessionModelConfig,
+      ...options.config,
+      model: options.config.model || sessionModelConfig.model,
+      providerName:
+        options.config.providerName || sessionModelConfig.providerName,
     };
 
     let requestPayload: RequestPayload | DalleRequestPayload;

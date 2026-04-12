@@ -114,7 +114,7 @@ const tw = {
       Masks: "所有角色助手",
       Clear: "清除聊天",
       Settings: "對話設定",
-      UploadImage: "上傳圖片",
+      UploadAttachment: "上傳圖片或文件",
       Search: "搜尋功能",
       SearchOn: "搜尋已啟用",
       SearchOff: "搜尋已停用",
@@ -249,6 +249,11 @@ const tw = {
     Title: "設定",
     SubTitle: "設定選項",
     ShowPassword: "顯示密碼",
+    MultiModel: {
+      Title: "多模型功能",
+      SubTitle:
+        "控制聊天區是否顯示多模型按鈕。即使此處啟用，仍需在聊天區內再單獨切換當前會話的多模型模式。",
+    },
 
     Tab: {
       General: "通用設定",

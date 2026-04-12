@@ -77,6 +77,8 @@ import { estimateTokenLength } from "../utils/token";
 
 import {
   autoGrowTextArea,
+  createAttachmentTextSegment,
+  getMessageAttachments,
   copyToClipboard,
   getMessageImages,
   getMessageTextContent,
@@ -91,7 +93,7 @@ import {
 } from "../utils";
 import { getTextContentFromSegments } from "../utils/thinking";
 
-import { uploadImage as uploadImageRemote } from "@/app/utils/chat";
+import { compressImage, readFileAsText } from "@/app/utils/chat";
 
 import dynamic from "next/dynamic";
 import { Collapse } from "antd";
@@ -134,7 +136,7 @@ import { prettyObject } from "../utils/format";
 import { ExportMessageModal } from "./exporter";
 import { getClientConfig } from "../config/client";
 import { useEnabledModels } from "../utils/hooks";
-import { ClientApi, MultimodalContent } from "../client/api";
+import { ChatAttachment, ClientApi, MultimodalContent } from "../client/api";
 import { createTTSPlayer } from "../utils/audio";
 import { MsEdgeTTS, OUTPUT_FORMAT } from "../utils/ms_edge_tts";
 
@@ -154,6 +156,63 @@ import { Markdown, ThoughtSegmentBlock } from "./markdown";
 const localStorage = safeLocalStorage();
 
 const ttsPlayer = createTTSPlayer();
+
+function buildUserMessageContent(
+  input: string,
+  attachments: ChatAttachment[],
+): string | MultimodalContent[] {
+  if (attachments.length === 0) {
+    return input;
+  }
+
+  const content: MultimodalContent[] = [];
+
+  if (input.trim().length > 0) {
+    content.push({ type: "text", text: input });
+  }
+
+  for (const attachment of attachments) {
+    if (attachment.type === "image") {
+      content.push({
+        type: "image_url",
+        image_url: { url: attachment.data },
+      });
+    } else {
+      content.push({
+        type: "text",
+        text: createAttachmentTextSegment(attachment.name, attachment.data),
+      });
+    }
+  }
+
+  return content;
+}
+
+async function buildAttachmentFromFile(file: File): Promise<ChatAttachment> {
+  const id = `${file.name}-${file.size}-${file.lastModified}`;
+  const mimeType = file.type || "application/octet-stream";
+
+  if (mimeType.startsWith("image/")) {
+    const data = await compressImage(file, 1024 * 1024);
+    return {
+      id,
+      type: "image",
+      name: file.name,
+      mimeType,
+      data,
+      previewUrl: data,
+    };
+  }
+
+  const data = await readFileAsText(file);
+  return {
+    id,
+    type: "text",
+    name: file.name,
+    mimeType,
+    data,
+  };
+}
 
 const MCPAction = ({ onTogglePanel }: { onTogglePanel: () => void }) => {
   const [count, setCount] = useState<number>(0);
@@ -1573,8 +1632,8 @@ function useScrollToBottom(
 }
 
 export function ChatActions(props: {
-  uploadImage: () => void;
-  setAttachImages: (images: string[]) => void;
+  uploadAttachment: () => void;
+  setAttachments: (attachments: ChatAttachment[]) => void;
   setUploading: (uploading: boolean) => void;
   scrollToBottom: () => void;
   showPromptHints: () => void;
@@ -1613,10 +1672,6 @@ export function ChatActions(props: {
     const nextTheme = themes[nextIndex];
     config.update((config) => (config.theme = nextTheme));
   }
-
-  // stop all responses
-  const couldStop = ChatControllerPool.hasPending();
-  const stopAll = () => ChatControllerPool.stopAll();
 
   // switch model
   const currentModel = session.mask.modelConfig.model;
@@ -1711,7 +1766,7 @@ export function ChatActions(props: {
     return result;
   }, [models, accessStore.customProviders]);
 
-  const [showUploadImage, setShowUploadImage] = useState(false);
+  const canUploadAttachment = true;
 
   const [showSizeSelector, setShowSizeSelector] = useState(false);
   const [showQualitySelector, setShowQualitySelector] = useState(false);
@@ -1726,15 +1781,12 @@ export function ChatActions(props: {
 
   const isMobileScreen = useMobileScreen();
 
-  const { setAttachImages, setUploading } = props;
+  const { setAttachments, setUploading } = props;
   useEffect(() => {
-    const show = isVisionModel(currentModel);
-    setShowUploadImage(show);
-    if (!show) {
-      setAttachImages([]);
+    if (!isVisionModel(currentModel)) {
       setUploading(false);
     }
-  }, [currentModel, setAttachImages, setUploading]);
+  }, [currentModel, setUploading]);
 
   // 分离模型可用性检查到单独的 useEffect
   // 使用 ref 来避免依赖 session 对象
@@ -1783,13 +1835,6 @@ export function ChatActions(props: {
 
   const leftActions = (
     <>
-      {couldStop && (
-        <ChatAction
-          onClick={stopAll}
-          text={Locale.Chat.InputActions.Stop}
-          icon={<StopIcon />}
-        />
-      )}
       {!props.hitBottom && (
         <ChatAction
           onClick={props.scrollToBottom}
@@ -1798,10 +1843,10 @@ export function ChatActions(props: {
         />
       )}
 
-      {showUploadImage && (
+      {canUploadAttachment && (
         <ChatAction
-          onClick={props.uploadImage}
-          text={Locale.Chat.InputActions.UploadImage}
+          onClick={props.uploadAttachment}
+          text={Locale.Chat.InputActions.UploadAttachment}
           icon={props.uploading ? <LoadingButtonIcon /> : <ImageIcon />}
         />
       )}
@@ -1990,7 +2035,9 @@ export function ChatActions(props: {
           onTogglePanel={() => props.setShowMcpPanel(!props.showMcpPanel)}
         />
       )}
-      <MultiModelAction onToggle={() => props.toggleMultiModelMode()} />
+      {config.enableMultiModel && (
+        <MultiModelAction onToggle={() => props.toggleMultiModelMode()} />
+      )}
     </>
   );
   const rightActions = (
@@ -2043,123 +2090,131 @@ export function ChatActions(props: {
           )}
         </button>
 
-        {props.showModelSelector && !session.multiModelMode?.enabled && (
-          <ModelSelectorModal
-            defaultSelectedValue={`${currentModel}@${currentProviderName}`}
-            groups={modelGroups}
-            searchPlaceholder={Locale.Chat.UI.SearchModels}
-            onClose={() => props.setShowModelSelector(false)}
-            onSelection={(selectedValue) => {
-              const [model, providerId] = getModelProvider(selectedValue);
-              chatStore.updateTargetSession(session, (session) => {
-                session.mask.modelConfig.model = model as ModelType;
-                // 直接保存 providerId（支持 custom_ 前缀），避免被标准化为内置服务商
-                session.mask.modelConfig.providerName = providerId! as any;
-                session.mask.syncGlobalConfig = false;
+        {props.showModelSelector &&
+          (!config.enableMultiModel || !session.multiModelMode?.enabled) && (
+            <ModelSelectorModal
+              defaultSelectedValue={`${currentModel}@${currentProviderName}`}
+              groups={modelGroups}
+              searchPlaceholder={Locale.Chat.UI.SearchModels}
+              onClose={() => props.setShowModelSelector(false)}
+              onSelection={(selectedValue) => {
+                const [model, providerId] = getModelProvider(selectedValue);
+                chatStore.updateTargetSession(session, (session) => {
+                  session.mask.modelConfig.model = model as ModelType;
+                  // 直接保存 providerId（支持 custom_ 前缀），避免被标准化为内置服务商
+                  session.mask.modelConfig.providerName = providerId! as any;
+                  session.mask.syncGlobalConfig = false;
 
-                // 检查新模型是否支持thinking功能，如果支持且thinkingBudget未设置，则设置默认值
-                const modelCapabilities = getModelCapabilitiesWithCustomConfig(
-                  session.mask.modelConfig.model,
-                );
-                if (
-                  modelCapabilities.reasoning &&
-                  modelCapabilities.thinkingType &&
-                  session.mask.modelConfig.thinkingBudget === undefined
-                ) {
-                  session.mask.modelConfig.thinkingBudget = -1; // 默认为动态思考
-                }
-
-                // 根据新模型自动更新压缩阈值
-                const autoThreshold = getModelCompressThreshold(model);
-                session.mask.modelConfig.compressMessageLengthThreshold =
-                  autoThreshold;
-              });
-
-              const selectedModel = models.find(
-                (m) => m.name == model && m?.provider?.id == providerId,
-              );
-
-              if (providerId == "ByteDance") {
-                showToast(selectedModel?.displayName ?? "");
-              } else {
-                showToast(selectedModel?.displayName || model);
-              }
-            }}
-          />
-        )}
-
-        {props.showModelSelector && session.multiModelMode?.enabled && (
-          <MultiModelSelectorModal
-            groups={modelGroups}
-            defaultSelectedValues={session.multiModelMode?.selectedModels || []}
-            searchPlaceholder={Locale.Chat.UI.SearchModels}
-            onClose={() => props.setShowModelSelector(false)}
-            onSelection={(selectedValues) => {
-              // 确保至少选择了两个模型
-              if (selectedValues.length < 2) {
-                showToast(Locale.Chat.MultiModel.MinimumModelsError);
-                return;
-              }
-
-              chatStore.updateTargetSession(session, (session) => {
-                if (!session.multiModelMode) {
-                  session.multiModelMode = {
-                    enabled: true,
-                    selectedModels: [],
-                    modelMessages: {},
-                    modelStats: {},
-                    modelMemoryPrompts: {},
-                    modelSummarizeIndexes: {},
-                  };
-                }
-
-                session.multiModelMode.selectedModels = selectedValues;
-                session.multiModelMode.enabled = true; // 确保启用多模型模式
-
-                // 初始化新选中模型的数据结构
-                selectedValues.forEach((modelKey) => {
-                  if (!session.multiModelMode!.modelMessages[modelKey]) {
-                    session.multiModelMode!.modelMessages[modelKey] = [];
+                  // 检查新模型是否支持thinking功能，如果支持且thinkingBudget未设置，则设置默认值
+                  const modelCapabilities =
+                    getModelCapabilitiesWithCustomConfig(
+                      session.mask.modelConfig.model,
+                    );
+                  if (
+                    modelCapabilities.reasoning &&
+                    modelCapabilities.thinkingType &&
+                    session.mask.modelConfig.thinkingBudget === undefined
+                  ) {
+                    session.mask.modelConfig.thinkingBudget = -1; // 默认为动态思考
                   }
-                  if (!session.multiModelMode!.modelStats[modelKey]) {
-                    session.multiModelMode!.modelStats[modelKey] = {
-                      tokenCount: 0,
-                      wordCount: 0,
-                      charCount: 0,
+
+                  // 根据新模型自动更新压缩阈值
+                  const autoThreshold = getModelCompressThreshold(model);
+                  session.mask.modelConfig.compressMessageLengthThreshold =
+                    autoThreshold;
+                });
+
+                const selectedModel = models.find(
+                  (m) => m.name == model && m?.provider?.id == providerId,
+                );
+
+                if (providerId == "ByteDance") {
+                  showToast(selectedModel?.displayName ?? "");
+                } else {
+                  showToast(selectedModel?.displayName || model);
+                }
+              }}
+            />
+          )}
+
+        {props.showModelSelector &&
+          config.enableMultiModel &&
+          session.multiModelMode?.enabled && (
+            <MultiModelSelectorModal
+              groups={modelGroups}
+              defaultSelectedValues={
+                session.multiModelMode?.selectedModels || []
+              }
+              searchPlaceholder={Locale.Chat.UI.SearchModels}
+              onClose={() => props.setShowModelSelector(false)}
+              onSelection={(selectedValues) => {
+                // 确保至少选择了两个模型
+                if (selectedValues.length < 2) {
+                  showToast(Locale.Chat.MultiModel.MinimumModelsError);
+                  return;
+                }
+
+                chatStore.updateTargetSession(session, (session) => {
+                  if (!session.multiModelMode) {
+                    session.multiModelMode = {
+                      enabled: true,
+                      selectedModels: [],
+                      modelMessages: {},
+                      modelStats: {},
+                      modelMemoryPrompts: {},
+                      modelSummarizeIndexes: {},
                     };
                   }
-                  if (!session.multiModelMode!.modelMemoryPrompts[modelKey]) {
-                    session.multiModelMode!.modelMemoryPrompts[modelKey] = "";
-                  }
-                  if (
-                    !session.multiModelMode!.modelSummarizeIndexes[modelKey]
-                  ) {
-                    session.multiModelMode!.modelSummarizeIndexes[modelKey] = 0;
-                  }
+
+                  session.multiModelMode.selectedModels = selectedValues;
+                  session.multiModelMode.enabled = true; // 确保启用多模型模式
+
+                  // 初始化新选中模型的数据结构
+                  selectedValues.forEach((modelKey) => {
+                    if (!session.multiModelMode!.modelMessages[modelKey]) {
+                      session.multiModelMode!.modelMessages[modelKey] = [];
+                    }
+                    if (!session.multiModelMode!.modelStats[modelKey]) {
+                      session.multiModelMode!.modelStats[modelKey] = {
+                        tokenCount: 0,
+                        wordCount: 0,
+                        charCount: 0,
+                      };
+                    }
+                    if (!session.multiModelMode!.modelMemoryPrompts[modelKey]) {
+                      session.multiModelMode!.modelMemoryPrompts[modelKey] = "";
+                    }
+                    if (
+                      !session.multiModelMode!.modelSummarizeIndexes[modelKey]
+                    ) {
+                      session.multiModelMode!.modelSummarizeIndexes[
+                        modelKey
+                      ] = 0;
+                    }
+                  });
+
+                  // 清理不再选中的模型数据
+                  const currentKeys = Object.keys(
+                    session.multiModelMode.modelMessages,
+                  );
+                  currentKeys.forEach((key) => {
+                    if (!selectedValues.includes(key)) {
+                      delete session.multiModelMode!.modelMessages[key];
+                      delete session.multiModelMode!.modelStats[key];
+                      delete session.multiModelMode!.modelMemoryPrompts[key];
+                      delete session.multiModelMode!.modelSummarizeIndexes[key];
+                    }
+                  });
                 });
 
-                // 清理不再选中的模型数据
-                const currentKeys = Object.keys(
-                  session.multiModelMode.modelMessages,
+                showToast(
+                  Locale.Chat.MultiModel.ModelsSelectedToast(
+                    selectedValues.length,
+                  ),
                 );
-                currentKeys.forEach((key) => {
-                  if (!selectedValues.includes(key)) {
-                    delete session.multiModelMode!.modelMessages[key];
-                    delete session.multiModelMode!.modelStats[key];
-                    delete session.multiModelMode!.modelMemoryPrompts[key];
-                    delete session.multiModelMode!.modelSummarizeIndexes[key];
-                  }
-                });
-              });
-
-              showToast(
-                Locale.Chat.MultiModel.ModelsSelectedToast(
-                  selectedValues.length,
-                ),
-              );
-            }}
-          />
-        )}
+              }}
+            />
+          )}
       </div>
     </>
   );
@@ -2374,7 +2429,7 @@ function ChatInner() {
   const isMobileScreen = useMobileScreen();
   const navigate = useNavigate();
   const { isCollapsed, toggleSideBarCollapse } = useDragSideBar();
-  const [attachImages, setAttachImages] = useState<string[]>([]);
+  const [attachments, setAttachments] = useState<ChatAttachment[]>([]);
   const [uploading, setUploading] = useState(false);
 
   // prompt hints
@@ -2446,7 +2501,7 @@ function ChatInner() {
   };
 
   const doSubmit = (userInput: string) => {
-    if (userInput.trim() === "" && isEmpty(attachImages)) return;
+    if (userInput.trim() === "" && isEmpty(attachments)) return;
     const matchCommand = chatCommands.match(userInput);
     if (matchCommand.matched) {
       setUserInput("");
@@ -2456,9 +2511,9 @@ function ChatInner() {
     }
     setIsLoading(true);
     chatStore
-      .onUserInput(userInput, attachImages)
+      .onUserInput(userInput, attachments)
       .then(() => setIsLoading(false));
-    setAttachImages([]);
+    setAttachments([]);
     chatStore.setLastInput(userInput);
     setUserInput("");
     setPromptHints([]);
@@ -2615,8 +2670,10 @@ function ChatInner() {
     deleteMessage(userMessage.id);
     setIsLoading(true);
     const textContent = getMessageTextContent(userMessage);
-    const images = getMessageImages(userMessage);
-    chatStore.onUserInput(textContent, images).then(() => setIsLoading(false));
+    const messageAttachments = getMessageAttachments(userMessage);
+    chatStore
+      .onUserInput(textContent, messageAttachments)
+      .then(() => setIsLoading(false));
     inputRef.current?.focus();
   };
 
@@ -2787,20 +2844,32 @@ function ChatInner() {
 
   // preview messages
   const renderMessages = useMemo(() => {
+    const previewContent =
+      attachments.length > 0
+        ? buildUserMessageContent(userInput, attachments)
+        : userInput;
+
     return context.concat(session.messages as RenderMessage[]).concat(
-      userInput.length > 0 && config.sendPreviewBubble
+      (userInput.length > 0 || attachments.length > 0) &&
+        config.sendPreviewBubble
         ? [
             {
               ...createMessage({
                 role: "user",
-                content: userInput,
+                content: previewContent,
               }),
               preview: true,
             },
           ]
         : [],
     );
-  }, [config.sendPreviewBubble, context, session.messages, userInput]);
+  }, [
+    attachments,
+    config.sendPreviewBubble,
+    context,
+    session.messages,
+    userInput,
+  ]);
 
   const [msgRenderIndex, _setMsgRenderIndex] = useState(
     Math.max(0, renderMessages.length - CHAT_PAGE_SIZE),
@@ -2930,90 +2999,47 @@ function ChatInner() {
 
   const handlePaste = useCallback(
     async (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
-      const currentModel = chatStore.currentSession().mask.modelConfig.model;
-      if (!isVisionModel(currentModel)) {
-        return;
-      }
       const items = (event.clipboardData || window.clipboardData).items;
       for (const item of items) {
         if (item.kind === "file" && item.type.startsWith("image/")) {
           event.preventDefault();
           const file = item.getAsFile();
           if (file) {
-            const images: string[] = [];
-            images.push(...attachImages);
-            images.push(
-              ...(await new Promise<string[]>((res, rej) => {
-                setUploading(true);
-                const imagesData: string[] = [];
-                uploadImageRemote(file)
-                  .then((dataUrl) => {
-                    imagesData.push(dataUrl);
-                    setUploading(false);
-                    res(imagesData);
-                  })
-                  .catch((e) => {
-                    setUploading(false);
-                    rej(e);
-                  });
-              })),
-            );
-            const imagesLength = images.length;
-
-            if (imagesLength > 3) {
-              images.splice(3, imagesLength - 3);
+            setUploading(true);
+            try {
+              const nextAttachment = await buildAttachmentFromFile(file);
+              setAttachments((prev) => [...prev, nextAttachment]);
+            } finally {
+              setUploading(false);
             }
-            setAttachImages(images);
           }
         }
       }
     },
-    [attachImages, chatStore],
+    [],
   );
 
-  async function uploadImage() {
-    const images: string[] = [];
-    images.push(...attachImages);
+  async function uploadAttachment() {
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept =
+      "image/png,image/jpeg,image/webp,image/heic,image/heif,text/plain,text/markdown,.md,.txt,.json,.csv,.log,.yaml,.yml,.xml";
+    fileInput.multiple = true;
+    fileInput.onchange = async (event: any) => {
+      const files = Array.from(event.target.files || []) as File[];
+      if (files.length === 0) return;
 
-    images.push(
-      ...(await new Promise<string[]>((res, rej) => {
-        const fileInput = document.createElement("input");
-        fileInput.type = "file";
-        fileInput.accept =
-          "image/png, image/jpeg, image/webp, image/heic, image/heif";
-        fileInput.multiple = true;
-        fileInput.onchange = (event: any) => {
-          setUploading(true);
-          const files = event.target.files;
-          const imagesData: string[] = [];
-          for (let i = 0; i < files.length; i++) {
-            const file = event.target.files[i];
-            uploadImageRemote(file)
-              .then((dataUrl) => {
-                imagesData.push(dataUrl);
-                if (
-                  imagesData.length === 3 ||
-                  imagesData.length === files.length
-                ) {
-                  setUploading(false);
-                  res(imagesData);
-                }
-              })
-              .catch((e) => {
-                setUploading(false);
-                rej(e);
-              });
-          }
-        };
-        fileInput.click();
-      })),
-    );
-
-    const imagesLength = images.length;
-    if (imagesLength > 3) {
-      images.splice(3, imagesLength - 3);
-    }
-    setAttachImages(images);
+      setUploading(true);
+      try {
+        const nextAttachments = await Promise.all(
+          files.map((file) => buildAttachmentFromFile(file)),
+        );
+        setAttachments((prev) => [...prev, ...nextAttachments]);
+      } finally {
+        setUploading(false);
+      }
+    };
+    fileInput.click();
   }
 
   // 快捷键 shortcut keys
@@ -3032,6 +3058,10 @@ function ChatInner() {
 
   // 切换多模型模式
   const toggleMultiModelMode = () => {
+    if (!config.enableMultiModel) {
+      return;
+    }
+
     chatStore.updateTargetSession(session, (session) => {
       if (!session.multiModelMode) {
         session.multiModelMode = {
@@ -3064,6 +3094,25 @@ function ChatInner() {
       showToast(Locale.Chat.MultiModel.DisableToast);
     }
   };
+
+  useEffect(() => {
+    if (!config.enableMultiModel) {
+      chatStore.updateTargetSession(session, (session) => {
+        if (!session.multiModelMode) {
+          return;
+        }
+        session.multiModelMode.enabled = false;
+        session.multiModelMode.selectedModels = [];
+        session.multiModelMode.modelMessages = {};
+        session.multiModelMode.modelStats = {};
+        session.multiModelMode.modelMemoryPrompts = {};
+        session.multiModelMode.modelSummarizeIndexes = {};
+      });
+      setShowMultiModelPanel(false);
+      setShowModelSelector(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config.enableMultiModel]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -3302,19 +3351,13 @@ function ChatInner() {
                                     let newContent:
                                       | string
                                       | MultimodalContent[] = newMessage;
-                                    const images = getMessageImages(message);
-                                    if (images.length > 0) {
-                                      newContent = [
-                                        { type: "text", text: newMessage },
-                                      ];
-                                      for (let i = 0; i < images.length; i++) {
-                                        newContent.push({
-                                          type: "image_url",
-                                          image_url: {
-                                            url: images[i],
-                                          },
-                                        });
-                                      }
+                                    const messageAttachments =
+                                      getMessageAttachments(message);
+                                    if (messageAttachments.length > 0) {
+                                      newContent = buildUserMessageContent(
+                                        newMessage,
+                                        messageAttachments,
+                                      );
                                     }
                                     chatStore.updateTargetSession(
                                       session,
@@ -3608,7 +3651,7 @@ function ChatInner() {
               />
 
               <MultiModelPanel
-                showPanel={showMultiModelPanel}
+                showPanel={config.enableMultiModel && showMultiModelPanel}
                 onClose={() => setShowMultiModelPanel(false)}
                 onOpenSelector={() => {
                   setShowMultiModelPanel(false);
@@ -3617,8 +3660,8 @@ function ChatInner() {
               />
 
               <ChatActions
-                uploadImage={uploadImage}
-                setAttachImages={setAttachImages}
+                uploadAttachment={uploadAttachment}
+                setAttachments={setAttachments}
                 setUploading={setUploading}
                 scrollToBottom={scrollToBottom}
                 hitBottom={hitBottom}
@@ -3653,7 +3696,7 @@ function ChatInner() {
               <label
                 className={clsx(styles["chat-input-panel-inner"], {
                   [styles["chat-input-panel-inner-attach"]]:
-                    attachImages.length !== 0,
+                    attachments.length !== 0,
                 })}
                 htmlFor="chat-input"
               >
@@ -3675,20 +3718,41 @@ function ChatInner() {
                     fontFamily: config.fontFamily,
                   }}
                 />
-                {attachImages.length != 0 && (
+                {attachments.length !== 0 && (
                   <div className={styles["attach-images"]}>
-                    {attachImages.map((image, index) => {
+                    {attachments.map((attachment, index) => {
+                      const isImage = attachment.type === "image";
+
                       return (
                         <div
-                          key={index}
-                          className={styles["attach-image"]}
-                          style={{ backgroundImage: `url("${image}")` }}
+                          key={attachment.id}
+                          className={clsx(styles["attach-item"], {
+                            [styles["attach-image"]]: isImage,
+                            [styles["attach-file"]]: !isImage,
+                          })}
+                          style={
+                            isImage && attachment.previewUrl
+                              ? {
+                                  backgroundImage: `url("${attachment.previewUrl}")`,
+                                }
+                              : undefined
+                          }
                         >
+                          {!isImage && (
+                            <div className={styles["attach-file-content"]}>
+                              <div className={styles["attach-file-name"]}>
+                                {attachment.name}
+                              </div>
+                              <div className={styles["attach-file-type"]}>
+                                {attachment.mimeType}
+                              </div>
+                            </div>
+                          )}
                           <div className={styles["attach-image-mask"]}>
                             <DeleteImageButton
                               deleteImage={() => {
-                                setAttachImages(
-                                  attachImages.filter((_, i) => i !== index),
+                                setAttachments(
+                                  attachments.filter((_, i) => i !== index),
                                 );
                               }}
                             />

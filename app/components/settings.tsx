@@ -1415,8 +1415,8 @@ export function Settings() {
             checkingUpdate
               ? Locale.Settings.Update.IsChecking
               : hasNewVersion
-                ? Locale.Settings.Update.FoundUpdate(remoteId ?? "ERROR")
-                : Locale.Settings.Update.IsLatest
+              ? Locale.Settings.Update.FoundUpdate(remoteId ?? "ERROR")
+              : Locale.Settings.Update.IsLatest
           }
         >
           {checkingUpdate ? (
@@ -1859,7 +1859,7 @@ export function Settings() {
                   config.provider as ServiceProvider
                 ] || false;
             const isCollapsed = config.isCustom
-              ? (collapsedCustomProviders[config.provider as string] ?? true) // 自定义服务商默认折叠
+              ? collapsedCustomProviders[config.provider as string] ?? true // 自定义服务商默认折叠
               : collapsedProviders[config.provider as ServiceProvider] || false;
 
             // 服务器环境变量是否对该服务商已配置
@@ -2259,6 +2259,12 @@ export function Settings() {
             config.update((config) => (config.modelConfig = modelConfig));
           }}
           showModelSelector={false}
+          enableMultiModel={config.enableMultiModel}
+          onToggleMultiModel={(enabled) => {
+            config.update((config) => {
+              config.enableMultiModel = enabled;
+            });
+          }}
         />
       </List>
     );

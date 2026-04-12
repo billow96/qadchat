@@ -113,7 +113,7 @@ const cn = {
       Masks: "所有助手",
       Clear: "清除聊天",
       Settings: "对话设置",
-      UploadImage: "上传图片",
+      UploadAttachment: "上传图片或文档",
       Search: "搜索功能",
       SearchOn: "搜索已启用",
       SearchOff: "搜索已禁用",
@@ -249,6 +249,11 @@ const cn = {
     Title: "设置",
     SubTitle: "所有设置选项",
     ShowPassword: "显示密码",
+    MultiModel: {
+      Title: "多模型功能",
+      SubTitle:
+        "控制聊天区是否显示多模型按钮。开启后，仍需在聊天区内单独启用会话级多模型模式。",
+    },
 
     Tab: {
       General: "通用配置",

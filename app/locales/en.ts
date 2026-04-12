@@ -116,7 +116,7 @@ const en: LocaleType = {
       Masks: "Assistants",
       Clear: "Clear Context",
       Settings: "Settings",
-      UploadImage: "Upload Images",
+      UploadAttachment: "Upload images or documents",
       Search: "Search",
       SearchOn: "Search Enabled",
       SearchOff: "Search Disabled",
@@ -255,6 +255,11 @@ const en: LocaleType = {
     Title: "Settings",
     SubTitle: "All Settings",
     ShowPassword: "ShowPassword",
+    MultiModel: {
+      Title: "Multi-model feature",
+      SubTitle:
+        "Controls whether the multi-model button is shown in the chat area. Even when enabled here, each chat still needs its own in-chat toggle.",
+    },
 
     Tab: {
       General: "General",

@@ -23,6 +23,8 @@ export function ModelConfigList(props: {
   updateConfig: (updater: (config: ModelConfig) => void) => void;
   showModelSelector?: boolean; // 新增参数控制是否显示模型选择器
   showGlobalOption?: boolean; // 新增参数控制是否显示"使用全局配置"选项
+  enableMultiModel?: boolean;
+  onToggleMultiModel?: (enabled: boolean) => void;
 }) {
   // 直接使用启用的模型，无需额外过滤
   const availableModels = useEnabledModels();
@@ -103,6 +105,22 @@ export function ModelConfigList(props: {
 
   return (
     <>
+      {typeof props.enableMultiModel === "boolean" &&
+        props.onToggleMultiModel && (
+          <ListItem
+            title={Locale.Settings.MultiModel.Title}
+            subTitle={Locale.Settings.MultiModel.SubTitle}
+          >
+            <input
+              aria-label={Locale.Settings.MultiModel.Title}
+              type="checkbox"
+              checked={props.enableMultiModel}
+              onChange={(e) =>
+                props.onToggleMultiModel?.(e.currentTarget.checked)
+              }
+            ></input>
+          </ListItem>
+        )}
       {props.showModelSelector && (
         <ListItem title={Locale.Settings.Model}>
           <Select

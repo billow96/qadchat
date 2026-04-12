@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { showToast } from "./components/ui-lib";
 import Locale from "./locales";
-import { RequestMessage } from "./client/api";
+import { ChatAttachment, RequestMessage } from "./client/api";
 import {
   REQUEST_TIMEOUT_MS,
   REQUEST_TIMEOUT_MS_FOR_THINKING,
@@ -238,12 +238,11 @@ export function getMessageTextContent(message: RequestMessage) {
   if (typeof message.content === "string") {
     return message.content;
   }
-  for (const c of message.content) {
-    if (c.type === "text") {
-      return c.text ?? "";
-    }
-  }
-  return "";
+  return message.content
+    .filter((c) => c.type === "text")
+    .map((c) => c.text ?? "")
+    .filter(Boolean)
+    .join("\n\n");
 }
 
 export function getMessageTextContentWithoutThinking(message: RequestMessage) {
@@ -252,12 +251,11 @@ export function getMessageTextContentWithoutThinking(message: RequestMessage) {
   if (typeof message.content === "string") {
     content = message.content;
   } else {
-    for (const c of message.content) {
-      if (c.type === "text") {
-        content = c.text ?? "";
-        break;
-      }
-    }
+    content = message.content
+      .filter((c) => c.type === "text")
+      .map((c) => c.text ?? "")
+      .filter(Boolean)
+      .join("\n\n");
   }
 
   // Remove thinking content between <think> and </think> tags
@@ -296,6 +294,68 @@ export function getMessageImages(message: RequestMessage): string[] {
     }
   }
   return urls;
+}
+
+const ATTACHMENT_TEXT_PREFIX = "[附件 ";
+const ATTACHMENT_TEXT_SUFFIX = "]";
+
+export function isAttachmentTextSegment(text?: string) {
+  return (
+    typeof text === "string" &&
+    text.startsWith(ATTACHMENT_TEXT_PREFIX) &&
+    text.includes(ATTACHMENT_TEXT_SUFFIX)
+  );
+}
+
+export function createAttachmentTextSegment(name: string, text: string) {
+  return `${ATTACHMENT_TEXT_PREFIX}${name}${ATTACHMENT_TEXT_SUFFIX}\n${text}`;
+}
+
+export function getMessageAttachments(
+  message: RequestMessage,
+): ChatAttachment[] {
+  if (typeof message.content === "string") {
+    return [];
+  }
+
+  const attachments: ChatAttachment[] = [];
+  let textIndex = 0;
+  let imageIndex = 0;
+
+  for (const part of message.content) {
+    if (part.type === "image_url" && part.image_url?.url) {
+      imageIndex += 1;
+      attachments.push({
+        id: `image-${imageIndex}-${part.image_url.url.slice(0, 16)}`,
+        type: "image",
+        name: `image-${imageIndex}`,
+        mimeType: "image/*",
+        data: part.image_url.url,
+        previewUrl: part.image_url.url,
+      });
+      continue;
+    }
+
+    if (part.type === "text" && isAttachmentTextSegment(part.text)) {
+      textIndex += 1;
+      const lines = (part.text ?? "").split("\n");
+      const header = lines.shift() ?? "";
+      const name = header
+        .replace(ATTACHMENT_TEXT_PREFIX, "")
+        .replace(ATTACHMENT_TEXT_SUFFIX, "")
+        .trim();
+
+      attachments.push({
+        id: `text-${textIndex}-${name}`,
+        type: "text",
+        name: name || `text-${textIndex}`,
+        mimeType: "text/plain",
+        data: lines.join("\n"),
+      });
+    }
+  }
+
+  return attachments;
 }
 
 export function isVisionModel(model: string) {
