@@ -515,6 +515,7 @@ export function stream(
   function animateResponseText() {
     if (finished || controller.signal.aborted) {
       responseText += remainText;
+      remainText = "";
       if (responseText?.length === 0) {
         options.onError?.(new Error("empty response from server"));
       }
@@ -656,11 +657,11 @@ export function stream(
           model: traceInfo.model,
           source: traceInfo.source,
           seq: traceSeq,
-          contentLength: (responseText + remainText).length,
-          remainLength: remainText.length,
+          contentLength: responseText.length,
+          remainLength: 0,
         });
       }
-      options.onFinish(responseText + remainText, responseRes); // 将res传递给onFinish
+      options.onFinish(responseText, responseRes); // 将res传递给onFinish
     }
   };
 
@@ -813,7 +814,7 @@ export function streamWithThink(
     modelHasReasoningCapability || chunkIsThinking || lastIsThinkingTagged;
 
   const syncDisplayText = () => {
-    displayText = responseText + remainText;
+    displayText = responseText;
   };
 
   if (traceInfo) {
@@ -980,6 +981,10 @@ export function streamWithThink(
         remainText += "\n</think>";
       }
 
+      responseText += remainText;
+      remainText = "";
+      syncDisplayText();
+
       if (!totalReplyLatency) {
         totalReplyLatency = Date.now() - startRequestTime;
       }
@@ -990,8 +995,7 @@ export function streamWithThink(
         );
       }
 
-      const finalContent = responseText + remainText;
-      syncDisplayText();
+      const finalContent = responseText;
       if (!completionTokens && finalContent) {
         completionTokens = Math.round(estimateTokenLength(finalContent));
       }
@@ -1005,7 +1009,7 @@ export function streamWithThink(
           source: traceInfo.source,
           seq: traceSeq,
           contentLength: finalContent.length,
-          remainLength: remainText.length,
+          remainLength: 0,
         });
       }
       options.onFinish(

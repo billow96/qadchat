@@ -1678,6 +1678,8 @@ export const useChatStore = createPersistStore(
           return;
         }
 
+        const retryMessage = session.messages[messageIndex];
+
         // 保存当前版本到版本数组
         get().updateTargetSession(session, (session) => {
           const currentMessage = session.messages[messageIndex];
@@ -1737,83 +1739,79 @@ export const useChatStore = createPersistStore(
             },
             nativeTools,
             onUpdate(message) {
-              get().updateTargetSession(session, (session) => {
-                const currentMessage = session.messages[messageIndex];
-                if (currentMessage) {
-                  const traceId = createStreamTraceId(
-                    session.id,
-                    currentMessage.id,
-                  );
-                  const traceMeta = getLatestMessageTrace(currentMessage.id);
-                  if (traceMeta) {
-                    recordStreamTraceStage("store_onUpdate", {
-                      traceId,
-                      sessionId: session.id,
-                      messageId: currentMessage.id,
-                      seq: traceMeta.seq,
-                      model: modelConfig.model,
-                      source: "retry",
-                      contentLength: traceMeta.contentLength,
-                      chunkLength: traceMeta.chunkLength,
-                      remainLength: traceMeta.remainLength,
-                    });
-                    recordStreamTraceStage("segment_update_start", {
-                      traceId,
-                      sessionId: session.id,
-                      messageId: currentMessage.id,
-                      seq: traceMeta.seq,
-                      model: modelConfig.model,
-                      source: "retry",
-                      contentLength: traceMeta.contentLength,
-                      chunkLength: traceMeta.chunkLength,
-                      remainLength: traceMeta.remainLength,
-                    });
-                  }
-                  currentMessage.streaming = true;
-                  currentMessage.content = message;
-                  currentMessage.segments = updateMessageSegmentsFromStream(
-                    currentMessage.segments,
-                    message,
-                    currentMessage.statistic?.reasoningLatency,
-                  );
-                  if (traceMeta) {
-                    recordStreamTraceStage("segment_update_done", {
-                      traceId,
-                      sessionId: session.id,
-                      messageId: currentMessage.id,
-                      seq: traceMeta.seq,
-                      model: modelConfig.model,
-                      source: "retry",
-                      contentLength: traceMeta.contentLength,
-                      chunkLength: traceMeta.chunkLength,
-                      remainLength: traceMeta.remainLength,
-                    });
-                  }
-                  // 重试时也使用流式优化器
-                  streamOptimizer.updateStreamingMessage(
-                    session.id,
-                    currentMessage.id,
-                    {
-                      content: message,
-                      streaming: true,
-                      segments: cloneMessageSegments(currentMessage.segments),
-                      _trace: traceMeta
-                        ? {
-                            traceId,
-                            seq: traceMeta.seq,
-                            model: modelConfig.model,
-                            source: "retry",
-                            sessionId: session.id,
-                            contentLength: traceMeta.contentLength,
-                            chunkLength: traceMeta.chunkLength,
-                            remainLength: traceMeta.remainLength,
-                          }
-                        : undefined,
-                    },
-                    session,
-                  );
-                }
-              });
+              if (!message) return;
+
+              const traceId = createStreamTraceId(session.id, retryMessage.id);
+              const traceMeta = getLatestMessageTrace(retryMessage.id);
+              if (traceMeta) {
+                recordStreamTraceStage("store_onUpdate", {
+                  traceId,
+                  sessionId: session.id,
+                  messageId: retryMessage.id,
+                  seq: traceMeta.seq,
+                  model: modelConfig.model,
+                  source: "retry",
+                  contentLength: traceMeta.contentLength,
+                  chunkLength: traceMeta.chunkLength,
+                  remainLength: traceMeta.remainLength,
+                });
+                recordStreamTraceStage("segment_update_start", {
+                  traceId,
+                  sessionId: session.id,
+                  messageId: retryMessage.id,
+                  seq: traceMeta.seq,
+                  model: modelConfig.model,
+                  source: "retry",
+                  contentLength: traceMeta.contentLength,
+                  chunkLength: traceMeta.chunkLength,
+                  remainLength: traceMeta.remainLength,
+                });
+              }
+
+              retryMessage.streaming = true;
+              retryMessage.content = message;
+              retryMessage.segments = updateMessageSegmentsFromStream(
+                retryMessage.segments,
+                message,
+                retryMessage.statistic?.reasoningLatency,
+              );
+
+              if (traceMeta) {
+                recordStreamTraceStage("segment_update_done", {
+                  traceId,
+                  sessionId: session.id,
+                  messageId: retryMessage.id,
+                  seq: traceMeta.seq,
+                  model: modelConfig.model,
+                  source: "retry",
+                  contentLength: traceMeta.contentLength,
+                  chunkLength: traceMeta.chunkLength,
+                  remainLength: traceMeta.remainLength,
+                });
+              }
+
+              streamOptimizer.updateStreamingMessage(
+                session.id,
+                retryMessage.id,
+                {
+                  content: message,
+                  streaming: true,
+                  segments: cloneMessageSegments(retryMessage.segments),
+                  _trace: traceMeta
+                    ? {
+                        traceId,
+                        seq: traceMeta.seq,
+                        model: modelConfig.model,
+                        source: "retry",
+                        sessionId: session.id,
+                        contentLength: traceMeta.contentLength,
+                        chunkLength: traceMeta.chunkLength,
+                        remainLength: traceMeta.remainLength,
+                      }
+                    : undefined,
+                },
+                session,
+              );
             },
             onFinish(message) {
               // 立即刷新待处理的更新
@@ -1839,33 +1837,52 @@ export const useChatStore = createPersistStore(
               if (finishedMessage) {
                 get().onNewMessage(finishedMessage, session);
               }
+              ChatControllerPool.remove(session.id, botMessageId);
             },
             onBeforeTool(tool: ChatMessageTool) {
               streamOptimizer.flushUpdates();
+              const enrichedTool = enrichToolWithMetadata(
+                tool,
+                nativeTools.metadata,
+              );
+              retryMessage.tools = upsertToolInMessage(
+                retryMessage.tools,
+                enrichedTool,
+              );
               get().updateTargetSession(session, (session) => {
                 const currentMessage = session.messages[messageIndex];
                 if (!currentMessage) return;
-                const enrichedTool = enrichToolWithMetadata(
-                  tool,
-                  nativeTools.metadata,
-                );
                 currentMessage.tools = upsertToolInMessage(
                   currentMessage.tools,
                   enrichedTool,
                 );
               });
+              streamOptimizer.updateStreamingMessage(
+                session.id,
+                retryMessage.id,
+                {
+                  content: retryMessage.content,
+                  tools: retryMessage.tools,
+                  segments: cloneMessageSegments(retryMessage.segments),
+                },
+                session,
+              );
             },
             onToolCallMessage(toolCallMessage) {
               streamOptimizer.flushUpdates();
+              retryMessage.toolCallContent = toolCallMessage.content || "";
+              retryMessage.segments = appendToolRoundSegments(
+                retryMessage.segments,
+                toolCallMessage.content || "",
+                toolCallMessage.tool_calls?.map((tool) => tool.id) ?? [],
+                retryMessage.statistic?.reasoningLatency,
+              );
               get().updateTargetSession(session, (session) => {
                 const currentMessage = session.messages[messageIndex];
                 if (!currentMessage) return;
-                currentMessage.toolCallContent = toolCallMessage.content || "";
-                currentMessage.segments = appendToolRoundSegments(
-                  currentMessage.segments,
-                  toolCallMessage.content || "",
-                  toolCallMessage.tool_calls?.map((tool) => tool.id) ?? [],
-                  currentMessage.statistic?.reasoningLatency,
+                currentMessage.toolCallContent = retryMessage.toolCallContent;
+                currentMessage.segments = cloneMessageSegments(
+                  retryMessage.segments,
                 );
                 currentMessage.content = serializeSegmentsToMessageContent(
                   currentMessage.segments,
@@ -1874,6 +1891,18 @@ export const useChatStore = createPersistStore(
             },
             onAfterTool(tool: ChatMessageTool) {
               streamOptimizer.flushUpdates();
+              retryMessage?.tools?.forEach((t, i, tools) => {
+                if (tool.id === t.id) {
+                  tools[i] = {
+                    ...tools[i],
+                    ...enrichToolWithMetadata(tool, nativeTools.metadata),
+                    response: tool.response,
+                    content:
+                      tool.content ??
+                      (tool.response ? stringifyToolResult(tool.response) : ""),
+                  };
+                }
+              });
               get().updateTargetSession(session, (session) => {
                 const currentMessage = session.messages[messageIndex];
                 if (!currentMessage?.tools) return;
@@ -1888,6 +1917,16 @@ export const useChatStore = createPersistStore(
                   },
                 );
               });
+              streamOptimizer.updateStreamingMessage(
+                session.id,
+                retryMessage.id,
+                {
+                  content: retryMessage.content,
+                  tools: retryMessage.tools,
+                  segments: cloneMessageSegments(retryMessage.segments),
+                },
+                session,
+              );
             },
             onError(error) {
               const isAborted = error.message.includes("aborted");
