@@ -425,6 +425,23 @@
   background: var(--second);
   border-radius: 6px;
   flex-shrink: 0;
+
+  .no-dark {
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 0;
+    flex-shrink: 0;
+  }
+
+  .no-dark svg {
+    display: block;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+  }
 }
 
 .model-details {

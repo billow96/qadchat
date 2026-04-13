@@ -216,6 +216,8 @@ async function buildAttachmentFromFile(file: File): Promise<ChatAttachment> {
 
 const MCPAction = ({ onTogglePanel }: { onTogglePanel: () => void }) => {
   const [count, setCount] = useState<number>(0);
+  const config = useAppConfig();
+  const mcpEnabled = config.mcpEnabled;
 
   useEffect(() => {
     const updateCount = async () => {
@@ -231,6 +233,7 @@ const MCPAction = ({ onTogglePanel }: { onTogglePanel: () => void }) => {
       text={`MCP${count ? ` (${count})` : ""}`}
       icon={<McpToolIcon />}
       dataAttribute="data-mcp-button"
+      active={mcpEnabled}
     />
   );
 };
@@ -998,6 +1001,7 @@ function ShortcutKeyPanel(props: { showPanel: boolean; onClose: () => void }) {
 function MCPPanel(props: { showPanel: boolean; onClose: () => void }) {
   const { showPanel, onClose } = props;
   const chatStore = useChatStore();
+  const config = useAppConfig();
   const [mcpClients, setMcpClients] = useState<MCPClient[]>([]);
   const [loading, setLoading] = useState(true);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -1059,7 +1063,7 @@ function MCPPanel(props: { showPanel: boolean; onClose: () => void }) {
 
   if (!showPanel) return null;
 
-  const mcpEnabled = chatStore.getSessionMcpEnabled();
+  const mcpEnabled = config.mcpEnabled;
 
   return (
     <div ref={panelRef} className={styles["mcp-panel"]}>
@@ -1109,9 +1113,8 @@ function MCPPanel(props: { showPanel: boolean; onClose: () => void }) {
             ) : (
               <div className={styles["mcp-client-list"]}>
                 {mcpClients.map((client) => {
-                  const isEnabled = chatStore.getSessionMcpClientStatus(
-                    client.clientId,
-                  );
+                  const isEnabled =
+                    config.mcpEnabledClients?.[client.clientId] ?? true;
                   const toolCount = client.tools?.tools?.length || 0;
 
                   return (
@@ -1475,13 +1478,16 @@ export function ChatAction(props: {
   icon: JSX.Element;
   onClick: () => void;
   dataAttribute?: string;
+  active?: boolean;
 }) {
   const [showTooltip, setShowTooltip] = useState(false);
 
   return (
     <div className={styles["chat-action-wrapper"]}>
       <button
-        className={clsx(styles["chat-input-action"], "clickable")}
+        className={clsx(styles["chat-input-action"], "clickable", {
+          [styles["chat-input-action-active"]]: props.active,
+        })}
         onClick={props.onClick}
         type="button"
         onMouseEnter={() => setShowTooltip(true)}
@@ -1489,6 +1495,7 @@ export function ChatAction(props: {
         {...(props.dataAttribute && { [props.dataAttribute]: true })}
       >
         <div className={styles["icon"]}>{props.icon}</div>
+        {props.active && <span className={styles["chat-action-indicator"]} />}
       </button>
       {showTooltip && (
         <div className={styles["chat-action-tooltip"]}>{props.text}</div>

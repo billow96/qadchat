@@ -103,6 +103,52 @@ function formatToolResponseContent(response: any): string {
   }
 }
 
+function stripHtmlTags(html: string) {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function formatErrorResponseText(
+  status: number,
+  statusText: string,
+  contentType: string | null,
+  bodyText: string,
+) {
+  const responseTexts: string[] = [];
+
+  if (status === 401) {
+    responseTexts.push(Locale.Error.Unauthorized);
+  } else if (status > 0) {
+    responseTexts.push(
+      `Request failed (${status}${statusText ? ` ${statusText}` : ""})`,
+    );
+  }
+
+  if (contentType?.includes("text/html")) {
+    const plainText = stripHtmlTags(bodyText);
+    if (
+      bodyText.includes("__next_error__") ||
+      bodyText.includes("NEXT_NOT_FOUND") ||
+      plainText.includes("页面未找到") ||
+      /\b404\b/.test(plainText)
+    ) {
+      responseTexts.push(
+        "上游返回了错误页面或不存在的接口地址，请检查当前请求路径或服务端路由配置。",
+      );
+    } else if (plainText) {
+      responseTexts.push(plainText.slice(0, 1000));
+    }
+  } else if (bodyText) {
+    responseTexts.push(bodyText);
+  }
+
+  return responseTexts.filter(Boolean).join("\n\n");
+}
+
 function hasToolCallsFinishReason(text: string) {
   try {
     const json = JSON.parse(text);
@@ -609,22 +655,17 @@ export function stream(
             ?.startsWith(EventStreamContentType) ||
           res.status !== 200
         ) {
-          const responseTexts = [responseText];
           let extraInfo = await res.clone().text();
           try {
             const resJson = await res.clone().json();
             extraInfo = prettyObject(resJson);
           } catch {}
-
-          if (res.status === 401) {
-            responseTexts.push(Locale.Error.Unauthorized);
-          }
-
-          if (extraInfo) {
-            responseTexts.push(extraInfo);
-          }
-
-          responseText = responseTexts.join("\n\n");
+          responseText = formatErrorResponseText(
+            res.status,
+            res.statusText,
+            contentType,
+            extraInfo,
+          );
 
           return finish();
         }
@@ -916,22 +957,17 @@ export function streamWithThink(
             ?.startsWith(EventStreamContentType) ||
           res.status !== 200
         ) {
-          const responseTexts = [responseText];
           let extraInfo = await res.clone().text();
           try {
             const resJson = await res.clone().json();
             extraInfo = prettyObject(resJson);
           } catch {}
-
-          if (res.status === 401) {
-            responseTexts.push(Locale.Error.Unauthorized);
-          }
-
-          if (extraInfo) {
-            responseTexts.push(extraInfo);
-          }
-
-          responseText = responseTexts.join("\n\n");
+          responseText = formatErrorResponseText(
+            res.status,
+            res.statusText,
+            contentType,
+            extraInfo,
+          );
 
           return finish();
         }

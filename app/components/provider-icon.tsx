@@ -28,6 +28,47 @@ import BotIconMoonshot from "../icons/llm-icons/moonshot.svg";
 import BotIconQwen from "../icons/llm-icons/qwen.svg";
 import BotIconGrok from "../icons/llm-icons/grok.svg";
 import BotIconDoubao from "../icons/llm-icons/doubao.svg";
+import BotIconMinimax from "../icons/llm-icons/minimax.svg";
+import BotIconZAI from "../icons/llm-icons/zai.svg";
+
+const MONO_ICON_STYLE: React.CSSProperties = {
+  color: "#111111",
+};
+
+function renderOpenAIAvatar(size: number) {
+  return (
+    <OpenAI.Avatar
+      size={size}
+      style={{
+        background: "#000000",
+        color: "#ffffff",
+      }}
+    />
+  );
+}
+
+function renderMonochromeIcon(
+  IconComponent: React.ComponentType<{ width?: number; height?: number }>,
+  size: number,
+) {
+  return (
+    <div
+      className="no-dark"
+      style={{
+        width: size,
+        height: size,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "#111111",
+        lineHeight: 0,
+        flexShrink: 0,
+      }}
+    >
+      <IconComponent width={size} height={size} />
+    </div>
+  );
+}
 
 export function resolveProviderForModel(
   provider: ServiceProvider | string,
@@ -49,6 +90,18 @@ export function resolveProviderForModel(
   return provider as ServiceProvider;
 }
 
+function getModelMatchName(modelName?: string) {
+  const lowerModelName = modelName?.toLowerCase() || "";
+  const rightPart = lowerModelName.includes("/")
+    ? lowerModelName.split("/").pop() || lowerModelName
+    : lowerModelName;
+
+  return {
+    full: lowerModelName,
+    match: rightPart,
+  };
+}
+
 // 根据模型名称判断应该使用的图标类型
 function getModelIconType(
   provider: ServiceProvider,
@@ -63,28 +116,62 @@ function getModelIconType(
   | "qwen"
   | "wenxin"
   | "doubao"
+  | "minimax"
+  | "zai"
   | "llama"
   | "deepseek"
   | "default" {
   if (!modelName) return "default";
 
-  const lowerModelName = modelName.toLowerCase();
+  const { full: lowerModelName, match: matchedModelName } =
+    getModelMatchName(modelName);
 
   // 跨服务商模型识别 - 优先级最高（SiliconFlow等聚合服务）
-  if (lowerModelName.includes("llama")) return "llama";
-  if (lowerModelName.includes("deepseek")) return "deepseek";
+  if (matchedModelName.includes("llama") || lowerModelName.includes("llama"))
+    return "llama";
   if (
+    matchedModelName.includes("deepseek") ||
+    lowerModelName.includes("deepseek")
+  )
+    return "deepseek";
+  if (
+    matchedModelName.includes("qwen") ||
+    matchedModelName.includes("qwq") ||
+    matchedModelName.includes("qvq") ||
     lowerModelName.includes("qwen") ||
     lowerModelName.includes("qwq") ||
     lowerModelName.includes("qvq")
   )
     return "qwen";
-  if (lowerModelName.includes("claude")) return "claude";
-  if (lowerModelName.includes("gemini")) return "gemini";
-  if (lowerModelName.includes("gpt-4") || lowerModelName.includes("chatgpt-4o"))
-    return "gpt4";
-  if (lowerModelName.includes("gpt-3")) return "gpt3";
+  if (matchedModelName.includes("glm") || lowerModelName.includes("glm"))
+    return "zai";
   if (
+    matchedModelName.includes("z.ai") ||
+    matchedModelName.includes("zai") ||
+    lowerModelName.includes("z.ai") ||
+    lowerModelName.includes("zai")
+  )
+    return "zai";
+  if (
+    matchedModelName.includes("minimax") ||
+    lowerModelName.includes("minimax")
+  )
+    return "minimax";
+  if (matchedModelName.includes("claude")) return "claude";
+  if (matchedModelName.includes("gemini")) return "gemini";
+  if (
+    matchedModelName.includes("gpt-4") ||
+    matchedModelName.includes("chatgpt-4o") ||
+    lowerModelName.includes("gpt-4") ||
+    lowerModelName.includes("chatgpt-4o")
+  )
+    return "gpt4";
+  if (matchedModelName.includes("gpt-3") || lowerModelName.includes("gpt-3"))
+    return "gpt3";
+  if (
+    matchedModelName.includes("o1") ||
+    matchedModelName.includes("o3") ||
+    matchedModelName.includes("o4") ||
     lowerModelName.includes("o1") ||
     lowerModelName.includes("o3") ||
     lowerModelName.includes("o4")
@@ -112,13 +199,22 @@ function getModelIconType(
     // 其他嵌入模型使用默认图标
     return "default";
   }
-  if (lowerModelName.includes("doubao") || lowerModelName.includes("豆包"))
+  if (
+    matchedModelName.includes("doubao") ||
+    lowerModelName.includes("doubao") ||
+    lowerModelName.includes("豆包")
+  )
     return "doubao";
-  if (lowerModelName.includes("kimi") || lowerModelName.includes("moonshot"))
+  if (
+    matchedModelName.includes("kimi") ||
+    lowerModelName.includes("kimi") ||
+    lowerModelName.includes("moonshot")
+  )
     return "kimi";
   if (lowerModelName.includes("wenxin") || lowerModelName.includes("文心"))
     return "wenxin";
-  if (lowerModelName.includes("grok")) return "default"; // Grok 暂时使用默认图标
+  if (matchedModelName.includes("grok") || lowerModelName.includes("grok"))
+    return "default";
 
   // 服务商特定模型判断 - 作为后备
   if (provider === ServiceProvider.OpenAI) {
@@ -191,30 +287,13 @@ export function ProviderIcon({
   // 根据模型类型显示相应的图标
   switch (iconType) {
     case "gpt3":
-      // GPT-3: 紫色背景 + 白色线条
-      return (
-        <OpenAI.Avatar
-          {...iconProps}
-          type="gpt3"
-          style={{ color: "#ffffff" }}
-        />
-      );
+      return renderOpenAIAvatar(size);
 
     case "gpt4":
-      // GPT-4: 绿色背景 + 白色线条
-      return (
-        <OpenAI.Avatar
-          {...iconProps}
-          type="gpt4"
-          style={{ color: "#ffffff" }}
-        />
-      );
+      return renderOpenAIAvatar(size);
 
     case "o1":
-      // O1: 蓝色背景 + 白色线条
-      return (
-        <OpenAI.Avatar {...iconProps} type="o1" style={{ color: "#ffffff" }} />
-      );
+      return renderOpenAIAvatar(size);
 
     case "claude":
       return <Claude.Color {...iconProps} />;
@@ -234,6 +313,12 @@ export function ProviderIcon({
     case "doubao":
       return <Doubao.Color {...iconProps} />;
 
+    case "minimax":
+      return renderMonochromeIcon(BotIconMinimax, size);
+
+    case "zai":
+      return renderMonochromeIcon(BotIconZAI, size);
+
     case "llama":
       return <Meta.Color {...iconProps} />;
 
@@ -244,8 +329,7 @@ export function ProviderIcon({
       // 如果没有具体模型信息，则根据服务商显示图标
       switch (actualProvider) {
         case ServiceProvider.OpenAI:
-          // OpenAI 默认显示彩色背景 + 白色线条的 Avatar
-          return <OpenAI.Avatar {...iconProps} style={{ color: "#ffffff" }} />;
+          return renderOpenAIAvatar(size);
 
         case ServiceProvider.Google:
           // Google 主要提供 Gemini 模型，显示 Gemini 彩色图标
@@ -272,19 +356,14 @@ export function ProviderIcon({
           return <DeepSeek.Color {...iconProps} />;
 
         case ServiceProvider.XAI:
-          // xAI 主要提供 Grok 模型，显示 Grok 图标（使用品牌色）
-          return <Grok {...iconProps} style={{ color: Grok.colorPrimary }} />;
+          return <Grok {...iconProps} style={MONO_ICON_STYLE} />;
 
         case ServiceProvider.SiliconFlow:
           // SiliconFlow 是聚合服务，显示 SiliconCloud 彩色图标
           return <SiliconCloud.Color {...iconProps} />;
 
         default:
-          return (
-            <div className="no-dark">
-              <BotIconOpenAI width={size} height={size} />
-            </div>
-          );
+          return renderOpenAIAvatar(size);
       }
   }
 }
@@ -298,9 +377,11 @@ function ModelAvatar({
   size?: number;
 }) {
   let LlmIcon = BotIconDefault;
+  let useOpenAIAvatar = false;
 
   if (modelName) {
-    const lowerModelName = modelName.toLowerCase();
+    const { full: lowerModelName, match: matchedModelName } =
+      getModelMatchName(modelName);
 
     // 嵌入模型的特殊处理
     if (lowerModelName.includes("embedding")) {
@@ -328,6 +409,7 @@ function ModelAvatar({
         lowerModelName.includes("ada")
       ) {
         LlmIcon = BotIconOpenAI;
+        useOpenAIAvatar = true;
       }
       // 其他嵌入模型使用默认图标
       else {
@@ -336,53 +418,88 @@ function ModelAvatar({
     }
     // 其他模型的识别逻辑
     else if (
-      lowerModelName.startsWith("gpt") ||
-      lowerModelName.startsWith("chatgpt") ||
-      lowerModelName.startsWith("dall-e") ||
-      lowerModelName.startsWith("dalle") ||
-      lowerModelName.startsWith("o1") ||
-      lowerModelName.startsWith("o3") ||
-      lowerModelName.startsWith("o4")
+      matchedModelName.startsWith("gpt") ||
+      matchedModelName.startsWith("chatgpt") ||
+      matchedModelName.startsWith("dall-e") ||
+      matchedModelName.startsWith("dalle") ||
+      matchedModelName.startsWith("o1") ||
+      matchedModelName.startsWith("o3") ||
+      matchedModelName.startsWith("o4")
     ) {
       LlmIcon = BotIconOpenAI;
-    } else if (lowerModelName.startsWith("gemini")) {
+      useOpenAIAvatar = true;
+    } else if (matchedModelName.startsWith("gemini")) {
       LlmIcon = BotIconGemini;
-    } else if (lowerModelName.startsWith("gemma")) {
+    } else if (matchedModelName.startsWith("gemma")) {
       LlmIcon = BotIconGemma;
-    } else if (lowerModelName.startsWith("claude")) {
+    } else if (matchedModelName.startsWith("claude")) {
       LlmIcon = BotIconClaude;
-    } else if (lowerModelName.includes("llama")) {
+    } else if (
+      matchedModelName.includes("minimax") ||
+      lowerModelName.includes("minimax")
+    ) {
+      LlmIcon = BotIconMinimax;
+    } else if (
+      matchedModelName.includes("glm") ||
+      matchedModelName.includes("z.ai") ||
+      matchedModelName.includes("zai") ||
+      lowerModelName.includes("glm")
+    ) {
+      LlmIcon = BotIconZAI;
+    } else if (
+      matchedModelName.includes("llama") ||
+      lowerModelName.includes("llama")
+    ) {
       LlmIcon = BotIconMeta;
     } else if (
-      lowerModelName.startsWith("mixtral") ||
-      lowerModelName.startsWith("codestral")
+      matchedModelName.startsWith("mixtral") ||
+      matchedModelName.startsWith("codestral")
     ) {
       LlmIcon = BotIconMistral;
-    } else if (lowerModelName.includes("deepseek")) {
+    } else if (
+      matchedModelName.includes("deepseek") ||
+      lowerModelName.includes("deepseek")
+    ) {
       LlmIcon = BotIconDeepseek;
     } else if (
-      lowerModelName.startsWith("moonshot") ||
-      lowerModelName.startsWith("kimi")
+      matchedModelName.startsWith("moonshot") ||
+      matchedModelName.startsWith("kimi") ||
+      lowerModelName.includes("moonshotai/")
     ) {
       LlmIcon = BotIconMoonshot;
     } else if (
-      lowerModelName.startsWith("qwen") ||
-      lowerModelName.startsWith("qwq") ||
-      lowerModelName.startsWith("qvq")
+      matchedModelName.startsWith("qwen") ||
+      matchedModelName.startsWith("qwq") ||
+      matchedModelName.startsWith("qvq")
     ) {
       LlmIcon = BotIconQwen;
-    } else if (lowerModelName.startsWith("grok")) {
+    } else if (matchedModelName.startsWith("grok")) {
       LlmIcon = BotIconGrok;
     } else if (
-      lowerModelName.startsWith("doubao") ||
-      lowerModelName.startsWith("ep-")
+      matchedModelName.startsWith("doubao") ||
+      matchedModelName.startsWith("ep-")
     ) {
       LlmIcon = BotIconDoubao;
     }
   }
 
+  if (useOpenAIAvatar) {
+    return renderOpenAIAvatar(size);
+  }
+
   return (
-    <div className="no-dark">
+    <div
+      className="no-dark"
+      style={{
+        width: size,
+        height: size,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        lineHeight: 0,
+        flexShrink: 0,
+      }}
+    >
       <LlmIcon width={size} height={size} />
     </div>
   );

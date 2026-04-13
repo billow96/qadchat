@@ -310,13 +310,16 @@ export function PreCode(props: { children: any }) {
     const htmlDom = ref.current.querySelector("code.language-html");
     const refText = ref.current.querySelector("code")?.innerText;
     if (htmlDom) {
-      setHtmlCode((htmlDom as HTMLElement).innerText);
+      const html = (htmlDom as HTMLElement).innerText;
+      setHtmlCode(isErrorHtmlDocument(html) ? "" : html);
     } else if (
       refText?.startsWith("<!DOCTYPE") ||
       refText?.startsWith("<svg") ||
       refText?.startsWith("<?xml")
     ) {
-      setHtmlCode(refText);
+      setHtmlCode(isErrorHtmlDocument(refText) ? "" : refText);
+    } else {
+      setHtmlCode("");
     }
   }, 600);
 
@@ -486,6 +489,26 @@ function tryWrapHtmlCode(text: string) {
         return !quoteEnd ? bodyEnd + space + htmlEnd + "\n```\n" : match;
       },
     );
+}
+
+function isErrorHtmlDocument(text: string) {
+  const normalized = text.trim().toLowerCase();
+
+  if (
+    !normalized.startsWith("<!doctype html") &&
+    !normalized.startsWith("<html")
+  ) {
+    return false;
+  }
+
+  return (
+    normalized.includes('id="__next_error__"') ||
+    normalized.includes('name="next-error"') ||
+    normalized.includes("next_not_found") ||
+    normalized.includes(">404<") ||
+    normalized.includes("页面未找到") ||
+    normalized.includes("page not found")
+  );
 }
 
 function formatThinkText(text: string): {

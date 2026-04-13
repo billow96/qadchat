@@ -25,10 +25,159 @@ import {
 import { SideBar, useDragSideBar } from "./sidebar";
 import { useAppConfig } from "../store/config";
 import { getClientConfig } from "../config/client";
-import { type ClientApi, getClientApi } from "../client/api";
+import {
+  type ClientApi,
+  getClientApi,
+  normalizeProviderName,
+} from "../client/api";
 import { useAccessStore } from "../store";
 import clsx from "clsx";
 import { initializeMcpSystem } from "../mcp/actions";
+import { ServiceProvider } from "../constant";
+import { useEnabledModels } from "../utils/hooks";
+
+function providerKeyOf(model: {
+  provider?: { id?: string; providerName?: string };
+}) {
+  return model.provider?.id || model.provider?.providerName || "";
+}
+
+function isModelMatched(
+  model: { name: string; provider?: { id?: string; providerName?: string } },
+  targetModel: string,
+  targetProvider?: string,
+) {
+  if (model.name !== targetModel) return false;
+  if (!targetProvider) return true;
+
+  const providerKey = providerKeyOf(model);
+  if (providerKey === targetProvider) return true;
+
+  return (
+    normalizeProviderName(providerKey) === normalizeProviderName(targetProvider)
+  );
+}
+
+function pickAutoCompressModel(
+  models: Array<{
+    name: string;
+    provider?: { id?: string; providerName?: string };
+    isDefault?: boolean;
+  }>,
+  selectedChatModel?: {
+    name: string;
+    provider?: { id?: string; providerName?: string };
+  },
+) {
+  if (models.length === 0) return null;
+
+  const preferred =
+    models.find(
+      (model) =>
+        model.name !== selectedChatModel?.name ||
+        providerKeyOf(model) !== providerKeyOf(selectedChatModel || {}),
+    ) ||
+    selectedChatModel ||
+    models.find((model) => model.isDefault) ||
+    models[0];
+
+  return preferred || null;
+}
+
+function syncResolvedModelsToConfig(
+  configStore: ReturnType<typeof useAppConfig.getState>,
+  models: Array<{
+    name: string;
+    provider?: { id?: string; providerName?: string };
+    isDefault?: boolean;
+  }>,
+) {
+  if (models.length === 0) return;
+
+  const currentConfig = configStore.modelConfig;
+  const preferredChatModel =
+    models.find((model) => model.isDefault) || models[0];
+  const currentChatModelExists = models.some((model) =>
+    isModelMatched(
+      model,
+      currentConfig.model,
+      currentConfig.providerName as string | undefined,
+    ),
+  );
+
+  const shouldReplaceChatModel =
+    !currentConfig.model ||
+    !currentChatModelExists ||
+    (currentConfig.model === "gpt-4o-mini" && models.length > 0);
+
+  const resolvedChatModel = shouldReplaceChatModel
+    ? preferredChatModel
+    : models.find((model) =>
+        isModelMatched(
+          model,
+          currentConfig.model,
+          currentConfig.providerName as string | undefined,
+        ),
+      ) || preferredChatModel;
+
+  const currentCompressExists =
+    !!currentConfig.compressModel &&
+    models.some((model) =>
+      isModelMatched(
+        model,
+        currentConfig.compressModel,
+        currentConfig.compressProviderName as string | undefined,
+      ),
+    );
+
+  const shouldReplaceCompressModel =
+    !currentConfig.compressModel ||
+    !currentCompressExists ||
+    currentConfig.compressModel === "gpt-4o-mini";
+
+  const resolvedCompressModel = shouldReplaceCompressModel
+    ? pickAutoCompressModel(models, resolvedChatModel)
+    : models.find((model) =>
+        isModelMatched(
+          model,
+          currentConfig.compressModel,
+          currentConfig.compressProviderName as string | undefined,
+        ),
+      ) || pickAutoCompressModel(models, resolvedChatModel);
+
+  const nextChatModel = resolvedChatModel?.name || "";
+  const nextChatProvider = (providerKeyOf(resolvedChatModel || {}) ||
+    resolvedChatModel?.provider?.providerName ||
+    ServiceProvider.OpenAI) as string;
+  const nextCompressModel = resolvedCompressModel?.name || "";
+  const nextCompressProvider =
+    providerKeyOf(resolvedCompressModel || {}) ||
+    resolvedCompressModel?.provider?.providerName ||
+    "";
+
+  const chatModelChanged =
+    nextChatModel !== currentConfig.model ||
+    nextChatProvider !== String(currentConfig.providerName || "");
+  const compressModelChanged =
+    nextCompressModel !== String(currentConfig.compressModel || "") ||
+    nextCompressProvider !== String(currentConfig.compressProviderName || "");
+
+  if (!chatModelChanged && !compressModelChanged) {
+    return;
+  }
+
+  configStore.update((config) => {
+    if (chatModelChanged && resolvedChatModel) {
+      config.modelConfig.model = nextChatModel as any;
+      config.modelConfig.providerName = nextChatProvider as any;
+    }
+
+    if (compressModelChanged && resolvedCompressModel) {
+      config.modelConfig.compressModel = nextCompressModel;
+      config.modelConfig.compressProviderName = nextCompressProvider;
+    }
+  });
+}
 
 export function Loading(props: { noLogo?: boolean }) {
   return (
@@ -217,6 +366,7 @@ function Screen() {
 
 export function useLoadData() {
   const config = useAppConfig();
+  const enabledModels = useEnabledModels();
 
   const api: ClientApi = getClientApi(config.modelConfig.providerName);
 
@@ -225,12 +375,18 @@ export function useLoadData() {
       try {
         const models = await api.llm.models();
         config.mergeModels(models);
+        syncResolvedModelsToConfig(useAppConfig.getState(), models);
       } catch (e) {
         console.error("[Config] failed to fetch models", e);
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (enabledModels.length === 0) return;
+    syncResolvedModelsToConfig(useAppConfig.getState(), enabledModels);
+  }, [enabledModels]);
 }
 
 export function Home() {

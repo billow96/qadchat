@@ -170,6 +170,7 @@
   }
 
   .chat-input-action {
+    position: relative;
     display: inline-flex;
     border-radius: 20px;
     font-size: 12px;
@@ -202,6 +203,22 @@
       outline: 2px solid var(--primary);
       outline-offset: 1px;
     }
+  }
+
+  .chat-input-action-active {
+    border-color: rgba(22, 163, 74, 0.35);
+  }
+
+  .chat-action-indicator {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #16a34a;
+    box-shadow: 0 0 0 2px var(--white);
+    pointer-events: none;
   }
 
   .token-counter-button {

@@ -749,8 +749,8 @@ export const useChatStore = createPersistStore(
         const api: ClientApi = getClientApi(modelConfig.providerName);
         const nativeTools = await getEnabledMcpNativeTools(
           modelConfig.model,
-          session.mcpEnabled ?? false,
-          session.mcpEnabledClients,
+          useAppConfig.getState().mcpEnabled ?? false,
+          useAppConfig.getState().mcpEnabledClients,
           resolveNativeToolProvider(modelConfig.providerName),
         );
 
@@ -1018,8 +1018,8 @@ export const useChatStore = createPersistStore(
           const api: ClientApi = getClientApi(modelConfig.providerName);
           const nativeTools = await getEnabledMcpNativeTools(
             modelConfig.model,
-            session.mcpEnabled ?? false,
-            session.mcpEnabledClients,
+            useAppConfig.getState().mcpEnabled ?? false,
+            useAppConfig.getState().mcpEnabledClients,
             resolveNativeToolProvider(modelConfig.providerName),
           );
 
@@ -1325,12 +1325,13 @@ export const useChatStore = createPersistStore(
           model = compressDecision.model;
           providerName = compressDecision.providerName;
         } else {
-          // 即使没有设置摘要模型，也要确保使用全局配置
+          // 如果没有明确的摘要模型，兜底使用当前对话模型
           const sessionCompressConfig = getSessionCompressModelConfig(
             session.mask,
           );
-          model = sessionCompressConfig.model;
-          providerName = sessionCompressConfig.providerName;
+          model = sessionCompressConfig.model || modelConfig.model;
+          providerName =
+            sessionCompressConfig.providerName || modelConfig.providerName;
         }
 
         const api: ClientApi = getClientApi(providerName as ServiceProvider);
@@ -1340,10 +1341,15 @@ export const useChatStore = createPersistStore(
 
         // should summarize topic after chating more than 50 words
         const SUMMARIZE_MIN_LEN = 50;
+        const isFirstTopicGeneration =
+          config.enableAutoGenerateTitle &&
+          session.topic === DEFAULT_TOPIC &&
+          messages.filter((msg) => !msg.isError).length >= 2;
         if (
           (config.enableAutoGenerateTitle &&
             session.topic === DEFAULT_TOPIC &&
-            countMessages(messages) >= SUMMARIZE_MIN_LEN) ||
+            (countMessages(messages) >= SUMMARIZE_MIN_LEN ||
+              isFirstTopicGeneration)) ||
           refreshTitle
         ) {
           const startIndex = Math.max(
@@ -1531,8 +1537,8 @@ export const useChatStore = createPersistStore(
         const api: ClientApi = getClientApi(modelConfig.providerName);
         const nativeTools = await getEnabledMcpNativeTools(
           modelConfig.model,
-          session.mcpEnabled ?? false,
-          session.mcpEnabledClients,
+          useAppConfig.getState().mcpEnabled ?? false,
+          useAppConfig.getState().mcpEnabledClients,
           resolveNativeToolProvider(modelConfig.providerName),
         );
 
@@ -1679,39 +1685,36 @@ export const useChatStore = createPersistStore(
 
       /** 更新当前对话的 MCP 客户端启用状态 */
       updateSessionMcpClient(clientId: string, enabled: boolean) {
-        const session = get().currentSession();
-        get().updateTargetSession(session, (session) => {
-          if (!session.mcpEnabledClients) {
-            session.mcpEnabledClients = {};
-          }
-          session.mcpEnabledClients[clientId] = enabled;
-        });
+        useAppConfig.setState((state) => ({
+          ...state,
+          mcpEnabledClients: {
+            ...(state.mcpEnabledClients ?? {}),
+            [clientId]: enabled,
+          },
+        }));
       },
 
       /** 获取当前对话的 MCP 客户端启用状态 */
       getSessionMcpClientStatus(clientId: string): boolean {
-        const session = get().currentSession();
-        return session.mcpEnabledClients?.[clientId] ?? true; // 默认启用
+        return useAppConfig.getState().mcpEnabledClients?.[clientId] ?? true;
       },
 
       /** 获取当前对话中所有 MCP 客户端的启用状态 */
       getSessionMcpClients(): Record<string, boolean> {
-        const session = get().currentSession();
-        return session.mcpEnabledClients ?? {};
+        return useAppConfig.getState().mcpEnabledClients ?? {};
       },
 
       /** 更新当前对话的 MCP 功能总开关 */
       updateSessionMcpEnabled(enabled: boolean) {
-        const session = get().currentSession();
-        get().updateTargetSession(session, (session) => {
-          session.mcpEnabled = enabled;
-        });
+        useAppConfig.setState((state) => ({
+          ...state,
+          mcpEnabled: enabled,
+        }));
       },
 
       /** 获取当前对话的 MCP 功能总开关状态 */
       getSessionMcpEnabled(): boolean {
-        const session = get().currentSession();
-        return session.mcpEnabled ?? false; // 默认关闭
+        return useAppConfig.getState().mcpEnabled ?? false;
       },
 
       /** 清理资源 */

@@ -33,47 +33,56 @@ export function AvatarPicker(props: {
 
 function inferProviderFromModel(model?: string): ServiceProvider {
   const modelName = model?.toLowerCase() || "";
+  const matchedModelName = modelName.includes("/")
+    ? modelName.split("/").pop() || modelName
+    : modelName;
 
   if (
-    modelName.startsWith("gpt") ||
-    modelName.startsWith("chatgpt") ||
-    modelName.startsWith("dall-e") ||
-    modelName.startsWith("dalle") ||
-    modelName.startsWith("o1") ||
-    modelName.startsWith("o3") ||
-    modelName.startsWith("o4") ||
+    matchedModelName.startsWith("gpt") ||
+    matchedModelName.startsWith("chatgpt") ||
+    matchedModelName.startsWith("dall-e") ||
+    matchedModelName.startsWith("dalle") ||
+    matchedModelName.startsWith("o1") ||
+    matchedModelName.startsWith("o3") ||
+    matchedModelName.startsWith("o4") ||
     modelName.includes("text-embedding") ||
     modelName.includes("ada")
   ) {
     return ServiceProvider.OpenAI;
   }
-  if (modelName.startsWith("gemini") || modelName.startsWith("gemma")) {
+  if (
+    matchedModelName.startsWith("gemini") ||
+    matchedModelName.startsWith("gemma")
+  ) {
     return ServiceProvider.Google;
   }
-  if (modelName.startsWith("claude")) {
+  if (matchedModelName.startsWith("claude")) {
     return ServiceProvider.Anthropic;
   }
   if (modelName.includes("deepseek")) {
     return ServiceProvider.DeepSeek;
   }
   if (
-    modelName.startsWith("moonshot") ||
-    modelName.startsWith("kimi") ||
+    matchedModelName.startsWith("moonshot") ||
+    matchedModelName.startsWith("kimi") ||
     modelName.includes("moonshotai/")
   ) {
     return ServiceProvider.Moonshot;
   }
   if (
-    modelName.startsWith("qwen") ||
-    modelName.startsWith("qwq") ||
-    modelName.startsWith("qvq")
+    matchedModelName.startsWith("qwen") ||
+    matchedModelName.startsWith("qwq") ||
+    matchedModelName.startsWith("qvq")
   ) {
     return ServiceProvider.Alibaba;
   }
-  if (modelName.startsWith("grok")) {
+  if (matchedModelName.startsWith("grok")) {
     return ServiceProvider.XAI;
   }
-  if (modelName.startsWith("doubao") || modelName.startsWith("ep-")) {
+  if (
+    matchedModelName.startsWith("doubao") ||
+    matchedModelName.startsWith("ep-")
+  ) {
     return ServiceProvider.ByteDance;
   }
   if (modelName.includes("llama")) {
