@@ -1,3 +1,5 @@
+import { getRuntimeModelMetadata } from "./model-runtime-metadata";
+
 // 模型能力配置
 export interface ModelCapabilities {
   vision?: boolean; // 视觉能力
@@ -6,6 +8,7 @@ export interface ModelCapabilities {
   tools?: boolean; // 工具调用能力
   embedding?: boolean; // 嵌入能力
   thinkingType?: "gemini" | "claude"; // thinking实现类型
+  structuredOutput?: boolean; // 结构化输出能力
 }
 
 // 基于模型名称的能力映射
@@ -882,24 +885,32 @@ export function getEnhancedModelCapabilities(
 export function getModelCapabilitiesWithCustomConfig(
   modelName: string,
 ): ModelCapabilities {
-  // 先获取默认能力
-  const defaultCapabilities = getEnhancedModelCapabilities(modelName);
-
-  // 尝试从本地存储获取自定义配置
   const capabilitiesKey = `model_capabilities_${modelName}`;
 
-  // 检查是否在浏览器环境中
-  if (typeof window !== "undefined" && window.localStorage) {
-    const customCapabilities = localStorage.getItem(capabilitiesKey);
+  let customCapabilities: ModelCapabilities | null = null;
 
-    if (customCapabilities) {
+  if (typeof window !== "undefined" && window.localStorage) {
+    const storedCapabilities = localStorage.getItem(capabilitiesKey);
+
+    if (storedCapabilities) {
       try {
-        return JSON.parse(customCapabilities);
+        customCapabilities = JSON.parse(storedCapabilities);
       } catch (e) {
         console.warn("[ModelCapabilities] 解析自定义能力配置失败:", e);
       }
     }
   }
 
-  return defaultCapabilities;
+  // 优先使用运行时元数据，再回退到本地规则表
+  const runtimeCapabilities =
+    typeof window !== "undefined"
+      ? getRuntimeModelMetadata(modelName)?.capabilities
+      : null;
+  const defaultCapabilities = getEnhancedModelCapabilities(modelName);
+
+  return {
+    ...defaultCapabilities,
+    ...(runtimeCapabilities || {}),
+    ...(customCapabilities || {}),
+  };
 }

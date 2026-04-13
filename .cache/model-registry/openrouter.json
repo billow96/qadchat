@@ -1,0 +1,5904 @@
+{
+  "provider": "openrouter",
+  "sourceUrl": "https://models.dev/api.json",
+  "fetchedAt": 1776059512742,
+  "sourceEtag": "W/\"524069abf322400af4db684542a43de4\"",
+  "models": {
+    "lfm-2.5-1.2b-instruct:free": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "liquid/lfm-2.5-1.2b-instruct:free",
+      "modelId": "lfm-2.5-1.2b-instruct:free",
+      "displayName": "LFM2.5-1.2B-Instruct (free)",
+      "family": "liquid",
+      "capabilities": {
+        "vision": false,
+        "reasoning": false,
+        "tools": false,
+        "structuredOutput": false
+      },
+      "contextTokens": 131072,
+      "maxOutputTokens": 32768,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2025-06",
+      "releaseDate": "2026-01-20",
+      "lastUpdated": "2026-01-28",
+      "openWeights": true
+    },
+    "lfm-2.5-1.2b-thinking:free": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "liquid/lfm-2.5-1.2b-thinking:free",
+      "modelId": "lfm-2.5-1.2b-thinking:free",
+      "displayName": "LFM2.5-1.2B-Thinking (free)",
+      "family": "liquid",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": false,
+        "structuredOutput": false
+      },
+      "contextTokens": 131072,
+      "maxOutputTokens": 32768,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2025-06",
+      "releaseDate": "2026-01-20",
+      "lastUpdated": "2026-01-28",
+      "openWeights": true
+    },
+    "deepseek-chat-v3.1": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "deepseek/deepseek-chat-v3.1",
+      "modelId": "deepseek-chat-v3.1",
+      "displayName": "DeepSeek-V3.1",
+      "family": "deepseek",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 163840,
+      "maxOutputTokens": 163840,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.2,
+        "output": 0.8
+      },
+      "knowledge": "2025-07",
+      "releaseDate": "2025-08-21",
+      "lastUpdated": "2025-08-21",
+      "openWeights": true
+    },
+    "deepseek-r1-distill-llama-70b": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "deepseek/deepseek-r1-distill-llama-70b",
+      "modelId": "deepseek-r1-distill-llama-70b",
+      "displayName": "DeepSeek R1 Distill Llama 70B",
+      "family": "deepseek-thinking",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": false,
+        "structuredOutput": true
+      },
+      "contextTokens": 8192,
+      "maxOutputTokens": 8192,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2024-10",
+      "releaseDate": "2025-01-23",
+      "lastUpdated": "2025-01-23",
+      "openWeights": true
+    },
+    "deepseek-r1": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "deepseek/deepseek-r1",
+      "modelId": "deepseek-r1",
+      "displayName": "DeepSeek: R1",
+      "family": "deepseek-thinking",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": false
+      },
+      "contextTokens": 64000,
+      "maxOutputTokens": 16000,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.7,
+        "output": 2.5
+      },
+      "knowledge": "2024-07",
+      "releaseDate": "2025-01-20",
+      "lastUpdated": "2025-01-20",
+      "openWeights": true
+    },
+    "deepseek-v3.2-speciale": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "deepseek/deepseek-v3.2-speciale",
+      "modelId": "deepseek-v3.2-speciale",
+      "displayName": "DeepSeek V3.2 Speciale",
+      "family": "deepseek",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 163840,
+      "maxOutputTokens": 65536,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.27,
+        "output": 0.41
+      },
+      "knowledge": "2024-07",
+      "releaseDate": "2025-12-01",
+      "lastUpdated": "2025-12-01",
+      "openWeights": true
+    },
+    "deepseek-v3.2": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "deepseek/deepseek-v3.2",
+      "modelId": "deepseek-v3.2",
+      "displayName": "DeepSeek V3.2",
+      "family": "deepseek",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 163840,
+      "maxOutputTokens": 65536,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.28,
+        "output": 0.4
+      },
+      "knowledge": "2024-07",
+      "releaseDate": "2025-12-01",
+      "lastUpdated": "2025-12-01",
+      "openWeights": true
+    },
+    "deepseek-v3.1-terminus:exacto": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "deepseek/deepseek-v3.1-terminus:exacto",
+      "modelId": "deepseek-v3.1-terminus:exacto",
+      "displayName": "DeepSeek V3.1 Terminus (exacto)",
+      "family": "deepseek",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 131072,
+      "maxOutputTokens": 65536,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.27,
+        "output": 1
+      },
+      "knowledge": "2025-07",
+      "releaseDate": "2025-09-22",
+      "lastUpdated": "2025-09-22",
+      "openWeights": true
+    },
+    "deepseek-chat-v3-0324": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "deepseek/deepseek-chat-v3-0324",
+      "modelId": "deepseek-chat-v3-0324",
+      "displayName": "DeepSeek V3 0324",
+      "family": "deepseek",
+      "capabilities": {
+        "vision": false,
+        "reasoning": false,
+        "tools": false,
+        "structuredOutput": true
+      },
+      "contextTokens": 16384,
+      "maxOutputTokens": 8192,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2024-10",
+      "releaseDate": "2025-03-24",
+      "lastUpdated": "2025-03-24",
+      "openWeights": true
+    },
+    "deepseek-v3.1-terminus": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "deepseek/deepseek-v3.1-terminus",
+      "modelId": "deepseek-v3.1-terminus",
+      "displayName": "DeepSeek V3.1 Terminus",
+      "family": "deepseek",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 131072,
+      "maxOutputTokens": 65536,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.27,
+        "output": 1
+      },
+      "knowledge": "2025-07",
+      "releaseDate": "2025-09-22",
+      "lastUpdated": "2025-09-22",
+      "openWeights": true
+    },
+    "free": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "openrouter/free",
+      "modelId": "free",
+      "displayName": "Free Models Router",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 200000,
+      "maxOutputTokens": 8000,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "releaseDate": "2026-02-01",
+      "lastUpdated": "2026-02-01",
+      "openWeights": false
+    },
+    "trinity-mini:free": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "arcee-ai/trinity-mini:free",
+      "modelId": "trinity-mini:free",
+      "displayName": "Trinity Mini",
+      "family": "trinity-mini",
+      "capabilities": {
+        "vision": false,
+        "reasoning": false,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 131072,
+      "maxOutputTokens": 131072,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2025-06",
+      "releaseDate": "2026-01-28",
+      "lastUpdated": "2026-01-28",
+      "openWeights": true
+    },
+    "trinity-large-thinking": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "arcee-ai/trinity-large-thinking",
+      "modelId": "trinity-large-thinking",
+      "displayName": "Trinity Large Thinking",
+      "family": "trinity",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": false
+      },
+      "contextTokens": 262144,
+      "maxOutputTokens": 80000,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.22,
+        "output": 0.85
+      },
+      "releaseDate": "2026-04-01",
+      "lastUpdated": "2026-04-03",
+      "openWeights": true
+    },
+    "trinity-large-preview:free": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "arcee-ai/trinity-large-preview:free",
+      "modelId": "trinity-large-preview:free",
+      "displayName": "Trinity Large Preview",
+      "family": "trinity",
+      "capabilities": {
+        "vision": false,
+        "reasoning": false,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 131072,
+      "maxOutputTokens": 131072,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2025-06",
+      "releaseDate": "2026-01-28",
+      "lastUpdated": "2026-01-28",
+      "openWeights": true
+    },
+    "dolphin-mistral-24b-venice-edition:free": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
+      "modelId": "dolphin-mistral-24b-venice-edition:free",
+      "displayName": "Uncensored (free)",
+      "family": "mistral",
+      "capabilities": {
+        "vision": false,
+        "reasoning": false,
+        "tools": false,
+        "structuredOutput": true
+      },
+      "contextTokens": 32768,
+      "maxOutputTokens": 32768,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2025-06",
+      "releaseDate": "2025-07-09",
+      "lastUpdated": "2026-01-31",
+      "openWeights": true
+    },
+    "seedream-4.5": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "bytedance-seed/seedream-4.5",
+      "modelId": "seedream-4.5",
+      "displayName": "Seedream 4.5",
+      "family": "seed",
+      "capabilities": {
+        "vision": true,
+        "reasoning": false,
+        "tools": false,
+        "structuredOutput": false
+      },
+      "contextTokens": 4096,
+      "maxOutputTokens": 4096,
+      "modalities": {
+        "input": [
+          "image",
+          "text"
+        ],
+        "output": [
+          "image"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2025-06",
+      "releaseDate": "2025-12-23",
+      "lastUpdated": "2026-01-31",
+      "openWeights": true
+    },
+    "flux.2-max": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "black-forest-labs/flux.2-max",
+      "modelId": "flux.2-max",
+      "displayName": "FLUX.2 Max",
+      "family": "flux",
+      "capabilities": {
+        "vision": true,
+        "reasoning": false,
+        "tools": false,
+        "structuredOutput": false
+      },
+      "contextTokens": 46864,
+      "maxOutputTokens": 46864,
+      "modalities": {
+        "input": [
+          "image",
+          "text"
+        ],
+        "output": [
+          "image"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2025-06",
+      "releaseDate": "2025-12-16",
+      "lastUpdated": "2026-01-31",
+      "openWeights": false
+    },
+    "flux.2-flex": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "black-forest-labs/flux.2-flex",
+      "modelId": "flux.2-flex",
+      "displayName": "FLUX.2 Flex",
+      "family": "flux",
+      "capabilities": {
+        "vision": true,
+        "reasoning": false,
+        "tools": false,
+        "structuredOutput": false
+      },
+      "contextTokens": 67344,
+      "maxOutputTokens": 67344,
+      "modalities": {
+        "input": [
+          "image",
+          "text"
+        ],
+        "output": [
+          "image"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2025-06",
+      "releaseDate": "2025-11-25",
+      "lastUpdated": "2026-01-31",
+      "openWeights": false
+    },
+    "flux.2-pro": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "black-forest-labs/flux.2-pro",
+      "modelId": "flux.2-pro",
+      "displayName": "FLUX.2 Pro",
+      "family": "flux",
+      "capabilities": {
+        "vision": true,
+        "reasoning": false,
+        "tools": false,
+        "structuredOutput": false
+      },
+      "contextTokens": 46864,
+      "maxOutputTokens": 46864,
+      "modalities": {
+        "input": [
+          "image",
+          "text"
+        ],
+        "output": [
+          "image"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2025-06",
+      "releaseDate": "2025-11-25",
+      "lastUpdated": "2026-01-31",
+      "openWeights": false
+    },
+    "flux.2-klein-4b": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "black-forest-labs/flux.2-klein-4b",
+      "modelId": "flux.2-klein-4b",
+      "displayName": "FLUX.2 Klein 4B",
+      "family": "flux",
+      "capabilities": {
+        "vision": true,
+        "reasoning": false,
+        "tools": false,
+        "structuredOutput": false
+      },
+      "contextTokens": 40960,
+      "maxOutputTokens": 40960,
+      "modalities": {
+        "input": [
+          "image",
+          "text"
+        ],
+        "output": [
+          "image"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2025-06",
+      "releaseDate": "2026-01-14",
+      "lastUpdated": "2026-01-31",
+      "openWeights": true
+    },
+    "hermes-3-llama-3.1-405b:free": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "nousresearch/hermes-3-llama-3.1-405b:free",
+      "modelId": "hermes-3-llama-3.1-405b:free",
+      "displayName": "Hermes 3 405B Instruct (free)",
+      "family": "hermes",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": false,
+        "structuredOutput": false
+      },
+      "contextTokens": 131072,
+      "maxOutputTokens": 131072,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2023-12",
+      "releaseDate": "2024-08-16",
+      "lastUpdated": "2024-08-16",
+      "openWeights": true
+    },
+    "hermes-4-405b": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "nousresearch/hermes-4-405b",
+      "modelId": "hermes-4-405b",
+      "displayName": "Hermes 4 405B",
+      "family": "hermes",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": false
+      },
+      "contextTokens": 131072,
+      "maxOutputTokens": 131072,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 1,
+        "output": 3
+      },
+      "knowledge": "2023-12",
+      "releaseDate": "2025-08-25",
+      "lastUpdated": "2025-08-25",
+      "openWeights": true
+    },
+    "hermes-4-70b": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "nousresearch/hermes-4-70b",
+      "modelId": "hermes-4-70b",
+      "displayName": "Hermes 4 70B",
+      "family": "hermes",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 131072,
+      "maxOutputTokens": 131072,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.13,
+        "output": 0.4
+      },
+      "knowledge": "2023-12",
+      "releaseDate": "2025-08-25",
+      "lastUpdated": "2025-08-25",
+      "openWeights": true
+    },
+    "step-3.5-flash:free": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "stepfun/step-3.5-flash:free",
+      "modelId": "step-3.5-flash:free",
+      "displayName": "Step 3.5 Flash (free)",
+      "family": "step",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": false
+      },
+      "contextTokens": 256000,
+      "maxOutputTokens": 256000,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2025-01",
+      "releaseDate": "2026-01-29",
+      "lastUpdated": "2026-01-29",
+      "openWeights": true
+    },
+    "step-3.5-flash": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "stepfun/step-3.5-flash",
+      "modelId": "step-3.5-flash",
+      "displayName": "Step 3.5 Flash",
+      "family": "step",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": false
+      },
+      "contextTokens": 256000,
+      "maxOutputTokens": 256000,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.1,
+        "output": 0.3,
+        "cache_read": 0.02
+      },
+      "knowledge": "2025-01",
+      "releaseDate": "2026-01-29",
+      "lastUpdated": "2026-01-29",
+      "openWeights": true
+    },
+    "mistral-small-3.1-24b-instruct": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "mistralai/mistral-small-3.1-24b-instruct",
+      "modelId": "mistral-small-3.1-24b-instruct",
+      "displayName": "Mistral Small 3.1 24B Instruct",
+      "family": "mistral-small",
+      "capabilities": {
+        "vision": true,
+        "reasoning": false,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 128000,
+      "maxOutputTokens": 8192,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2024-10",
+      "releaseDate": "2025-03-17",
+      "lastUpdated": "2025-03-17",
+      "openWeights": true
+    },
+    "devstral-2512": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "mistralai/devstral-2512",
+      "modelId": "devstral-2512",
+      "displayName": "Devstral 2 2512",
+      "family": "devstral",
+      "capabilities": {
+        "vision": false,
+        "reasoning": false,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 262144,
+      "maxOutputTokens": 262144,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.15,
+        "output": 0.6
+      },
+      "knowledge": "2025-12",
+      "releaseDate": "2025-09-12",
+      "lastUpdated": "2025-09-12",
+      "openWeights": true
+    },
+    "codestral-2508": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "mistralai/codestral-2508",
+      "modelId": "codestral-2508",
+      "displayName": "Codestral 2508",
+      "family": "codestral",
+      "capabilities": {
+        "vision": false,
+        "reasoning": false,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 256000,
+      "maxOutputTokens": 256000,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.3,
+        "output": 0.9
+      },
+      "knowledge": "2025-05",
+      "releaseDate": "2025-08-01",
+      "lastUpdated": "2025-08-01",
+      "openWeights": true
+    },
+    "mistral-medium-3.1": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "mistralai/mistral-medium-3.1",
+      "modelId": "mistral-medium-3.1",
+      "displayName": "Mistral Medium 3.1",
+      "family": "mistral-medium",
+      "capabilities": {
+        "vision": true,
+        "reasoning": false,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 262144,
+      "maxOutputTokens": 262144,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.4,
+        "output": 2
+      },
+      "knowledge": "2025-05",
+      "releaseDate": "2025-08-12",
+      "lastUpdated": "2025-08-12",
+      "openWeights": false
+    },
+    "mistral-small-2603": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "mistralai/mistral-small-2603",
+      "modelId": "mistral-small-2603",
+      "displayName": "Mistral Small 4",
+      "family": "mistral-small",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": false
+      },
+      "contextTokens": 262144,
+      "maxOutputTokens": 262144,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.15,
+        "output": 0.6
+      },
+      "knowledge": "2025-06",
+      "releaseDate": "2026-03-16",
+      "lastUpdated": "2026-03-16",
+      "openWeights": true
+    },
+    "mistral-medium-3": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "mistralai/mistral-medium-3",
+      "modelId": "mistral-medium-3",
+      "displayName": "Mistral Medium 3",
+      "family": "mistral-medium",
+      "capabilities": {
+        "vision": true,
+        "reasoning": false,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 131072,
+      "maxOutputTokens": 131072,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.4,
+        "output": 2
+      },
+      "knowledge": "2025-05",
+      "releaseDate": "2025-05-07",
+      "lastUpdated": "2025-05-07",
+      "openWeights": false
+    },
+    "devstral-small-2505": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "mistralai/devstral-small-2505",
+      "modelId": "devstral-small-2505",
+      "displayName": "Devstral Small",
+      "family": "devstral",
+      "capabilities": {
+        "vision": false,
+        "reasoning": false,
+        "tools": true,
+        "structuredOutput": false
+      },
+      "contextTokens": 128000,
+      "maxOutputTokens": 128000,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.06,
+        "output": 0.12
+      },
+      "knowledge": "2025-05",
+      "releaseDate": "2025-05-07",
+      "lastUpdated": "2025-05-07",
+      "openWeights": true
+    },
+    "mistral-small-3.2-24b-instruct": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "mistralai/mistral-small-3.2-24b-instruct",
+      "modelId": "mistral-small-3.2-24b-instruct",
+      "displayName": "Mistral Small 3.2 24B Instruct",
+      "family": "mistral-small",
+      "capabilities": {
+        "vision": true,
+        "reasoning": false,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 96000,
+      "maxOutputTokens": 8192,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2024-10",
+      "releaseDate": "2025-06-20",
+      "lastUpdated": "2025-06-20",
+      "openWeights": true
+    },
+    "devstral-medium-2507": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "mistralai/devstral-medium-2507",
+      "modelId": "devstral-medium-2507",
+      "displayName": "Devstral Medium",
+      "family": "devstral",
+      "capabilities": {
+        "vision": false,
+        "reasoning": false,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 131072,
+      "maxOutputTokens": 131072,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.4,
+        "output": 2
+      },
+      "knowledge": "2025-05",
+      "releaseDate": "2025-07-10",
+      "lastUpdated": "2025-07-10",
+      "openWeights": true
+    },
+    "devstral-small-2507": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "mistralai/devstral-small-2507",
+      "modelId": "devstral-small-2507",
+      "displayName": "Devstral Small 1.1",
+      "family": "devstral",
+      "capabilities": {
+        "vision": false,
+        "reasoning": false,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 131072,
+      "maxOutputTokens": 131072,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.1,
+        "output": 0.3
+      },
+      "knowledge": "2025-05",
+      "releaseDate": "2025-07-10",
+      "lastUpdated": "2025-07-10",
+      "openWeights": true
+    },
+    "llama-3.2-11b-vision-instruct": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "meta-llama/llama-3.2-11b-vision-instruct",
+      "modelId": "llama-3.2-11b-vision-instruct",
+      "displayName": "Llama 3.2 11B Vision Instruct",
+      "family": "llama",
+      "capabilities": {
+        "vision": true,
+        "reasoning": false,
+        "tools": false,
+        "structuredOutput": false
+      },
+      "contextTokens": 131072,
+      "maxOutputTokens": 8192,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2023-12",
+      "releaseDate": "2024-09-25",
+      "lastUpdated": "2024-09-25",
+      "openWeights": true
+    },
+    "llama-3.2-3b-instruct:free": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "meta-llama/llama-3.2-3b-instruct:free",
+      "modelId": "llama-3.2-3b-instruct:free",
+      "displayName": "Llama 3.2 3B Instruct (free)",
+      "family": "llama",
+      "capabilities": {
+        "vision": true,
+        "reasoning": false,
+        "tools": false,
+        "structuredOutput": false
+      },
+      "contextTokens": 131072,
+      "maxOutputTokens": 131072,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2023-12",
+      "releaseDate": "2024-09-25",
+      "lastUpdated": "2024-09-25",
+      "openWeights": true
+    },
+    "llama-3.3-70b-instruct:free": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "meta-llama/llama-3.3-70b-instruct:free",
+      "modelId": "llama-3.3-70b-instruct:free",
+      "displayName": "Llama 3.3 70B Instruct (free)",
+      "family": "llama",
+      "capabilities": {
+        "vision": false,
+        "reasoning": false,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 131072,
+      "maxOutputTokens": 131072,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2024-12",
+      "releaseDate": "2024-12-06",
+      "lastUpdated": "2024-12-06",
+      "openWeights": true
+    },
+    "grok-4.20-multi-agent-beta": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "x-ai/grok-4.20-multi-agent-beta",
+      "modelId": "grok-4.20-multi-agent-beta",
+      "displayName": "Grok 4.20 Multi - Agent Beta",
+      "family": "grok",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": false,
+        "structuredOutput": false
+      },
+      "contextTokens": 2000000,
+      "maxOutputTokens": 30000,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 2,
+        "output": 6,
+        "cache_read": 0.2,
+        "context_over_200k": {
+          "input": 4,
+          "output": 12
+        }
+      },
+      "releaseDate": "2026-03-12",
+      "lastUpdated": "2026-03-12",
+      "openWeights": false
+    },
+    "grok-4-fast": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "x-ai/grok-4-fast",
+      "modelId": "grok-4-fast",
+      "displayName": "Grok 4 Fast",
+      "family": "grok",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 2000000,
+      "maxOutputTokens": 30000,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.2,
+        "output": 0.5,
+        "cache_read": 0.05,
+        "cache_write": 0.05
+      },
+      "knowledge": "2024-11",
+      "releaseDate": "2025-08-19",
+      "lastUpdated": "2025-08-19",
+      "openWeights": false
+    },
+    "grok-code-fast-1": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "x-ai/grok-code-fast-1",
+      "modelId": "grok-code-fast-1",
+      "displayName": "Grok Code Fast 1",
+      "family": "grok",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 256000,
+      "maxOutputTokens": 10000,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.2,
+        "output": 1.5,
+        "cache_read": 0.02
+      },
+      "knowledge": "2025-08",
+      "releaseDate": "2025-08-26",
+      "lastUpdated": "2025-08-26",
+      "openWeights": false
+    },
+    "grok-3-beta": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "x-ai/grok-3-beta",
+      "modelId": "grok-3-beta",
+      "displayName": "Grok 3 Beta",
+      "family": "grok",
+      "capabilities": {
+        "vision": false,
+        "reasoning": false,
+        "tools": true,
+        "structuredOutput": false
+      },
+      "contextTokens": 131072,
+      "maxOutputTokens": 8192,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 3,
+        "output": 15,
+        "cache_read": 0.75,
+        "cache_write": 15
+      },
+      "knowledge": "2024-11",
+      "releaseDate": "2025-02-17",
+      "lastUpdated": "2025-02-17",
+      "openWeights": false
+    },
+    "grok-4": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "x-ai/grok-4",
+      "modelId": "grok-4",
+      "displayName": "Grok 4",
+      "family": "grok",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 256000,
+      "maxOutputTokens": 64000,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 3,
+        "output": 15,
+        "cache_read": 0.75,
+        "cache_write": 15
+      },
+      "knowledge": "2025-07",
+      "releaseDate": "2025-07-09",
+      "lastUpdated": "2025-07-09",
+      "openWeights": false
+    },
+    "grok-3-mini": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "x-ai/grok-3-mini",
+      "modelId": "grok-3-mini",
+      "displayName": "Grok 3 Mini",
+      "family": "grok",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 131072,
+      "maxOutputTokens": 8192,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.3,
+        "output": 0.5,
+        "cache_read": 0.075,
+        "cache_write": 0.5
+      },
+      "knowledge": "2024-11",
+      "releaseDate": "2025-02-17",
+      "lastUpdated": "2025-02-17",
+      "openWeights": false
+    },
+    "grok-4.1-fast": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "x-ai/grok-4.1-fast",
+      "modelId": "grok-4.1-fast",
+      "displayName": "Grok 4.1 Fast",
+      "family": "grok",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 2000000,
+      "maxOutputTokens": 30000,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.2,
+        "output": 0.5,
+        "cache_read": 0.05,
+        "cache_write": 0.05
+      },
+      "knowledge": "2024-11",
+      "releaseDate": "2025-11-19",
+      "lastUpdated": "2025-11-19",
+      "openWeights": false
+    },
+    "grok-4.20-beta": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "x-ai/grok-4.20-beta",
+      "modelId": "grok-4.20-beta",
+      "displayName": "Grok 4.20 Beta",
+      "family": "grok",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": false
+      },
+      "contextTokens": 2000000,
+      "maxOutputTokens": 30000,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 2,
+        "output": 6,
+        "cache_read": 0.2,
+        "context_over_200k": {
+          "input": 4,
+          "output": 12
+        }
+      },
+      "releaseDate": "2026-03-12",
+      "lastUpdated": "2026-03-12",
+      "openWeights": false
+    },
+    "grok-3-mini-beta": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "x-ai/grok-3-mini-beta",
+      "modelId": "grok-3-mini-beta",
+      "displayName": "Grok 3 Mini Beta",
+      "family": "grok",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": false
+      },
+      "contextTokens": 131072,
+      "maxOutputTokens": 8192,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.3,
+        "output": 0.5,
+        "cache_read": 0.075,
+        "cache_write": 0.5
+      },
+      "knowledge": "2024-11",
+      "releaseDate": "2025-02-17",
+      "lastUpdated": "2025-02-17",
+      "openWeights": false
+    },
+    "grok-3": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "x-ai/grok-3",
+      "modelId": "grok-3",
+      "displayName": "Grok 3",
+      "family": "grok",
+      "capabilities": {
+        "vision": false,
+        "reasoning": false,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 131072,
+      "maxOutputTokens": 8192,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 3,
+        "output": 15,
+        "cache_read": 0.75,
+        "cache_write": 15
+      },
+      "knowledge": "2024-11",
+      "releaseDate": "2025-02-17",
+      "lastUpdated": "2025-02-17",
+      "openWeights": false
+    },
+    "intellect-3": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "prime-intellect/intellect-3",
+      "modelId": "intellect-3",
+      "displayName": "Intellect 3",
+      "family": "glm",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 131072,
+      "maxOutputTokens": 8192,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.2,
+        "output": 1.1
+      },
+      "knowledge": "2024-10",
+      "releaseDate": "2025-01-15",
+      "lastUpdated": "2025-01-15",
+      "openWeights": true
+    },
+    "nemotron-3-super-120b-a12b": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "nvidia/nemotron-3-super-120b-a12b",
+      "modelId": "nemotron-3-super-120b-a12b",
+      "displayName": "Nemotron 3 Super",
+      "family": "nemotron",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": false
+      },
+      "contextTokens": 262144,
+      "maxOutputTokens": 262144,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.1,
+        "output": 0.5
+      },
+      "knowledge": "2024-04",
+      "releaseDate": "2026-03-11",
+      "lastUpdated": "2026-03-11",
+      "openWeights": true
+    },
+    "nemotron-3-nano-30b-a3b:free": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "nvidia/nemotron-3-nano-30b-a3b:free",
+      "modelId": "nemotron-3-nano-30b-a3b:free",
+      "displayName": "Nemotron 3 Nano 30B A3B (free)",
+      "family": "nemotron",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 256000,
+      "maxOutputTokens": 256000,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2025-11",
+      "releaseDate": "2025-12-14",
+      "lastUpdated": "2026-01-31",
+      "openWeights": true
+    },
+    "nemotron-nano-9b-v2:free": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "nvidia/nemotron-nano-9b-v2:free",
+      "modelId": "nemotron-nano-9b-v2:free",
+      "displayName": "Nemotron Nano 9B V2 (free)",
+      "family": "nemotron",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 128000,
+      "maxOutputTokens": 128000,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2024-09",
+      "releaseDate": "2025-09-05",
+      "lastUpdated": "2025-08-18",
+      "openWeights": true
+    },
+    "nemotron-3-super-120b-a12b:free": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "nvidia/nemotron-3-super-120b-a12b:free",
+      "modelId": "nemotron-3-super-120b-a12b:free",
+      "displayName": "Nemotron 3 Super (free)",
+      "family": "nemotron",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": false
+      },
+      "contextTokens": 262144,
+      "maxOutputTokens": 262144,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2024-04",
+      "releaseDate": "2026-03-11",
+      "lastUpdated": "2026-03-11",
+      "openWeights": true
+    },
+    "nemotron-nano-9b-v2": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "nvidia/nemotron-nano-9b-v2",
+      "modelId": "nemotron-nano-9b-v2",
+      "displayName": "nvidia-nemotron-nano-9b-v2",
+      "family": "nemotron",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": false
+      },
+      "contextTokens": 131072,
+      "maxOutputTokens": 131072,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.04,
+        "output": 0.16
+      },
+      "knowledge": "2024-09",
+      "releaseDate": "2025-08-18",
+      "lastUpdated": "2025-08-18",
+      "openWeights": true
+    },
+    "nemotron-nano-12b-v2-vl:free": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "nvidia/nemotron-nano-12b-v2-vl:free",
+      "modelId": "nemotron-nano-12b-v2-vl:free",
+      "displayName": "Nemotron Nano 12B 2 VL (free)",
+      "family": "nemotron",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": false
+      },
+      "contextTokens": 128000,
+      "maxOutputTokens": 128000,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2025-11",
+      "releaseDate": "2025-10-28",
+      "lastUpdated": "2026-01-31",
+      "openWeights": true
+    },
+    "mercury-2": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "inception/mercury-2",
+      "modelId": "mercury-2",
+      "displayName": "Mercury 2",
+      "family": "mercury",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 128000,
+      "maxOutputTokens": 50000,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.25,
+        "output": 0.75,
+        "cache_read": 0.025
+      },
+      "releaseDate": "2026-03-04",
+      "lastUpdated": "2026-03-04",
+      "openWeights": false
+    },
+    "mercury": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "inception/mercury",
+      "modelId": "mercury",
+      "displayName": "Mercury",
+      "family": "mercury",
+      "capabilities": {
+        "vision": false,
+        "reasoning": false,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 128000,
+      "maxOutputTokens": 32000,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.25,
+        "output": 0.75,
+        "cache_read": 0.025
+      },
+      "releaseDate": "2025-06-26",
+      "lastUpdated": "2025-06-26",
+      "openWeights": false
+    },
+    "mercury-coder": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "inception/mercury-coder",
+      "modelId": "mercury-coder",
+      "displayName": "Mercury Coder",
+      "family": "mercury",
+      "capabilities": {
+        "vision": false,
+        "reasoning": false,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 128000,
+      "maxOutputTokens": 32000,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.25,
+        "output": 0.75,
+        "cache_read": 0.025
+      },
+      "releaseDate": "2025-04-30",
+      "lastUpdated": "2025-04-30",
+      "openWeights": false
+    },
+    "gpt-5.1-codex-max": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "openai/gpt-5.1-codex-max",
+      "modelId": "gpt-5.1-codex-max",
+      "displayName": "GPT-5.1-Codex-Max",
+      "family": "gpt-codex",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 400000,
+      "maxOutputTokens": 128000,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 1.1,
+        "output": 9,
+        "cache_read": 0.11
+      },
+      "knowledge": "2024-09-30",
+      "releaseDate": "2025-11-13",
+      "lastUpdated": "2025-11-13",
+      "openWeights": false
+    },
+    "gpt-5.2-chat": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "openai/gpt-5.2-chat",
+      "modelId": "gpt-5.2-chat",
+      "displayName": "GPT-5.2 Chat",
+      "family": "gpt-codex",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 128000,
+      "maxOutputTokens": 16384,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 1.75,
+        "output": 14,
+        "cache_read": 0.175
+      },
+      "knowledge": "2025-08-31",
+      "releaseDate": "2025-12-11",
+      "lastUpdated": "2025-12-11",
+      "openWeights": false
+    },
+    "gpt-oss-120b:exacto": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "openai/gpt-oss-120b:exacto",
+      "modelId": "gpt-oss-120b:exacto",
+      "displayName": "GPT OSS 120B (exacto)",
+      "family": "gpt-oss",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 131072,
+      "maxOutputTokens": 32768,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.05,
+        "output": 0.24
+      },
+      "releaseDate": "2025-08-05",
+      "lastUpdated": "2025-08-05",
+      "openWeights": true
+    },
+    "gpt-5-chat": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "openai/gpt-5-chat",
+      "modelId": "gpt-5-chat",
+      "displayName": "GPT-5 Chat (latest)",
+      "family": "gpt-codex",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": false,
+        "structuredOutput": true
+      },
+      "contextTokens": 400000,
+      "maxOutputTokens": 128000,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 1.25,
+        "output": 10
+      },
+      "knowledge": "2024-09-30",
+      "releaseDate": "2025-08-07",
+      "lastUpdated": "2025-08-07",
+      "openWeights": false
+    },
+    "gpt-5.2-pro": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "openai/gpt-5.2-pro",
+      "modelId": "gpt-5.2-pro",
+      "displayName": "GPT-5.2 Pro",
+      "family": "gpt-pro",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 400000,
+      "maxOutputTokens": 128000,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 21,
+        "output": 168
+      },
+      "knowledge": "2025-08-31",
+      "releaseDate": "2025-12-11",
+      "lastUpdated": "2025-12-11",
+      "openWeights": false
+    },
+    "gpt-5-mini": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "openai/gpt-5-mini",
+      "modelId": "gpt-5-mini",
+      "displayName": "GPT-5 Mini",
+      "family": "gpt-mini",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 400000,
+      "maxOutputTokens": 128000,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.25,
+        "output": 2
+      },
+      "knowledge": "2024-10-01",
+      "releaseDate": "2025-08-07",
+      "lastUpdated": "2025-08-07",
+      "openWeights": false
+    },
+    "gpt-5-nano": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "openai/gpt-5-nano",
+      "modelId": "gpt-5-nano",
+      "displayName": "GPT-5 Nano",
+      "family": "gpt-nano",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 400000,
+      "maxOutputTokens": 128000,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.05,
+        "output": 0.4
+      },
+      "knowledge": "2024-10-01",
+      "releaseDate": "2025-08-07",
+      "lastUpdated": "2025-08-07",
+      "openWeights": false
+    },
+    "gpt-5.3-codex": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "openai/gpt-5.3-codex",
+      "modelId": "gpt-5.3-codex",
+      "displayName": "GPT-5.3-Codex",
+      "family": "gpt-codex",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 400000,
+      "maxOutputTokens": 128000,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 1.75,
+        "output": 14,
+        "cache_read": 0.175
+      },
+      "knowledge": "2025-08-31",
+      "releaseDate": "2026-02-24",
+      "lastUpdated": "2026-02-24",
+      "openWeights": false
+    },
+    "gpt-5.2": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "openai/gpt-5.2",
+      "modelId": "gpt-5.2",
+      "displayName": "GPT-5.2",
+      "family": "gpt",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 400000,
+      "maxOutputTokens": 128000,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 1.75,
+        "output": 14,
+        "cache_read": 0.175
+      },
+      "knowledge": "2025-08-31",
+      "releaseDate": "2025-12-11",
+      "lastUpdated": "2025-12-11",
+      "openWeights": false
+    },
+    "gpt-oss-20b:free": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "openai/gpt-oss-20b:free",
+      "modelId": "gpt-oss-20b:free",
+      "displayName": "gpt-oss-20b (free)",
+      "family": "gpt-oss",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": false
+      },
+      "contextTokens": 131072,
+      "maxOutputTokens": 32768,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "releaseDate": "2025-08-05",
+      "lastUpdated": "2026-01-31",
+      "openWeights": true
+    },
+    "gpt-4o-mini": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "openai/gpt-4o-mini",
+      "modelId": "gpt-4o-mini",
+      "displayName": "GPT-4o-mini",
+      "family": "gpt-mini",
+      "capabilities": {
+        "vision": true,
+        "reasoning": false,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 128000,
+      "maxOutputTokens": 16384,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.15,
+        "output": 0.6,
+        "cache_read": 0.08
+      },
+      "knowledge": "2024-10",
+      "releaseDate": "2024-07-18",
+      "lastUpdated": "2024-07-18",
+      "openWeights": false
+    },
+    "gpt-5.4-mini": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "openai/gpt-5.4-mini",
+      "modelId": "gpt-5.4-mini",
+      "displayName": "GPT-5.4 Mini",
+      "family": "gpt-mini",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 400000,
+      "maxOutputTokens": 128000,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 7.5e-7,
+        "output": 0.0000045,
+        "cache_read": 7.5e-8
+      },
+      "knowledge": "2025-08-31",
+      "releaseDate": "2026-03-17",
+      "lastUpdated": "2026-03-17",
+      "openWeights": false
+    },
+    "gpt-5.1-chat": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "openai/gpt-5.1-chat",
+      "modelId": "gpt-5.1-chat",
+      "displayName": "GPT-5.1 Chat",
+      "family": "gpt-codex",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 128000,
+      "maxOutputTokens": 16384,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 1.25,
+        "output": 10,
+        "cache_read": 0.125
+      },
+      "knowledge": "2024-09-30",
+      "releaseDate": "2025-11-13",
+      "lastUpdated": "2025-11-13",
+      "openWeights": false
+    },
+    "o4-mini": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "openai/o4-mini",
+      "modelId": "o4-mini",
+      "displayName": "o4 Mini",
+      "family": "o-mini",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 200000,
+      "maxOutputTokens": 100000,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 1.1,
+        "output": 4.4,
+        "cache_read": 0.28
+      },
+      "knowledge": "2024-06",
+      "releaseDate": "2025-04-16",
+      "lastUpdated": "2025-04-16",
+      "openWeights": false
+    },
+    "gpt-5.4-nano": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "openai/gpt-5.4-nano",
+      "modelId": "gpt-5.4-nano",
+      "displayName": "GPT-5.4 Nano",
+      "family": "gpt-nano",
+      "capabilities": {
+        "vision": true,
+        "reasoning": false,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 400000,
+      "maxOutputTokens": 128000,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 2e-7,
+        "output": 0.00000125,
+        "cache_read": 2e-8
+      },
+      "knowledge": "2025-08-31",
+      "releaseDate": "2026-03-17",
+      "lastUpdated": "2026-03-17",
+      "openWeights": false
+    },
+    "gpt-5.2-codex": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "openai/gpt-5.2-codex",
+      "modelId": "gpt-5.2-codex",
+      "displayName": "GPT-5.2-Codex",
+      "family": "gpt-codex",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 400000,
+      "maxOutputTokens": 128000,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 1.75,
+        "output": 14,
+        "cache_read": 0.175
+      },
+      "knowledge": "2025-08-31",
+      "releaseDate": "2026-01-14",
+      "lastUpdated": "2026-01-14",
+      "openWeights": false
+    },
+    "gpt-5.1-codex-mini": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "openai/gpt-5.1-codex-mini",
+      "modelId": "gpt-5.1-codex-mini",
+      "displayName": "GPT-5.1-Codex-Mini",
+      "family": "gpt-codex",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 400000,
+      "maxOutputTokens": 100000,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.25,
+        "output": 2,
+        "cache_read": 0.025
+      },
+      "knowledge": "2024-09-30",
+      "releaseDate": "2025-11-13",
+      "lastUpdated": "2025-11-13",
+      "openWeights": false
+    },
+    "gpt-5-image": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "openai/gpt-5-image",
+      "modelId": "gpt-5-image",
+      "displayName": "GPT-5 Image",
+      "family": "gpt",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 400000,
+      "maxOutputTokens": 128000,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text",
+          "image"
+        ]
+      },
+      "pricing": {
+        "input": 5,
+        "output": 10,
+        "cache_read": 1.25
+      },
+      "knowledge": "2024-10-01",
+      "releaseDate": "2025-10-14",
+      "lastUpdated": "2025-10-14",
+      "openWeights": false
+    },
+    "gpt-5.1": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "openai/gpt-5.1",
+      "modelId": "gpt-5.1",
+      "displayName": "GPT-5.1",
+      "family": "gpt",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 400000,
+      "maxOutputTokens": 128000,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 1.25,
+        "output": 10,
+        "cache_read": 0.125
+      },
+      "knowledge": "2024-09-30",
+      "releaseDate": "2025-11-13",
+      "lastUpdated": "2025-11-13",
+      "openWeights": false
+    },
+    "gpt-5.4-pro": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "openai/gpt-5.4-pro",
+      "modelId": "gpt-5.4-pro",
+      "displayName": "GPT-5.4 Pro",
+      "family": "gpt-pro",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": false
+      },
+      "contextTokens": 1050000,
+      "maxOutputTokens": 128000,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 30,
+        "output": 180,
+        "cache_read": 30
+      },
+      "knowledge": "2025-08-31",
+      "releaseDate": "2026-03-05",
+      "lastUpdated": "2026-03-05",
+      "openWeights": false
+    },
+    "gpt-5-codex": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "openai/gpt-5-codex",
+      "modelId": "gpt-5-codex",
+      "displayName": "GPT-5 Codex",
+      "family": "gpt-codex",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 400000,
+      "maxOutputTokens": 128000,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 1.25,
+        "output": 10,
+        "cache_read": 0.125
+      },
+      "knowledge": "2024-10-01",
+      "releaseDate": "2025-09-15",
+      "lastUpdated": "2025-09-15",
+      "openWeights": false
+    },
+    "gpt-5.4": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "openai/gpt-5.4",
+      "modelId": "gpt-5.4",
+      "displayName": "GPT-5.4",
+      "family": "gpt",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 1050000,
+      "maxOutputTokens": 128000,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 2.5,
+        "output": 15,
+        "cache_read": 0.25,
+        "context_over_200k": {
+          "input": 5,
+          "output": 22.5,
+          "cache_read": 0.5
+        }
+      },
+      "knowledge": "2025-08-31",
+      "releaseDate": "2026-03-05",
+      "lastUpdated": "2026-03-05",
+      "openWeights": false
+    },
+    "gpt-oss-20b": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "openai/gpt-oss-20b",
+      "modelId": "gpt-oss-20b",
+      "displayName": "GPT OSS 20B",
+      "family": "gpt-oss",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 131072,
+      "maxOutputTokens": 32768,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.05,
+        "output": 0.2
+      },
+      "releaseDate": "2025-08-05",
+      "lastUpdated": "2025-08-05",
+      "openWeights": true
+    },
+    "gpt-5-pro": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "openai/gpt-5-pro",
+      "modelId": "gpt-5-pro",
+      "displayName": "GPT-5 Pro",
+      "family": "gpt-pro",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 400000,
+      "maxOutputTokens": 272000,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 15,
+        "output": 120
+      },
+      "knowledge": "2024-09-30",
+      "releaseDate": "2025-10-06",
+      "lastUpdated": "2025-10-06",
+      "openWeights": false
+    },
+    "gpt-oss-120b:free": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "openai/gpt-oss-120b:free",
+      "modelId": "gpt-oss-120b:free",
+      "displayName": "gpt-oss-120b (free)",
+      "family": "gpt-oss",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": false
+      },
+      "contextTokens": 131072,
+      "maxOutputTokens": 32768,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "releaseDate": "2025-08-05",
+      "lastUpdated": "2025-08-05",
+      "openWeights": true
+    },
+    "gpt-5": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "openai/gpt-5",
+      "modelId": "gpt-5",
+      "displayName": "GPT-5",
+      "family": "gpt",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 400000,
+      "maxOutputTokens": 128000,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 1.25,
+        "output": 10
+      },
+      "knowledge": "2024-10-01",
+      "releaseDate": "2025-08-07",
+      "lastUpdated": "2025-08-07",
+      "openWeights": false
+    },
+    "gpt-oss-safeguard-20b": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "openai/gpt-oss-safeguard-20b",
+      "modelId": "gpt-oss-safeguard-20b",
+      "displayName": "GPT OSS Safeguard 20B",
+      "family": "gpt-oss",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": false
+      },
+      "contextTokens": 131072,
+      "maxOutputTokens": 65536,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.075,
+        "output": 0.3
+      },
+      "releaseDate": "2025-10-29",
+      "lastUpdated": "2025-10-29",
+      "openWeights": false
+    },
+    "gpt-oss-120b": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "openai/gpt-oss-120b",
+      "modelId": "gpt-oss-120b",
+      "displayName": "GPT OSS 120B",
+      "family": "gpt-oss",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 131072,
+      "maxOutputTokens": 32768,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.072,
+        "output": 0.28
+      },
+      "releaseDate": "2025-08-05",
+      "lastUpdated": "2025-08-05",
+      "openWeights": true
+    },
+    "gpt-4.1": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "openai/gpt-4.1",
+      "modelId": "gpt-4.1",
+      "displayName": "GPT-4.1",
+      "family": "gpt",
+      "capabilities": {
+        "vision": true,
+        "reasoning": false,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 1047576,
+      "maxOutputTokens": 32768,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 2,
+        "output": 8,
+        "cache_read": 0.5
+      },
+      "knowledge": "2024-04",
+      "releaseDate": "2025-04-14",
+      "lastUpdated": "2025-04-14",
+      "openWeights": false
+    },
+    "gpt-4.1-mini": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "openai/gpt-4.1-mini",
+      "modelId": "gpt-4.1-mini",
+      "displayName": "GPT-4.1 Mini",
+      "family": "gpt-mini",
+      "capabilities": {
+        "vision": true,
+        "reasoning": false,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 1047576,
+      "maxOutputTokens": 32768,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.4,
+        "output": 1.6,
+        "cache_read": 0.1
+      },
+      "knowledge": "2024-04",
+      "releaseDate": "2025-04-14",
+      "lastUpdated": "2025-04-14",
+      "openWeights": false
+    },
+    "gpt-5.1-codex": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "openai/gpt-5.1-codex",
+      "modelId": "gpt-5.1-codex",
+      "displayName": "GPT-5.1-Codex",
+      "family": "gpt-codex",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 400000,
+      "maxOutputTokens": 128000,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 1.25,
+        "output": 10,
+        "cache_read": 0.125
+      },
+      "knowledge": "2024-09-30",
+      "releaseDate": "2025-11-13",
+      "lastUpdated": "2025-11-13",
+      "openWeights": false
+    },
+    "glm-4.7": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "z-ai/glm-4.7",
+      "modelId": "glm-4.7",
+      "displayName": "GLM-4.7",
+      "family": "glm",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 204800,
+      "maxOutputTokens": 131072,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.6,
+        "output": 2.2,
+        "cache_read": 0.11
+      },
+      "knowledge": "2025-04",
+      "releaseDate": "2025-12-22",
+      "lastUpdated": "2025-12-22",
+      "openWeights": true
+    },
+    "glm-4.5-air:free": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "z-ai/glm-4.5-air:free",
+      "modelId": "glm-4.5-air:free",
+      "displayName": "GLM 4.5 Air (free)",
+      "family": "glm-air",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": false,
+        "structuredOutput": false
+      },
+      "contextTokens": 128000,
+      "maxOutputTokens": 96000,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2025-04",
+      "releaseDate": "2025-07-28",
+      "lastUpdated": "2025-07-28",
+      "openWeights": true
+    },
+    "glm-5": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "z-ai/glm-5",
+      "modelId": "glm-5",
+      "displayName": "GLM-5",
+      "family": "glm",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 202752,
+      "maxOutputTokens": 131000,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 1,
+        "output": 3.2,
+        "cache_read": 0.2
+      },
+      "releaseDate": "2026-02-12",
+      "lastUpdated": "2026-02-12",
+      "openWeights": true
+    },
+    "glm-5.1": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "z-ai/glm-5.1",
+      "modelId": "glm-5.1",
+      "displayName": "GLM-5.1",
+      "family": "glm",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 202752,
+      "maxOutputTokens": 131072,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 1.4,
+        "output": 4.4,
+        "cache_read": 0.26
+      },
+      "releaseDate": "2026-04-07",
+      "lastUpdated": "2026-04-07",
+      "openWeights": true
+    },
+    "glm-4.5": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "z-ai/glm-4.5",
+      "modelId": "glm-4.5",
+      "displayName": "GLM 4.5",
+      "family": "glm",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 128000,
+      "maxOutputTokens": 96000,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.6,
+        "output": 2.2
+      },
+      "knowledge": "2025-04",
+      "releaseDate": "2025-07-28",
+      "lastUpdated": "2025-07-28",
+      "openWeights": true
+    },
+    "glm-4.6:exacto": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "z-ai/glm-4.6:exacto",
+      "modelId": "glm-4.6:exacto",
+      "displayName": "GLM 4.6 (exacto)",
+      "family": "glm",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 200000,
+      "maxOutputTokens": 128000,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.6,
+        "output": 1.9,
+        "cache_read": 0.11
+      },
+      "knowledge": "2025-09",
+      "releaseDate": "2025-09-30",
+      "lastUpdated": "2025-09-30",
+      "openWeights": true
+    },
+    "glm-4.5-air": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "z-ai/glm-4.5-air",
+      "modelId": "glm-4.5-air",
+      "displayName": "GLM 4.5 Air",
+      "family": "glm-air",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 128000,
+      "maxOutputTokens": 96000,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.2,
+        "output": 1.1
+      },
+      "knowledge": "2025-04",
+      "releaseDate": "2025-07-28",
+      "lastUpdated": "2025-07-28",
+      "openWeights": true
+    },
+    "glm-5-turbo": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "z-ai/glm-5-turbo",
+      "modelId": "glm-5-turbo",
+      "displayName": "GLM-5-Turbo",
+      "family": "glm",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 202752,
+      "maxOutputTokens": 131072,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.96,
+        "output": 3.2,
+        "cache_read": 0.192,
+        "cache_write": 0
+      },
+      "releaseDate": "2026-03-16",
+      "lastUpdated": "2026-03-16",
+      "openWeights": false
+    },
+    "glm-4.5v": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "z-ai/glm-4.5v",
+      "modelId": "glm-4.5v",
+      "displayName": "GLM 4.5V",
+      "family": "glm",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 64000,
+      "maxOutputTokens": 16384,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.6,
+        "output": 1.8
+      },
+      "knowledge": "2025-04",
+      "releaseDate": "2025-08-11",
+      "lastUpdated": "2025-08-11",
+      "openWeights": true
+    },
+    "glm-4.6": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "z-ai/glm-4.6",
+      "modelId": "glm-4.6",
+      "displayName": "GLM 4.6",
+      "family": "glm",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 200000,
+      "maxOutputTokens": 128000,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.6,
+        "output": 2.2,
+        "cache_read": 0.11
+      },
+      "knowledge": "2025-09",
+      "releaseDate": "2025-09-30",
+      "lastUpdated": "2025-09-30",
+      "openWeights": true
+    },
+    "glm-4.7-flash": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "z-ai/glm-4.7-flash",
+      "modelId": "glm-4.7-flash",
+      "displayName": "GLM-4.7-Flash",
+      "family": "glm",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 200000,
+      "maxOutputTokens": 65535,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.07,
+        "output": 0.4
+      },
+      "releaseDate": "2026-01-19",
+      "lastUpdated": "2026-01-19",
+      "openWeights": true
+    },
+    "riverflow-v2-standard-preview": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "sourceful/riverflow-v2-standard-preview",
+      "modelId": "riverflow-v2-standard-preview",
+      "displayName": "Riverflow V2 Standard Preview",
+      "family": "sourceful",
+      "capabilities": {
+        "vision": true,
+        "reasoning": false,
+        "tools": false,
+        "structuredOutput": false
+      },
+      "contextTokens": 8192,
+      "maxOutputTokens": 8192,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "image"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2025-06",
+      "releaseDate": "2025-12-08",
+      "lastUpdated": "2026-01-28",
+      "openWeights": true
+    },
+    "riverflow-v2-fast-preview": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "sourceful/riverflow-v2-fast-preview",
+      "modelId": "riverflow-v2-fast-preview",
+      "displayName": "Riverflow V2 Fast Preview",
+      "family": "sourceful",
+      "capabilities": {
+        "vision": true,
+        "reasoning": false,
+        "tools": false,
+        "structuredOutput": false
+      },
+      "contextTokens": 8192,
+      "maxOutputTokens": 8192,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "image"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2025-06",
+      "releaseDate": "2025-12-08",
+      "lastUpdated": "2026-01-28",
+      "openWeights": true
+    },
+    "riverflow-v2-max-preview": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "sourceful/riverflow-v2-max-preview",
+      "modelId": "riverflow-v2-max-preview",
+      "displayName": "Riverflow V2 Max Preview",
+      "family": "sourceful",
+      "capabilities": {
+        "vision": true,
+        "reasoning": false,
+        "tools": false,
+        "structuredOutput": false
+      },
+      "contextTokens": 8192,
+      "maxOutputTokens": 8192,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "image"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2025-06",
+      "releaseDate": "2025-12-08",
+      "lastUpdated": "2026-01-28",
+      "openWeights": true
+    },
+    "minimax-m2.7": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "minimax/minimax-m2.7",
+      "modelId": "minimax-m2.7",
+      "displayName": "MiniMax M2.7",
+      "family": "minimax",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": false
+      },
+      "contextTokens": 204800,
+      "maxOutputTokens": 131072,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.3,
+        "output": 1.2,
+        "cache_read": 0.06,
+        "cache_write": 0.375
+      },
+      "releaseDate": "2026-03-18",
+      "lastUpdated": "2026-03-18",
+      "openWeights": true
+    },
+    "minimax-m2": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "minimax/minimax-m2",
+      "modelId": "minimax-m2",
+      "displayName": "MiniMax M2",
+      "family": "minimax",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 196600,
+      "maxOutputTokens": 118000,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.28,
+        "output": 1.15,
+        "cache_read": 0.28,
+        "cache_write": 1.15
+      },
+      "releaseDate": "2025-10-23",
+      "lastUpdated": "2025-10-23",
+      "openWeights": true
+    },
+    "minimax-01": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "minimax/minimax-01",
+      "modelId": "minimax-01",
+      "displayName": "MiniMax-01",
+      "family": "minimax",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": false
+      },
+      "contextTokens": 1000000,
+      "maxOutputTokens": 1000000,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.2,
+        "output": 1.1
+      },
+      "releaseDate": "2025-01-15",
+      "lastUpdated": "2025-01-15",
+      "openWeights": true
+    },
+    "minimax-m2.1": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "minimax/minimax-m2.1",
+      "modelId": "minimax-m2.1",
+      "displayName": "MiniMax M2.1",
+      "family": "minimax",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 204800,
+      "maxOutputTokens": 131072,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.3,
+        "output": 1.2
+      },
+      "releaseDate": "2025-12-23",
+      "lastUpdated": "2025-12-23",
+      "openWeights": true
+    },
+    "minimax-m2.5:free": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "minimax/minimax-m2.5:free",
+      "modelId": "minimax-m2.5:free",
+      "displayName": "MiniMax M2.5 (free)",
+      "family": "minimax",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 204800,
+      "maxOutputTokens": 131072,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "releaseDate": "2026-02-12",
+      "lastUpdated": "2026-02-12",
+      "openWeights": true
+    },
+    "minimax-m1": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "minimax/minimax-m1",
+      "modelId": "minimax-m1",
+      "displayName": "MiniMax M1",
+      "family": "minimax",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": false
+      },
+      "contextTokens": 1000000,
+      "maxOutputTokens": 40000,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.4,
+        "output": 2.2
+      },
+      "releaseDate": "2025-06-17",
+      "lastUpdated": "2025-06-17",
+      "openWeights": true
+    },
+    "minimax-m2.5": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "minimax/minimax-m2.5",
+      "modelId": "minimax-m2.5",
+      "displayName": "MiniMax M2.5",
+      "family": "minimax",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 204800,
+      "maxOutputTokens": 131072,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.3,
+        "output": 1.2,
+        "cache_read": 0.03
+      },
+      "releaseDate": "2026-02-12",
+      "lastUpdated": "2026-02-12",
+      "openWeights": true
+    },
+    "qwen3.5-397b-a17b": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "qwen/qwen3.5-397b-a17b",
+      "modelId": "qwen3.5-397b-a17b",
+      "displayName": "Qwen3.5 397B A17B",
+      "family": "qwen",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 262144,
+      "maxOutputTokens": 65536,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.6,
+        "output": 3.6
+      },
+      "knowledge": "2025-04",
+      "releaseDate": "2026-02-16",
+      "lastUpdated": "2026-02-16",
+      "openWeights": true
+    },
+    "qwen2.5-vl-72b-instruct": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "qwen/qwen2.5-vl-72b-instruct",
+      "modelId": "qwen2.5-vl-72b-instruct",
+      "displayName": "Qwen2.5 VL 72B Instruct",
+      "family": "qwen",
+      "capabilities": {
+        "vision": true,
+        "reasoning": false,
+        "tools": false,
+        "structuredOutput": true
+      },
+      "contextTokens": 32768,
+      "maxOutputTokens": 8192,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2024-10",
+      "releaseDate": "2025-02-01",
+      "lastUpdated": "2025-02-01",
+      "openWeights": true
+    },
+    "qwen3-coder:free": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "qwen/qwen3-coder:free",
+      "modelId": "qwen3-coder:free",
+      "displayName": "Qwen3 Coder 480B A35B Instruct (free)",
+      "family": "qwen",
+      "capabilities": {
+        "vision": false,
+        "reasoning": false,
+        "tools": true,
+        "structuredOutput": false
+      },
+      "contextTokens": 262144,
+      "maxOutputTokens": 66536,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2025-04",
+      "releaseDate": "2025-07-23",
+      "lastUpdated": "2025-07-23",
+      "openWeights": true
+    },
+    "qwen3.5-flash-02-23": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "qwen/qwen3.5-flash-02-23",
+      "modelId": "qwen3.5-flash-02-23",
+      "displayName": "Qwen: Qwen3.5-Flash",
+      "family": "qwen",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 1000000,
+      "maxOutputTokens": 65536,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.065,
+        "output": 0.26
+      },
+      "releaseDate": "2026-02-25",
+      "lastUpdated": "2026-02-25",
+      "openWeights": false
+    },
+    "qwen3.6-plus": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "qwen/qwen3.6-plus",
+      "modelId": "qwen3.6-plus",
+      "displayName": "Qwen3.6 Plus",
+      "family": "qwen",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 1000000,
+      "maxOutputTokens": 65536,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.325,
+        "output": 1.95
+      },
+      "knowledge": "2025-04",
+      "releaseDate": "2026-04-02",
+      "lastUpdated": "2026-04-02",
+      "openWeights": false
+    },
+    "qwen3-max": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "qwen/qwen3-max",
+      "modelId": "qwen3-max",
+      "displayName": "Qwen3 Max",
+      "family": "qwen",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": false
+      },
+      "contextTokens": 262144,
+      "maxOutputTokens": 32768,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 1.2,
+        "output": 6
+      },
+      "releaseDate": "2025-09-05",
+      "lastUpdated": "2025-09-05",
+      "openWeights": false
+    },
+    "qwen3-coder:exacto": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "qwen/qwen3-coder:exacto",
+      "modelId": "qwen3-coder:exacto",
+      "displayName": "Qwen3 Coder (exacto)",
+      "family": "qwen",
+      "capabilities": {
+        "vision": false,
+        "reasoning": false,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 131072,
+      "maxOutputTokens": 32768,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.38,
+        "output": 1.53
+      },
+      "knowledge": "2025-04",
+      "releaseDate": "2025-07-23",
+      "lastUpdated": "2025-07-23",
+      "openWeights": true
+    },
+    "qwen3-30b-a3b-instruct-2507": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "qwen/qwen3-30b-a3b-instruct-2507",
+      "modelId": "qwen3-30b-a3b-instruct-2507",
+      "displayName": "Qwen3 30B A3B Instruct 2507",
+      "family": "qwen",
+      "capabilities": {
+        "vision": false,
+        "reasoning": false,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 262000,
+      "maxOutputTokens": 262000,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.2,
+        "output": 0.8
+      },
+      "knowledge": "2025-04",
+      "releaseDate": "2025-07-29",
+      "lastUpdated": "2025-07-29",
+      "openWeights": true
+    },
+    "qwen3-235b-a22b-thinking-2507": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "qwen/qwen3-235b-a22b-thinking-2507",
+      "modelId": "qwen3-235b-a22b-thinking-2507",
+      "displayName": "Qwen3 235B A22B Thinking 2507",
+      "family": "qwen",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 262144,
+      "maxOutputTokens": 81920,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.078,
+        "output": 0.312
+      },
+      "knowledge": "2025-04",
+      "releaseDate": "2025-07-25",
+      "lastUpdated": "2025-07-25",
+      "openWeights": true
+    },
+    "qwen3-next-80b-a3b-thinking": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "qwen/qwen3-next-80b-a3b-thinking",
+      "modelId": "qwen3-next-80b-a3b-thinking",
+      "displayName": "Qwen3 Next 80B A3B Thinking",
+      "family": "qwen",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 262144,
+      "maxOutputTokens": 262144,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.14,
+        "output": 1.4
+      },
+      "knowledge": "2025-04",
+      "releaseDate": "2025-09-11",
+      "lastUpdated": "2025-09-11",
+      "openWeights": true
+    },
+    "qwen3-30b-a3b-thinking-2507": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "qwen/qwen3-30b-a3b-thinking-2507",
+      "modelId": "qwen3-30b-a3b-thinking-2507",
+      "displayName": "Qwen3 30B A3B Thinking 2507",
+      "family": "qwen",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 262000,
+      "maxOutputTokens": 262000,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.2,
+        "output": 0.8
+      },
+      "knowledge": "2025-04",
+      "releaseDate": "2025-07-29",
+      "lastUpdated": "2025-07-29",
+      "openWeights": true
+    },
+    "qwen3-4b:free": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "qwen/qwen3-4b:free",
+      "modelId": "qwen3-4b:free",
+      "displayName": "Qwen3 4B (free)",
+      "family": "qwen",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 40960,
+      "maxOutputTokens": 40960,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2025-04",
+      "releaseDate": "2025-04-30",
+      "lastUpdated": "2025-07-23",
+      "openWeights": true
+    },
+    "qwen3-next-80b-a3b-instruct:free": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "qwen/qwen3-next-80b-a3b-instruct:free",
+      "modelId": "qwen3-next-80b-a3b-instruct:free",
+      "displayName": "Qwen3 Next 80B A3B Instruct (free)",
+      "family": "qwen",
+      "capabilities": {
+        "vision": false,
+        "reasoning": false,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 262144,
+      "maxOutputTokens": 262144,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2025-04",
+      "releaseDate": "2025-09-11",
+      "lastUpdated": "2025-09-11",
+      "openWeights": true
+    },
+    "qwen3-coder-flash": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "qwen/qwen3-coder-flash",
+      "modelId": "qwen3-coder-flash",
+      "displayName": "Qwen3 Coder Flash",
+      "family": "qwen",
+      "capabilities": {
+        "vision": false,
+        "reasoning": false,
+        "tools": true,
+        "structuredOutput": false
+      },
+      "contextTokens": 128000,
+      "maxOutputTokens": 66536,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.3,
+        "output": 1.5
+      },
+      "knowledge": "2025-04",
+      "releaseDate": "2025-07-23",
+      "lastUpdated": "2025-07-23",
+      "openWeights": false
+    },
+    "qwen3-next-80b-a3b-instruct": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "qwen/qwen3-next-80b-a3b-instruct",
+      "modelId": "qwen3-next-80b-a3b-instruct",
+      "displayName": "Qwen3 Next 80B A3B Instruct",
+      "family": "qwen",
+      "capabilities": {
+        "vision": false,
+        "reasoning": false,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 262144,
+      "maxOutputTokens": 262144,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.14,
+        "output": 1.4
+      },
+      "knowledge": "2025-04",
+      "releaseDate": "2025-09-11",
+      "lastUpdated": "2025-09-11",
+      "openWeights": true
+    },
+    "qwen-2.5-coder-32b-instruct": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "qwen/qwen-2.5-coder-32b-instruct",
+      "modelId": "qwen-2.5-coder-32b-instruct",
+      "displayName": "Qwen2.5 Coder 32B Instruct",
+      "family": "qwen",
+      "capabilities": {
+        "vision": false,
+        "reasoning": false,
+        "tools": false,
+        "structuredOutput": true
+      },
+      "contextTokens": 32768,
+      "maxOutputTokens": 8192,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2024-10",
+      "releaseDate": "2024-11-11",
+      "lastUpdated": "2024-11-11",
+      "openWeights": true
+    },
+    "qwen3-coder-30b-a3b-instruct": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "qwen/qwen3-coder-30b-a3b-instruct",
+      "modelId": "qwen3-coder-30b-a3b-instruct",
+      "displayName": "Qwen3 Coder 30B A3B Instruct",
+      "family": "qwen",
+      "capabilities": {
+        "vision": false,
+        "reasoning": false,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 160000,
+      "maxOutputTokens": 65536,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.07,
+        "output": 0.27
+      },
+      "knowledge": "2025-04",
+      "releaseDate": "2025-07-31",
+      "lastUpdated": "2025-07-31",
+      "openWeights": true
+    },
+    "qwen3-coder": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "qwen/qwen3-coder",
+      "modelId": "qwen3-coder",
+      "displayName": "Qwen3 Coder",
+      "family": "qwen",
+      "capabilities": {
+        "vision": false,
+        "reasoning": false,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 262144,
+      "maxOutputTokens": 66536,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.3,
+        "output": 1.2
+      },
+      "knowledge": "2025-04",
+      "releaseDate": "2025-07-23",
+      "lastUpdated": "2025-07-23",
+      "openWeights": true
+    },
+    "qwen3.5-plus-02-15": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "qwen/qwen3.5-plus-02-15",
+      "modelId": "qwen3.5-plus-02-15",
+      "displayName": "Qwen3.5 Plus 2026-02-15",
+      "family": "qwen",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 1000000,
+      "maxOutputTokens": 65536,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.4,
+        "output": 2.4
+      },
+      "knowledge": "2025-04",
+      "releaseDate": "2026-02-16",
+      "lastUpdated": "2026-02-16",
+      "openWeights": false
+    },
+    "qwen3-235b-a22b-07-25": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "qwen/qwen3-235b-a22b-07-25",
+      "modelId": "qwen3-235b-a22b-07-25",
+      "displayName": "Qwen3 235B A22B Instruct 2507",
+      "family": "qwen",
+      "capabilities": {
+        "vision": false,
+        "reasoning": false,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 262144,
+      "maxOutputTokens": 131072,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.15,
+        "output": 0.85
+      },
+      "knowledge": "2025-04",
+      "releaseDate": "2025-04-28",
+      "lastUpdated": "2025-07-21",
+      "openWeights": true
+    },
+    "gemini-2.5-pro-preview-05-06": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "google/gemini-2.5-pro-preview-05-06",
+      "modelId": "gemini-2.5-pro-preview-05-06",
+      "displayName": "Gemini 2.5 Pro Preview 05-06",
+      "family": "gemini-pro",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 1048576,
+      "maxOutputTokens": 65536,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 1.25,
+        "output": 10,
+        "cache_read": 0.31
+      },
+      "knowledge": "2025-01",
+      "releaseDate": "2025-05-06",
+      "lastUpdated": "2025-05-06",
+      "openWeights": false
+    },
+    "gemini-3.1-pro-preview-customtools": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "google/gemini-3.1-pro-preview-customtools",
+      "modelId": "gemini-3.1-pro-preview-customtools",
+      "displayName": "Gemini 3.1 Pro Preview Custom Tools",
+      "family": "gemini-pro",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 1048576,
+      "maxOutputTokens": 65536,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 2,
+        "output": 12,
+        "reasoning": 12,
+        "context_over_200k": {
+          "input": 4,
+          "output": 18,
+          "cache_read": 0.4
+        }
+      },
+      "knowledge": "2025-01",
+      "releaseDate": "2026-02-19",
+      "lastUpdated": "2026-02-19",
+      "openWeights": false
+    },
+    "gemma-3-4b-it:free": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "google/gemma-3-4b-it:free",
+      "modelId": "gemma-3-4b-it:free",
+      "displayName": "Gemma 3 4B (free)",
+      "family": "gemma",
+      "capabilities": {
+        "vision": true,
+        "reasoning": false,
+        "tools": false,
+        "structuredOutput": false
+      },
+      "contextTokens": 32768,
+      "maxOutputTokens": 8192,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2024-10",
+      "releaseDate": "2025-03-13",
+      "lastUpdated": "2025-03-13",
+      "openWeights": true
+    },
+    "gemini-2.5-flash-lite-preview-09-2025": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "google/gemini-2.5-flash-lite-preview-09-2025",
+      "modelId": "gemini-2.5-flash-lite-preview-09-2025",
+      "displayName": "Gemini 2.5 Flash Lite Preview 09-25",
+      "family": "gemini-flash-lite",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 1048576,
+      "maxOutputTokens": 65536,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.1,
+        "output": 0.4,
+        "cache_read": 0.025
+      },
+      "knowledge": "2025-01",
+      "releaseDate": "2025-09-25",
+      "lastUpdated": "2025-09-25",
+      "openWeights": false
+    },
+    "gemini-2.0-flash-001": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "google/gemini-2.0-flash-001",
+      "modelId": "gemini-2.0-flash-001",
+      "displayName": "Gemini 2.0 Flash",
+      "family": "gemini-flash",
+      "capabilities": {
+        "vision": true,
+        "reasoning": false,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 1048576,
+      "maxOutputTokens": 8192,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.1,
+        "output": 0.4,
+        "cache_read": 0.025
+      },
+      "knowledge": "2024-06",
+      "releaseDate": "2024-12-11",
+      "lastUpdated": "2024-12-11",
+      "openWeights": false
+    },
+    "gemma-3n-e4b-it": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "google/gemma-3n-e4b-it",
+      "modelId": "gemma-3n-e4b-it",
+      "displayName": "Gemma 3n 4B",
+      "family": "gemma",
+      "capabilities": {
+        "vision": false,
+        "reasoning": false,
+        "tools": false,
+        "structuredOutput": false
+      },
+      "contextTokens": 32768,
+      "maxOutputTokens": 32768,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.02,
+        "output": 0.04
+      },
+      "knowledge": "2024-06",
+      "releaseDate": "2025-05-20",
+      "lastUpdated": "2025-05-20",
+      "openWeights": true
+    },
+    "gemini-3.1-flash-lite-preview": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "google/gemini-3.1-flash-lite-preview",
+      "modelId": "gemini-3.1-flash-lite-preview",
+      "displayName": "Gemini 3.1 Flash Lite Preview",
+      "family": "gemini-flash-lite",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 1048576,
+      "maxOutputTokens": 65536,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video",
+          "pdf",
+          "audio"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.25,
+        "output": 1.5,
+        "reasoning": 1.5,
+        "cache_read": 0.025,
+        "cache_write": 0.083,
+        "input_audio": 0.5,
+        "output_audio": 0.5
+      },
+      "releaseDate": "2026-03-03",
+      "lastUpdated": "2026-03-03",
+      "openWeights": false
+    },
+    "gemma-3n-e4b-it:free": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "google/gemma-3n-e4b-it:free",
+      "modelId": "gemma-3n-e4b-it:free",
+      "displayName": "Gemma 3n 4B (free)",
+      "family": "gemma",
+      "capabilities": {
+        "vision": false,
+        "reasoning": false,
+        "tools": false,
+        "structuredOutput": false
+      },
+      "contextTokens": 8192,
+      "maxOutputTokens": 2000,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2024-06",
+      "releaseDate": "2025-05-20",
+      "lastUpdated": "2025-05-20",
+      "openWeights": true
+    },
+    "gemini-3.1-pro-preview": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "google/gemini-3.1-pro-preview",
+      "modelId": "gemini-3.1-pro-preview",
+      "displayName": "Gemini 3.1 Pro Preview",
+      "family": "gemini-pro",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 1048576,
+      "maxOutputTokens": 65536,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 2,
+        "output": 12,
+        "reasoning": 12,
+        "context_over_200k": {
+          "input": 4,
+          "output": 18,
+          "cache_read": 0.4
+        }
+      },
+      "knowledge": "2025-01",
+      "releaseDate": "2026-02-19",
+      "lastUpdated": "2026-02-19",
+      "openWeights": false
+    },
+    "gemini-3-flash-preview": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "google/gemini-3-flash-preview",
+      "modelId": "gemini-3-flash-preview",
+      "displayName": "Gemini 3 Flash Preview",
+      "family": "gemini-flash",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 1048576,
+      "maxOutputTokens": 65536,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.5,
+        "output": 3,
+        "cache_read": 0.05
+      },
+      "knowledge": "2025-01",
+      "releaseDate": "2025-12-17",
+      "lastUpdated": "2025-12-17",
+      "openWeights": false
+    },
+    "gemini-3-pro-preview": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "google/gemini-3-pro-preview",
+      "modelId": "gemini-3-pro-preview",
+      "displayName": "Gemini 3 Pro Preview",
+      "family": "gemini-pro",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 1050000,
+      "maxOutputTokens": 66000,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 2,
+        "output": 12
+      },
+      "knowledge": "2025-01",
+      "releaseDate": "2025-11-18",
+      "lastUpdated": "2025-11",
+      "openWeights": false
+    },
+    "gemma-3n-e2b-it:free": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "google/gemma-3n-e2b-it:free",
+      "modelId": "gemma-3n-e2b-it:free",
+      "displayName": "Gemma 3n 2B (free)",
+      "family": "gemma",
+      "capabilities": {
+        "vision": false,
+        "reasoning": false,
+        "tools": false,
+        "structuredOutput": false
+      },
+      "contextTokens": 8192,
+      "maxOutputTokens": 2000,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2024-06",
+      "releaseDate": "2025-07-09",
+      "lastUpdated": "2025-07-09",
+      "openWeights": true
+    },
+    "gemini-2.5-pro": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "google/gemini-2.5-pro",
+      "modelId": "gemini-2.5-pro",
+      "displayName": "Gemini 2.5 Pro",
+      "family": "gemini-pro",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 1048576,
+      "maxOutputTokens": 65536,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 1.25,
+        "output": 10,
+        "cache_read": 0.31
+      },
+      "knowledge": "2025-01",
+      "releaseDate": "2025-03-20",
+      "lastUpdated": "2025-06-05",
+      "openWeights": false
+    },
+    "gemma-2-9b-it": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "google/gemma-2-9b-it",
+      "modelId": "gemma-2-9b-it",
+      "displayName": "Gemma 2 9B",
+      "family": "gemma",
+      "capabilities": {
+        "vision": false,
+        "reasoning": false,
+        "tools": false,
+        "structuredOutput": false
+      },
+      "contextTokens": 8192,
+      "maxOutputTokens": 8192,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.03,
+        "output": 0.09
+      },
+      "knowledge": "2024-06",
+      "releaseDate": "2024-06-28",
+      "lastUpdated": "2024-06-28",
+      "openWeights": true
+    },
+    "gemma-4-31b-it": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "google/gemma-4-31b-it",
+      "modelId": "gemma-4-31b-it",
+      "displayName": "Gemma 4 31B",
+      "family": "gemma",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 262144,
+      "maxOutputTokens": 262144,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.14,
+        "output": 0.4
+      },
+      "knowledge": "2025-01",
+      "releaseDate": "2026-04-02",
+      "lastUpdated": "2026-04-02",
+      "openWeights": true
+    },
+    "gemini-2.5-pro-preview-06-05": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "google/gemini-2.5-pro-preview-06-05",
+      "modelId": "gemini-2.5-pro-preview-06-05",
+      "displayName": "Gemini 2.5 Pro Preview 06-05",
+      "family": "gemini-pro",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 1048576,
+      "maxOutputTokens": 65536,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 1.25,
+        "output": 10,
+        "cache_read": 0.31
+      },
+      "knowledge": "2025-01",
+      "releaseDate": "2025-06-05",
+      "lastUpdated": "2025-06-05",
+      "openWeights": false
+    },
+    "gemma-3-12b-it": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "google/gemma-3-12b-it",
+      "modelId": "gemma-3-12b-it",
+      "displayName": "Gemma 3 12B",
+      "family": "gemma",
+      "capabilities": {
+        "vision": true,
+        "reasoning": false,
+        "tools": false,
+        "structuredOutput": true
+      },
+      "contextTokens": 131072,
+      "maxOutputTokens": 131072,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.03,
+        "output": 0.1
+      },
+      "knowledge": "2024-10",
+      "releaseDate": "2025-03-13",
+      "lastUpdated": "2025-03-13",
+      "openWeights": true
+    },
+    "gemma-3-27b-it:free": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "google/gemma-3-27b-it:free",
+      "modelId": "gemma-3-27b-it:free",
+      "displayName": "Gemma 3 27B (free)",
+      "family": "gemma",
+      "capabilities": {
+        "vision": true,
+        "reasoning": false,
+        "tools": true,
+        "structuredOutput": false
+      },
+      "contextTokens": 131072,
+      "maxOutputTokens": 8192,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2024-10",
+      "releaseDate": "2025-03-12",
+      "lastUpdated": "2025-03-12",
+      "openWeights": true
+    },
+    "gemini-2.5-flash": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "google/gemini-2.5-flash",
+      "modelId": "gemini-2.5-flash",
+      "displayName": "Gemini 2.5 Flash",
+      "family": "gemini-flash",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 1048576,
+      "maxOutputTokens": 65536,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.3,
+        "output": 2.5,
+        "cache_read": 0.0375
+      },
+      "knowledge": "2025-01",
+      "releaseDate": "2025-07-17",
+      "lastUpdated": "2025-07-17",
+      "openWeights": false
+    },
+    "gemma-4-31b-it:free": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "google/gemma-4-31b-it:free",
+      "modelId": "gemma-4-31b-it:free",
+      "displayName": "Gemma 4 31B (free)",
+      "family": "gemma",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 262144,
+      "maxOutputTokens": 32768,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2025-01",
+      "releaseDate": "2026-04-02",
+      "lastUpdated": "2026-04-02",
+      "openWeights": true
+    },
+    "gemma-3-12b-it:free": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "google/gemma-3-12b-it:free",
+      "modelId": "gemma-3-12b-it:free",
+      "displayName": "Gemma 3 12B (free)",
+      "family": "gemma",
+      "capabilities": {
+        "vision": true,
+        "reasoning": false,
+        "tools": false,
+        "structuredOutput": false
+      },
+      "contextTokens": 32768,
+      "maxOutputTokens": 8192,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2024-10",
+      "releaseDate": "2025-03-13",
+      "lastUpdated": "2025-03-13",
+      "openWeights": true
+    },
+    "gemma-3-4b-it": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "google/gemma-3-4b-it",
+      "modelId": "gemma-3-4b-it",
+      "displayName": "Gemma 3 4B",
+      "family": "gemma",
+      "capabilities": {
+        "vision": true,
+        "reasoning": false,
+        "tools": false,
+        "structuredOutput": false
+      },
+      "contextTokens": 96000,
+      "maxOutputTokens": 96000,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.01703,
+        "output": 0.06815
+      },
+      "knowledge": "2024-10",
+      "releaseDate": "2025-03-13",
+      "lastUpdated": "2025-03-13",
+      "openWeights": true
+    },
+    "gemini-2.5-flash-preview-09-2025": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "google/gemini-2.5-flash-preview-09-2025",
+      "modelId": "gemini-2.5-flash-preview-09-2025",
+      "displayName": "Gemini 2.5 Flash Preview 09-25",
+      "family": "gemini-flash",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 1048576,
+      "maxOutputTokens": 65536,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.3,
+        "output": 2.5,
+        "cache_read": 0.031
+      },
+      "knowledge": "2025-01",
+      "releaseDate": "2025-09-25",
+      "lastUpdated": "2025-09-25",
+      "openWeights": false
+    },
+    "gemma-3-27b-it": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "google/gemma-3-27b-it",
+      "modelId": "gemma-3-27b-it",
+      "displayName": "Gemma 3 27B",
+      "family": "gemma",
+      "capabilities": {
+        "vision": true,
+        "reasoning": false,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 96000,
+      "maxOutputTokens": 96000,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.04,
+        "output": 0.15
+      },
+      "knowledge": "2024-10",
+      "releaseDate": "2025-03-12",
+      "lastUpdated": "2025-03-12",
+      "openWeights": true
+    },
+    "gemma-4-26b-a4b-it": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "google/gemma-4-26b-a4b-it",
+      "modelId": "gemma-4-26b-a4b-it",
+      "displayName": "Gemma 4 26B A4B",
+      "family": "gemma",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 262144,
+      "maxOutputTokens": 262144,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.13,
+        "output": 0.4
+      },
+      "knowledge": "2025-01",
+      "releaseDate": "2026-04-03",
+      "lastUpdated": "2026-04-03",
+      "openWeights": true
+    },
+    "gemma-4-26b-a4b-it:free": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "google/gemma-4-26b-a4b-it:free",
+      "modelId": "gemma-4-26b-a4b-it:free",
+      "displayName": "Gemma 4 26B A4B (free)",
+      "family": "gemma",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 262144,
+      "maxOutputTokens": 32768,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2025-01",
+      "releaseDate": "2026-04-03",
+      "lastUpdated": "2026-04-03",
+      "openWeights": true
+    },
+    "gemini-2.5-flash-lite": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "google/gemini-2.5-flash-lite",
+      "modelId": "gemini-2.5-flash-lite",
+      "displayName": "Gemini 2.5 Flash Lite",
+      "family": "gemini-flash-lite",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 1048576,
+      "maxOutputTokens": 65536,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.1,
+        "output": 0.4,
+        "cache_read": 0.025
+      },
+      "knowledge": "2025-01",
+      "releaseDate": "2025-06-17",
+      "lastUpdated": "2025-06-17",
+      "openWeights": false
+    },
+    "kimi-k2.5": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "moonshotai/kimi-k2.5",
+      "modelId": "kimi-k2.5",
+      "displayName": "Kimi K2.5",
+      "family": "kimi",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 262144,
+      "maxOutputTokens": 262144,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.6,
+        "output": 3,
+        "cache_read": 0.1
+      },
+      "knowledge": "2025-01",
+      "releaseDate": "2026-01-27",
+      "lastUpdated": "2026-01-27",
+      "openWeights": true
+    },
+    "kimi-k2-0905": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "moonshotai/kimi-k2-0905",
+      "modelId": "kimi-k2-0905",
+      "displayName": "Kimi K2 Instruct 0905",
+      "family": "kimi",
+      "capabilities": {
+        "vision": false,
+        "reasoning": false,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 262144,
+      "maxOutputTokens": 16384,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.6,
+        "output": 2.5
+      },
+      "knowledge": "2024-10",
+      "releaseDate": "2025-09-05",
+      "lastUpdated": "2025-09-05",
+      "openWeights": true
+    },
+    "kimi-k2-0905:exacto": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "moonshotai/kimi-k2-0905:exacto",
+      "modelId": "kimi-k2-0905:exacto",
+      "displayName": "Kimi K2 Instruct 0905 (exacto)",
+      "family": "kimi",
+      "capabilities": {
+        "vision": false,
+        "reasoning": false,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 262144,
+      "maxOutputTokens": 16384,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.6,
+        "output": 2.5
+      },
+      "knowledge": "2024-10",
+      "releaseDate": "2025-09-05",
+      "lastUpdated": "2025-09-05",
+      "openWeights": true
+    },
+    "kimi-k2": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "moonshotai/kimi-k2",
+      "modelId": "kimi-k2",
+      "displayName": "Kimi K2",
+      "family": "kimi",
+      "capabilities": {
+        "vision": false,
+        "reasoning": false,
+        "tools": true,
+        "structuredOutput": false
+      },
+      "contextTokens": 131072,
+      "maxOutputTokens": 32768,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.55,
+        "output": 2.2
+      },
+      "knowledge": "2024-10",
+      "releaseDate": "2025-07-11",
+      "lastUpdated": "2025-07-11",
+      "openWeights": true
+    },
+    "kimi-k2:free": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "moonshotai/kimi-k2:free",
+      "modelId": "kimi-k2:free",
+      "displayName": "Kimi K2 (free)",
+      "family": "kimi",
+      "capabilities": {
+        "vision": false,
+        "reasoning": false,
+        "tools": true,
+        "structuredOutput": false
+      },
+      "contextTokens": 32800,
+      "maxOutputTokens": 32800,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0,
+        "output": 0
+      },
+      "knowledge": "2025-04",
+      "releaseDate": "2025-07-11",
+      "lastUpdated": "2025-07-11",
+      "openWeights": true
+    },
+    "kimi-k2-thinking": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "moonshotai/kimi-k2-thinking",
+      "modelId": "kimi-k2-thinking",
+      "displayName": "Kimi K2 Thinking",
+      "family": "kimi-thinking",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 262144,
+      "maxOutputTokens": 262144,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.6,
+        "output": 2.5,
+        "cache_read": 0.15
+      },
+      "knowledge": "2024-08",
+      "releaseDate": "2025-11-06",
+      "lastUpdated": "2025-11-06",
+      "openWeights": true
+    },
+    "claude-opus-4.1": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "anthropic/claude-opus-4.1",
+      "modelId": "claude-opus-4.1",
+      "displayName": "Claude Opus 4.1",
+      "family": "claude-opus",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 200000,
+      "maxOutputTokens": 32000,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 15,
+        "output": 75,
+        "cache_read": 1.5,
+        "cache_write": 18.75
+      },
+      "knowledge": "2025-03-31",
+      "releaseDate": "2025-08-05",
+      "lastUpdated": "2025-08-05",
+      "openWeights": false
+    },
+    "claude-3.7-sonnet": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "anthropic/claude-3.7-sonnet",
+      "modelId": "claude-3.7-sonnet",
+      "displayName": "Claude Sonnet 3.7",
+      "family": "claude-sonnet",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": false
+      },
+      "contextTokens": 200000,
+      "maxOutputTokens": 128000,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 15,
+        "output": 75,
+        "cache_read": 1.5,
+        "cache_write": 18.75
+      },
+      "knowledge": "2024-01",
+      "releaseDate": "2025-02-19",
+      "lastUpdated": "2025-02-19",
+      "openWeights": false
+    },
+    "claude-opus-4.6": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "anthropic/claude-opus-4.6",
+      "modelId": "claude-opus-4.6",
+      "displayName": "Claude Opus 4.6",
+      "family": "claude-opus",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 1000000,
+      "maxOutputTokens": 128000,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 5,
+        "output": 25,
+        "cache_read": 0.5,
+        "cache_write": 6.25,
+        "context_over_200k": {
+          "input": 10,
+          "output": 37.5,
+          "cache_read": 1,
+          "cache_write": 12.5
+        }
+      },
+      "knowledge": "2025-05-30",
+      "releaseDate": "2026-02-05",
+      "lastUpdated": "2026-02-05",
+      "openWeights": false
+    },
+    "claude-sonnet-4": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "anthropic/claude-sonnet-4",
+      "modelId": "claude-sonnet-4",
+      "displayName": "Claude Sonnet 4",
+      "family": "claude-sonnet",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": false
+      },
+      "contextTokens": 200000,
+      "maxOutputTokens": 64000,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 3,
+        "output": 15,
+        "cache_read": 0.3,
+        "cache_write": 3.75,
+        "context_over_200k": {
+          "input": 6,
+          "output": 22.5,
+          "cache_read": 0.6,
+          "cache_write": 7.5
+        }
+      },
+      "knowledge": "2025-03-31",
+      "releaseDate": "2025-05-22",
+      "lastUpdated": "2025-05-22",
+      "openWeights": false
+    },
+    "claude-sonnet-4.5": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "anthropic/claude-sonnet-4.5",
+      "modelId": "claude-sonnet-4.5",
+      "displayName": "Claude Sonnet 4.5",
+      "family": "claude-sonnet",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 1000000,
+      "maxOutputTokens": 64000,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 3,
+        "output": 15,
+        "cache_read": 0.3,
+        "cache_write": 3.75,
+        "context_over_200k": {
+          "input": 6,
+          "output": 22.5,
+          "cache_read": 0.6,
+          "cache_write": 7.5
+        }
+      },
+      "knowledge": "2025-07-31",
+      "releaseDate": "2025-09-29",
+      "lastUpdated": "2025-09-29",
+      "openWeights": false
+    },
+    "claude-opus-4.5": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "anthropic/claude-opus-4.5",
+      "modelId": "claude-opus-4.5",
+      "displayName": "Claude Opus 4.5",
+      "family": "claude-opus",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 200000,
+      "maxOutputTokens": 32000,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 5,
+        "output": 25,
+        "cache_read": 0.5,
+        "cache_write": 6.25
+      },
+      "knowledge": "2025-05-30",
+      "releaseDate": "2025-11-24",
+      "lastUpdated": "2025-11-24",
+      "openWeights": false
+    },
+    "claude-opus-4": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "anthropic/claude-opus-4",
+      "modelId": "claude-opus-4",
+      "displayName": "Claude Opus 4",
+      "family": "claude-opus",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": false
+      },
+      "contextTokens": 200000,
+      "maxOutputTokens": 32000,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 15,
+        "output": 75,
+        "cache_read": 1.5,
+        "cache_write": 18.75
+      },
+      "knowledge": "2025-03-31",
+      "releaseDate": "2025-05-22",
+      "lastUpdated": "2025-05-22",
+      "openWeights": false
+    },
+    "claude-3.5-haiku": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "anthropic/claude-3.5-haiku",
+      "modelId": "claude-3.5-haiku",
+      "displayName": "Claude Haiku 3.5",
+      "family": "claude-haiku",
+      "capabilities": {
+        "vision": true,
+        "reasoning": false,
+        "tools": true,
+        "structuredOutput": false
+      },
+      "contextTokens": 200000,
+      "maxOutputTokens": 8192,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.8,
+        "output": 4,
+        "cache_read": 0.08,
+        "cache_write": 1
+      },
+      "knowledge": "2024-07-31",
+      "releaseDate": "2024-10-22",
+      "lastUpdated": "2024-10-22",
+      "openWeights": false
+    },
+    "claude-haiku-4.5": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "anthropic/claude-haiku-4.5",
+      "modelId": "claude-haiku-4.5",
+      "displayName": "Claude Haiku 4.5",
+      "family": "claude-haiku",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 200000,
+      "maxOutputTokens": 64000,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 1,
+        "output": 5,
+        "cache_read": 0.1,
+        "cache_write": 1.25
+      },
+      "knowledge": "2025-02-28",
+      "releaseDate": "2025-10-15",
+      "lastUpdated": "2025-10-15",
+      "openWeights": false
+    },
+    "claude-sonnet-4.6": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "anthropic/claude-sonnet-4.6",
+      "modelId": "claude-sonnet-4.6",
+      "displayName": "Claude Sonnet 4.6",
+      "family": "claude-sonnet",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 1000000,
+      "maxOutputTokens": 128000,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 3,
+        "output": 15,
+        "cache_read": 0.3,
+        "cache_write": 3.75,
+        "context_over_200k": {
+          "input": 6,
+          "output": 22.5,
+          "cache_read": 0.6,
+          "cache_write": 7.5
+        }
+      },
+      "releaseDate": "2026-02-17",
+      "lastUpdated": "2026-02-17",
+      "openWeights": false
+    },
+    "mimo-v2-omni": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "xiaomi/mimo-v2-omni",
+      "modelId": "mimo-v2-omni",
+      "displayName": "MiMo-V2-Omni",
+      "family": "mimo",
+      "capabilities": {
+        "vision": true,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 262144,
+      "maxOutputTokens": 65536,
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video",
+          "audio"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.4,
+        "output": 2,
+        "cache_read": 0.08
+      },
+      "releaseDate": "2026-03-18",
+      "lastUpdated": "2026-03-18",
+      "openWeights": true
+    },
+    "mimo-v2-pro": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "xiaomi/mimo-v2-pro",
+      "modelId": "mimo-v2-pro",
+      "displayName": "MiMo-V2-Pro",
+      "family": "mimo",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 1048576,
+      "maxOutputTokens": 65536,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 1,
+        "output": 3,
+        "cache_read": 0.2
+      },
+      "releaseDate": "2026-03-18",
+      "lastUpdated": "2026-03-18",
+      "openWeights": true
+    },
+    "mimo-v2-flash": {
+      "provider": "openrouter",
+      "source": "models.dev/openrouter",
+      "sourceModelId": "xiaomi/mimo-v2-flash",
+      "modelId": "mimo-v2-flash",
+      "displayName": "MiMo-V2-Flash",
+      "family": "mimo",
+      "capabilities": {
+        "vision": false,
+        "reasoning": true,
+        "tools": true,
+        "structuredOutput": true
+      },
+      "contextTokens": 262144,
+      "maxOutputTokens": 65536,
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "pricing": {
+        "input": 0.1,
+        "output": 0.3,
+        "cache_read": 0.01
+      },
+      "knowledge": "2024-12",
+      "releaseDate": "2025-12-14",
+      "lastUpdated": "2025-12-14",
+      "openWeights": true
+    }
+  }
+}

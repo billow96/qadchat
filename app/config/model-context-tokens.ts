@@ -1,6 +1,8 @@
 // 模型上下文Token数配置
 // 基于各个模型提供商的官方文档和API规格整理
 
+import { getRuntimeModelMetadata } from "./model-runtime-metadata";
+
 export interface ModelContextConfig {
   contextTokens: number; // 上下文窗口大小（输入+输出）
   maxOutputTokens?: number; // 最大输出Token数（如果有特殊限制）
@@ -454,6 +456,26 @@ export const MODEL_CONTEXT_TOKENS: Record<string, ModelContextConfig> = {
 export function getModelContextTokens(
   modelName: string,
 ): ModelContextConfig | null {
+  if (typeof window !== "undefined") {
+    try {
+      const metadata = getRuntimeModelMetadata(modelName);
+      if (
+        typeof metadata?.contextTokens === "number" &&
+        metadata.contextTokens > 0
+      ) {
+        return {
+          contextTokens: metadata.contextTokens,
+          maxOutputTokens: metadata.maxOutputTokens,
+        };
+      }
+    } catch (e) {
+      console.warn(
+        `Failed to read runtime context tokens for ${modelName}:`,
+        e,
+      );
+    }
+  }
+
   // 检查是否在浏览器环境中
   if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
     // 首先检查是否有自定义配置

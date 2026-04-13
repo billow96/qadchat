@@ -30,6 +30,7 @@ import BotIconGrok from "../icons/llm-icons/grok.svg";
 import BotIconDoubao from "../icons/llm-icons/doubao.svg";
 import BotIconMinimax from "../icons/llm-icons/minimax.svg";
 import BotIconZAI from "../icons/llm-icons/zai.svg";
+import { getModelIdentityParts } from "../utils/model-identity";
 
 const MONO_ICON_STYLE: React.CSSProperties = {
   color: "#111111",
@@ -91,10 +92,9 @@ export function resolveProviderForModel(
 }
 
 function getModelMatchName(modelName?: string) {
-  const lowerModelName = modelName?.toLowerCase() || "";
-  const rightPart = lowerModelName.includes("/")
-    ? lowerModelName.split("/").pop() || lowerModelName
-    : lowerModelName;
+  const parts = getModelIdentityParts(modelName || "");
+  const lowerModelName = parts.raw.toLowerCase();
+  const rightPart = parts.simple.toLowerCase();
 
   return {
     full: lowerModelName,

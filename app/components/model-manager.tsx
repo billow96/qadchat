@@ -24,6 +24,7 @@ import {
   formatTokenCount,
   saveCustomContextTokens,
 } from "../config/model-context-tokens";
+import { getUnifiedCategoryName } from "../utils/model-identity";
 
 interface ModelManagerProps {
   provider: ServiceProvider | string; // 支持自定义服务商ID
@@ -110,46 +111,6 @@ function CustomModal({ title, children, onClose }: CustomModalProps) {
     </div>
   );
 }
-
-// 基于模型名称的分类映射（用于默认分组显示）
-const MODEL_NAME_CATEGORIES: Record<string, string[]> = {
-  "GPT-5": ["gpt-5"],
-  "GPT-4o": ["gpt-4o"],
-  "GPT-4.5": ["gpt-4.5"],
-  "GPT-4.1": ["gpt-4.1"],
-  "GPT-4": ["gpt-4", "gpt-4-turbo"],
-  "GPT-3.5": ["gpt-3.5-turbo"],
-  "GPT-OSS": ["gpt-oss"],
-  O系列: ["o1-preview", "o1-mini", "o1-2024-12-17", "o3", "o4-mini"],
-  "Gemini 2.5": ["gemini-2.5"],
-  "Gemini 2.0": ["gemini-2.0"],
-  "Gemini 1.5": ["gemini-1.5"],
-  "Gemini Pro": ["gemini-pro"],
-  "Claude 4": ["claude-sonnet-4", "claude-opus-4"],
-  "Claude 3.7": ["claude-3-7"],
-  "Claude 3.5": ["claude-3-5"],
-  "Claude 3": ["claude-3"],
-  "DeepSeek R1": ["deepseek-r1"],
-  "DeepSeek V3": ["deepseek-v3"],
-  DeepSeek: ["deepseek-chat", "deepseek-reasoner"],
-  "Doubao 1.5": ["doubao-1-5"],
-  "Doubao Pro": ["doubao-pro"],
-  "Doubao Lite": ["doubao-lite"],
-  "Doubao Vision": ["doubao-vision"],
-  "Qwen 3": ["qwen3"],
-  "Qwen 2.5": ["qwen2.5"],
-  "Qwen 2": ["qwen2"],
-  Qwen: ["qwen-max", "qwen-plus", "qwen-turbo", "qwen-coder", "qwen-vl"],
-  QwQ: ["qwq"],
-  QvQ: ["qvq"],
-  Kimi: ["kimi"],
-  Moonshot: ["moonshot"],
-  "Grok 3": ["grok-3"],
-  "Grok 2": ["grok-2", "grok-vision"],
-  Grok: ["grok-beta"],
-  嵌入模型: ["embedding", "embed"],
-  其他: [],
-};
 
 // 基于能力的模型过滤器
 const CAPABILITY_FILTERS: Record<string, (model: any) => boolean> = {
@@ -384,49 +345,27 @@ export function ModelManager({ provider, onClose }: ModelManagerProps) {
   const categorizedModels = useMemo(() => {
     const categories: Record<string, LLMModel[]> = {};
 
-    // 初始化分类
-    Object.keys(MODEL_NAME_CATEGORIES).forEach((category) => {
-      categories[category] = [];
-    });
-
     providerModels.forEach((model) => {
-      let categorized = false;
+      const customCategory =
+        model.provider?.providerType === "custom" &&
+        model.displayName &&
+        model.displayName !== model.name
+          ? model.displayName
+          : null;
 
-      // 检查是否是自定义模型，如果有自定义分组则使用自定义分组
-      if (model.displayName && model.displayName !== model.name) {
-        // 这是一个有自定义显示名称的模型，可能是自定义分组
-        const customCategory = model.displayName;
+      if (customCategory) {
         if (!categories[customCategory]) {
           categories[customCategory] = [];
         }
         categories[customCategory].push(model);
-        categorized = true;
-      } else {
-        // 根据模型名称匹配分类
-        for (const [category, patterns] of Object.entries(
-          MODEL_NAME_CATEGORIES,
-        )) {
-          if (category === "其他") continue;
-
-          if (
-            patterns.some((pattern) =>
-              model.name.toLowerCase().includes(pattern.toLowerCase()),
-            )
-          ) {
-            categories[category].push(model);
-            categorized = true;
-            break;
-          }
-        }
+        return;
       }
 
-      // 未分类的放入"其他"
-      if (!categorized) {
-        if (!categories["其他"]) {
-          categories["其他"] = [];
-        }
-        categories["其他"].push(model);
+      const category = getUnifiedCategoryName(model.name);
+      if (!categories[category]) {
+        categories[category] = [];
       }
+      categories[category].push(model);
     });
 
     // 移除空分类

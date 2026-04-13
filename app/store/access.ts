@@ -771,6 +771,11 @@ export const useAccessStore = createPersistStore(
     fetch() {
       if (fetchState > 0 || getClientConfig()?.buildMode === "export") return;
       fetchState = 1;
+      void fetch("/api/model-registry/bootstrap", {
+        method: "POST",
+      }).catch(() => {
+        console.warn("[ModelRegistry] bootstrap failed");
+      });
       fetch("/api/config", {
         method: "post",
         body: null,

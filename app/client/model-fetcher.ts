@@ -2,12 +2,22 @@ import { ServiceProvider, DEFAULT_MODELS } from "../constant";
 import { useAccessStore } from "../store/access";
 import { LLMModel } from "./api";
 import { getHeaders, getClientApi } from "./api";
+import {
+  RuntimeModelMetadata,
+  saveRuntimeModelMetadataBatch,
+} from "../config/model-runtime-metadata";
+import {
+  canonicalizeModelId,
+  compactModelId,
+  getSimpleModelId,
+} from "../utils/model-identity";
 
 // 统一的模型响应接口
 export interface ModelFetchResponse {
   models: LLMModel[];
   success: boolean;
   error?: string;
+  metadata?: RuntimeModelMetadata[];
 }
 
 // OpenAI格式的模型响应
@@ -49,10 +59,166 @@ interface GoogleModelResponse {
   nextPageToken?: string;
 }
 
+interface RegistryModelEntry {
+  provider: string;
+  source: string;
+  sourceModelId: string;
+  modelId: string;
+  displayName?: string;
+  family?: string;
+  capabilities?: {
+    vision?: boolean;
+    reasoning?: boolean;
+    tools?: boolean;
+    structuredOutput?: boolean;
+  };
+  contextTokens?: number;
+  maxOutputTokens?: number;
+  modalities?: {
+    input?: string[];
+    output?: string[];
+  };
+  pricing?: Record<string, number>;
+  knowledge?: string;
+  releaseDate?: string;
+  lastUpdated?: string;
+  openWeights?: boolean;
+}
+
 /**
  * 统一的模型获取服务
  */
 export class ModelFetcher {
+  private static async fetchOpenRouterMetadataMap() {
+    const res = await fetch("/api/model-registry/openrouter", {
+      method: "GET",
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      throw new Error(`Failed to fetch openrouter registry: ${res.status}`);
+    }
+    const payload = (await res.json()) as {
+      error?: boolean;
+      models?: RegistryModelEntry[];
+    };
+    const list = payload.models || [];
+    const map = new Map<string, RegistryModelEntry>();
+    list.forEach((entry) => {
+      const compact = compactModelId(entry.modelId);
+      const sourceCompact = compactModelId(entry.sourceModelId);
+      map.set(entry.modelId, entry);
+      map.set(entry.sourceModelId, entry);
+      map.set(canonicalizeModelId(entry.modelId), entry);
+      map.set(canonicalizeModelId(entry.sourceModelId), entry);
+      map.set(compact, entry);
+      map.set(sourceCompact, entry);
+    });
+    return map;
+  }
+
+  private static findRegistryEntry(
+    registryMap: Map<string, RegistryModelEntry>,
+    modelId: string,
+  ) {
+    const simpleId = getSimpleModelId(modelId);
+    const canonical = canonicalizeModelId(simpleId);
+    const compact = compactModelId(simpleId);
+
+    const direct =
+      registryMap.get(simpleId) ||
+      registryMap.get(modelId) ||
+      registryMap.get(canonical) ||
+      registryMap.get(compact);
+
+    if (direct) return direct;
+
+    // 紧凑匹配用于处理 4.6 / 4-6 / 4-6-1m / :free 等变体
+    for (const [key, entry] of registryMap.entries()) {
+      const keyCompact = key.replace(/[^a-z0-9]/g, "");
+      if (!keyCompact) continue;
+      if (compact === keyCompact) return entry;
+      if (compact.includes(keyCompact) || keyCompact.includes(compact)) {
+        return entry;
+      }
+    }
+
+    return undefined;
+  }
+
+  private static toRuntimeMetadata(
+    entry: RegistryModelEntry | undefined,
+  ): RuntimeModelMetadata | null {
+    if (!entry) return null;
+    return {
+      provider: entry.provider,
+      source: entry.source,
+      sourceModelId: entry.sourceModelId,
+      modelId: entry.modelId,
+      displayName: entry.displayName,
+      family: entry.family,
+      capabilities: {
+        vision: entry.capabilities?.vision,
+        reasoning: entry.capabilities?.reasoning,
+        tools: entry.capabilities?.tools,
+        structuredOutput: entry.capabilities?.structuredOutput,
+      },
+      contextTokens: entry.contextTokens,
+      maxOutputTokens: entry.maxOutputTokens,
+      modalities: entry.modalities,
+      pricing: entry.pricing,
+      knowledge: entry.knowledge,
+      releaseDate: entry.releaseDate,
+      lastUpdated: entry.lastUpdated,
+      openWeights: entry.openWeights,
+    };
+  }
+
+  private static persistMetadata(metadata?: RuntimeModelMetadata[]) {
+    if (metadata && metadata.length > 0) {
+      saveRuntimeModelMetadataBatch(metadata);
+    }
+  }
+
+  private static async enrichModelsWithOpenRouterMetadata(models: LLMModel[]) {
+    try {
+      const registryMap = await this.fetchOpenRouterMetadataMap();
+      const metadata: RuntimeModelMetadata[] = [];
+
+      const enriched = models.map((model) => {
+        const originalName = String(model.name);
+        const simpleId = getSimpleModelId(originalName);
+        const registryEntry = this.findRegistryEntry(registryMap, originalName);
+        const runtimeMetadata = this.toRuntimeMetadata(registryEntry);
+        if (runtimeMetadata) {
+          metadata.push({
+            ...runtimeMetadata,
+            modelId: originalName,
+          });
+        }
+
+        if (!registryEntry) {
+          return model;
+        }
+
+        return {
+          ...model,
+          name: originalName,
+          displayName:
+            model.displayName || registryEntry.displayName || simpleId,
+          contextTokens: registryEntry.contextTokens ?? model.contextTokens,
+        };
+      });
+
+      this.persistMetadata(metadata);
+      return enriched;
+    } catch (error) {
+      console.warn(
+        "[ModelFetcher] failed to enrich models from registry:",
+        error,
+      );
+      return models;
+    }
+  }
   /**
    * 从指定服务商获取可用模型列表
    */
@@ -125,7 +291,9 @@ export class ModelFetcher {
   ): Promise<ModelFetchResponse> {
     const api = getClientApi(provider);
     try {
-      const models = await api.llm.models();
+      const models = await this.enrichModelsWithOpenRouterMetadata(
+        await api.llm.models(),
+      );
       return {
         models,
         success: true,
@@ -148,7 +316,9 @@ export class ModelFetcher {
   private static async fetchAnthropicModels(): Promise<ModelFetchResponse> {
     const api = getClientApi(ServiceProvider.Anthropic);
     try {
-      const models = await api.llm.models();
+      const models = await this.enrichModelsWithOpenRouterMetadata(
+        await api.llm.models(),
+      );
       return {
         models,
         success: true,
@@ -171,7 +341,9 @@ export class ModelFetcher {
   private static async fetchGoogleModels(): Promise<ModelFetchResponse> {
     const api = getClientApi(ServiceProvider.Google);
     try {
-      const models = await api.llm.models();
+      const models = await this.enrichModelsWithOpenRouterMetadata(
+        await api.llm.models(),
+      );
       return {
         models,
         success: true,
@@ -194,7 +366,9 @@ export class ModelFetcher {
   private static async fetchDeepSeekModels(): Promise<ModelFetchResponse> {
     const api = getClientApi(ServiceProvider.DeepSeek);
     try {
-      const models = await api.llm.models();
+      const models = await this.enrichModelsWithOpenRouterMetadata(
+        await api.llm.models(),
+      );
       return {
         models,
         success: true,
@@ -253,7 +427,9 @@ export class ModelFetcher {
   ): Promise<ModelFetchResponse> {
     const api = getClientApi(provider);
     try {
-      const models = await api.llm.models();
+      const models = await this.enrichModelsWithOpenRouterMetadata(
+        await api.llm.models(),
+      );
       return {
         models,
         success: true,
@@ -280,6 +456,16 @@ export class ModelFetcher {
       const providerId = customProvider.id as string;
 
       if (customProvider.type === "openai") {
+        let registryMap: Map<string, RegistryModelEntry> | null = null;
+        try {
+          registryMap = await this.fetchOpenRouterMetadataMap();
+        } catch (error) {
+          console.warn(
+            "[ModelFetcher] openrouter registry unavailable:",
+            error,
+          );
+        }
+
         const res = await fetch(`/api/openai/v1/models`, {
           method: "GET",
           headers: getHeaders(false, {
@@ -294,19 +480,39 @@ export class ModelFetcher {
         }
 
         const data = (await res.json()) as OpenAIModelResponse;
-        const list = (data?.data ?? []).map((m) => ({
-          name: m.id,
-          available: true,
-          provider: {
-            id: providerId,
-            providerName: providerId,
-            providerType: "openai",
-            sorted: 1,
-          },
-          sorted: 1,
-        })) as LLMModel[];
+        const metadata: RuntimeModelMetadata[] = [];
+        const list = (data?.data ?? []).map((m) => {
+          const rawId = String(m.id);
+          const simpleId = getSimpleModelId(rawId);
+          const registryEntry = registryMap
+            ? this.findRegistryEntry(registryMap, rawId)
+            : undefined;
+          const runtimeMetadata = this.toRuntimeMetadata(registryEntry);
+          if (runtimeMetadata) {
+            metadata.push({
+              ...runtimeMetadata,
+              modelId: rawId,
+            });
+          }
 
-        return { models: list, success: true };
+          return {
+            name: rawId,
+            displayName: rawId,
+            available: true,
+            contextTokens: registryEntry?.contextTokens,
+            provider: {
+              id: providerId,
+              providerName: providerId,
+              providerType: "openai",
+              sorted: 1,
+            },
+            sorted: 1,
+          };
+        }) as LLMModel[];
+
+        this.persistMetadata(metadata);
+
+        return { models: list, success: true, metadata };
       }
 
       if (customProvider.type === "google") {
@@ -336,6 +542,7 @@ export class ModelFetcher {
           sorted: 1,
           contextTokens: m.inputTokenLimit,
         }));
+        this.persistMetadata();
         return { models, success: true };
       }
 
@@ -354,6 +561,7 @@ export class ModelFetcher {
               providerType: "anthropic",
             },
           }));
+        this.persistMetadata();
         return { models, success: true };
       }
 
