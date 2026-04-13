@@ -52,6 +52,9 @@ masks.json
 # mcp config
 app/mcp/mcp_config.json
 
+# data
+data/access-groups.json
+
 .kiro
 dev_docs
 qdrant*

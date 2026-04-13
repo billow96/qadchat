@@ -32,6 +32,7 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/.next/server ./.next/server
 
+RUN mkdir -p /app/data
 RUN mkdir -p /app/app/mcp && chmod 777 /app/app/mcp
 
 EXPOSE 3000

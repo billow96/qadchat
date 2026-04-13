@@ -1,5 +1,11 @@
 import { NextRequest } from "next/server";
 import { ACCESS_CODE_PREFIX, ModelProvider } from "../constant";
+import {
+  ACCESS_SESSION_COOKIE,
+  resolveGroupByAccessCode,
+  resolveGroupBySessionToken,
+} from "../server/access-groups";
+import { getProviderRuntimeByModelProvider } from "../server/provider-runtime";
 
 function getIP(req: NextRequest) {
   let ip = req.ip ?? req.headers.get("x-real-ip");
@@ -22,7 +28,7 @@ function parseApiKey(bearToken: string) {
   };
 }
 
-export function auth(req: NextRequest, modelProvider: ModelProvider) {
+export async function auth(req: NextRequest, modelProvider: ModelProvider) {
   const authToken = req.headers.get("Authorization") ?? "";
   const xGoogApiKey = req.headers.get("x-goog-api-key") ?? "";
   const xApiKey = req.headers.get("x-api-key") ?? ""; // Anthropics style
@@ -34,44 +40,15 @@ export function auth(req: NextRequest, modelProvider: ModelProvider) {
   console.log("[User IP] ", getIP(req));
   console.log("[Time] ", new Date().toLocaleString());
 
-  // 检查是否有服务器端配置
-  const serverAccessCode = process.env.ACCESS_CODE || "";
-  const hasValidAccessCode =
-    serverAccessCode && accessCode === serverAccessCode;
-
-  // 获取服务器端API密钥（根据模型提供商）
-  let serverApiKey = "";
-  if (hasValidAccessCode) {
-    switch (modelProvider) {
-      case ModelProvider.GPT:
-        serverApiKey = process.env.OPENAI_API_KEY || "";
-        break;
-      case ModelProvider.GeminiPro:
-        serverApiKey = process.env.GOOGLE_API_KEY || "";
-        break;
-      case ModelProvider.Claude:
-        serverApiKey = process.env.ANTHROPIC_API_KEY || "";
-        break;
-      case ModelProvider.Doubao:
-        serverApiKey = process.env.BYTEDANCE_API_KEY || "";
-        break;
-      case ModelProvider.Qwen:
-        serverApiKey = process.env.ALIBABA_API_KEY || "";
-        break;
-      case ModelProvider.Moonshot:
-        serverApiKey = process.env.MOONSHOT_API_KEY || "";
-        break;
-      case ModelProvider.DeepSeek:
-        serverApiKey = process.env.DEEPSEEK_API_KEY || "";
-        break;
-      case ModelProvider.XAI:
-        serverApiKey = process.env.XAI_API_KEY || "";
-        break;
-      case ModelProvider.SiliconFlow:
-        serverApiKey = process.env.SILICONFLOW_API_KEY || "";
-        break;
-    }
-  }
+  const accessCodeGroup = accessCode
+    ? await resolveGroupByAccessCode(accessCode)
+    : null;
+  const sessionToken = req.cookies.get(ACCESS_SESSION_COOKIE)?.value;
+  const sessionGroup = await resolveGroupBySessionToken(sessionToken);
+  const activeGroup = accessCodeGroup || sessionGroup;
+  const runtimeConfig = activeGroup
+    ? getProviderRuntimeByModelProvider(activeGroup, modelProvider)
+    : null;
 
   // 根据提供商选择用户提供的 API Key 来源
   let userApiKey = "";
@@ -92,12 +69,14 @@ export function auth(req: NextRequest, modelProvider: ModelProvider) {
 
   const finalApiKey = userApiKey;
 
-  // 如果有有效的访问码和服务器端API密钥，允许通过
-  if (hasValidAccessCode && serverApiKey) {
+  // 如果当前服务组已配置该 provider，则优先走服务端配置
+  if (runtimeConfig?.apiKey) {
     console.log("[Auth] use server api key");
     return {
       error: false,
       useServerConfig: true,
+      group: activeGroup,
+      runtimeConfig,
     };
   }
 
@@ -114,5 +93,7 @@ export function auth(req: NextRequest, modelProvider: ModelProvider) {
   return {
     error: false,
     useServerConfig: false,
+    group: activeGroup,
+    runtimeConfig: null,
   };
 }

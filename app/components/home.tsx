@@ -35,6 +35,9 @@ import clsx from "clsx";
 import { initializeMcpSystem } from "../mcp/actions";
 import { ServiceProvider } from "../constant";
 import { useEnabledModels } from "../utils/hooks";
+import Locale from "../locales";
+import { IconButton } from "./button";
+import ChatGptIcon from "../icons/chatgpt.svg";
 
 function providerKeyOf(model: {
   provider?: { id?: string; providerName?: string };
@@ -298,6 +301,128 @@ export function WindowContent(props: { children: React.ReactNode }) {
   );
 }
 
+function AccessGate(props: {
+  accessCode: string;
+  authError: string;
+  submittingAccess: boolean;
+  onChangeAccessCode: (value: string) => void;
+  onSubmit: () => void;
+}) {
+  const {
+    accessCode,
+    authError,
+    submittingAccess,
+    onChangeAccessCode,
+    onSubmit,
+  } = props;
+
+  return (
+    <div className={styles["access-gate"]}>
+      <div className={styles["access-gate-shell"]}>
+        <section className={styles["access-gate-brand"]}>
+          <div className={styles["access-gate-brand-bg"]} />
+          <div className={styles["access-gate-brand-header"]}>
+            <div className={styles["access-gate-brand-logo"]}>
+              <ChatGptIcon />
+            </div>
+            <div>
+              <div className={styles["access-gate-brand-title"]}>
+                {Locale.Auth.Brand}
+              </div>
+              <div className={styles["access-gate-brand-subtitle"]}>
+                {Locale.Auth.BrandSubTitle}
+              </div>
+            </div>
+          </div>
+          <div className={styles["access-gate-brand-badge"]}>
+            {Locale.Auth.SecurityBadge}
+          </div>
+          <h1 className={styles["access-gate-brand-heading"]}>
+            {Locale.Auth.SecurityTitle}
+          </h1>
+          <p className={styles["access-gate-brand-description"]}>
+            {Locale.Auth.Description}
+          </p>
+          <div className={styles["access-gate-brand-divider"]} />
+          <div className={styles["access-gate-feature-title"]}>
+            {Locale.Auth.HintTitle}
+          </div>
+          <ul className={styles["access-gate-feature-list"]}>
+            <li>{Locale.Auth.HintFeatureChats}</li>
+            <li>{Locale.Auth.HintFeatureProviders}</li>
+            <li>{Locale.Auth.HintFeatureSecurity}</li>
+          </ul>
+        </section>
+
+        <section className={styles["access-gate-panel"]}>
+          <div className={styles["access-gate-panel-card"]}>
+            <div className={styles["access-gate-panel-head"]}>
+              <div className={styles["access-gate-panel-kicker"]}>
+                {Locale.Auth.SecurityBadge}
+              </div>
+              <h2 className={styles["access-gate-panel-title"]}>
+                {Locale.Auth.Title}
+              </h2>
+              <p className={styles["access-gate-panel-text"]}>
+                {Locale.Auth.Tips}
+              </p>
+            </div>
+
+            <div className={styles["access-gate-form"]}>
+              <label
+                className={styles["access-gate-label"]}
+                htmlFor="access-code-input"
+              >
+                {Locale.Auth.Input}
+              </label>
+              <input
+                id="access-code-input"
+                aria-label={Locale.Auth.Input}
+                className={styles["access-gate-input"]}
+                type="password"
+                placeholder={Locale.Auth.Input}
+                value={accessCode}
+                onChange={(e) => onChangeAccessCode(e.currentTarget.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !submittingAccess) {
+                    e.preventDefault();
+                    onSubmit();
+                  }
+                }}
+              />
+
+              <div className={styles["access-gate-actions"]}>
+                <IconButton
+                  type="primary"
+                  shadow
+                  text={
+                    submittingAccess
+                      ? Locale.Auth.Verifying
+                      : Locale.Auth.Confirm
+                  }
+                  onClick={onSubmit}
+                  disabled={submittingAccess || !accessCode.trim()}
+                  className={styles["access-gate-submit"]}
+                  aria={Locale.Auth.Confirm}
+                />
+              </div>
+
+              <div
+                className={clsx(styles["access-gate-feedback"], {
+                  [styles["access-gate-feedback-error"]]: !!authError,
+                })}
+                aria-live="polite"
+              >
+                {authError || Locale.Auth.SubTips}
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
+
 function Screen() {
   const config = useAppConfig();
   const accessStore = useAccessStore();
@@ -310,8 +435,53 @@ function Screen() {
   const shouldTightBorder =
     getClientConfig()?.isApp || (config.tightBorder && !isMobileScreen);
   const { isCollapsed } = useDragSideBar();
+  const [checkingAccess, setCheckingAccess] = useState(true);
+  const [submittingAccess, setSubmittingAccess] = useState(false);
+  const [authError, setAuthError] = useState("");
 
-  // 旧的鉴权页已移除，访问控制由请求时校验与设置页输入处理
+  const submitAccessCode = async () => {
+    if (submittingAccess || !accessStore.accessCode.trim()) {
+      return;
+    }
+
+    setSubmittingAccess(true);
+    setAuthError("");
+
+    try {
+      const ok = await accessStore.verifyServerAccessCode(
+        accessStore.accessCode,
+      );
+
+      if (ok) {
+        await accessStore.fetchServerConfig(accessStore.accessCode);
+      } else {
+        setAuthError(Locale.Auth.Invalid);
+      }
+    } finally {
+      setSubmittingAccess(false);
+    }
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    const store = useAccessStore.getState();
+
+    const run = async () => {
+      try {
+        await store.fetchServerConfig(store.accessCode);
+      } finally {
+        if (!cancelled) {
+          setCheckingAccess(false);
+        }
+      }
+    };
+
+    void run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     loadAsyncGoogleFont();
@@ -324,6 +494,31 @@ function Screen() {
       </Routes>
     );
   }
+
+  const requiresAuth = accessStore.enabledAccessControl();
+  const isAuthorized = accessStore.isAuthorized();
+
+  if (checkingAccess) {
+    return <Loading />;
+  }
+
+  if (requiresAuth && !isAuthorized) {
+    return (
+      <AccessGate
+        accessCode={accessStore.accessCode}
+        authError={authError}
+        submittingAccess={submittingAccess}
+        onChangeAccessCode={(value) => {
+          setAuthError("");
+          accessStore.updateAccessCode(value);
+        }}
+        onSubmit={() => {
+          void submitAccessCode();
+        }}
+      />
+    );
+  }
+
   const renderContent = () => {
     return (
       <>
@@ -364,15 +559,15 @@ function Screen() {
   );
 }
 
-export function useLoadData() {
+export function useLoadData(enabled: boolean) {
   const config = useAppConfig();
   const enabledModels = useEnabledModels();
 
-  const api: ClientApi = getClientApi(config.modelConfig.providerName);
-
   useEffect(() => {
+    if (!enabled) return;
     (async () => {
       try {
+        const api: ClientApi = getClientApi(config.modelConfig.providerName);
         const models = await api.llm.models();
         config.mergeModels(models);
         syncResolvedModelsToConfig(useAppConfig.getState(), models);
@@ -381,7 +576,7 @@ export function useLoadData() {
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [enabled]);
 
   useEffect(() => {
     if (enabledModels.length === 0) return;
@@ -391,23 +586,31 @@ export function useLoadData() {
 
 export function Home() {
   useSwitchTheme();
-  useLoadData();
   useHtmlLang();
+  const accessStore = useAccessStore();
+  const configReady = accessStore.configLoaded;
+  const canLoadProtectedData =
+    configReady &&
+    (!accessStore.enabledAccessControl() || accessStore.isAuthorized());
+
+  useLoadData(canLoadProtectedData);
 
   useEffect(() => {
-    useAccessStore.getState().fetch();
+    accessStore.fetch();
 
     const initMcp = async () => {
       try {
-        await initializeMcpSystem();
+        if (canLoadProtectedData) {
+          await initializeMcpSystem();
+        }
       } catch (err) {
         // MCP 初始化失败，静默处理
       }
     };
-    initMcp();
-  }, []);
+    void initMcp();
+  }, [accessStore, canLoadProtectedData]);
 
-  if (!useHasHydrated()) {
+  if (!useHasHydrated() || !configReady) {
     return <Loading />;
   }
 

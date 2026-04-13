@@ -20,6 +20,24 @@ type DangerConfig = {
   visionModels: string;
   hasServerAccessCode: boolean;
   hasServerProviderConfig: boolean;
+  accessMode?: "legacy" | "group";
+  hasAccessGroupsConfig?: boolean;
+  currentGroupId?: string;
+  currentGroupName?: string;
+  groupBootstrap?: {
+    groupId: string;
+    groupName: string;
+    defaultProvider: string;
+    defaultModel: string;
+    summaryModel: string;
+    enabledModels: Record<string, string[]>;
+    mcpServers: Record<string, any>;
+    serverProviders: Record<
+      string,
+      { hasApiKey: boolean; hasBaseUrl: boolean }
+    >;
+    hasServerProviderConfig: boolean;
+  } | null;
   serverProviders: {
     openai: { hasApiKey: boolean; hasBaseUrl: boolean };
     google: { hasApiKey: boolean; hasBaseUrl: boolean };

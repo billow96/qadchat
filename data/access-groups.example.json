@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "groups": [
+    {
+      "id": "group-1",
+      "name": "分组1",
+      "accessCode": "12345",
+      "defaultProvider": "openai",
+      "defaultModel": "gpt-4.1",
+      "summaryModel": "claude-3.5-haiku",
+      "enabledModels": {
+        "openai": ["gpt-4.1", "claude-3.5"]
+      },
+      "providers": {
+        "openai": {
+          "apiKey": "ah-ced0395da",
+          "baseUrl": "http://192.168.123.179:9010"
+        }
+      },
+      "mcpServers": {
+        "MCPHyperTerminal1": {
+          "type": "streamableHttp",
+          "baseUrl": "https://mcp.api-inference.modelscope.net/2/mcp",
+          "headers": {
+            "Authorization": "Bearer ms-f949ac44-b59baae8ffd1"
+          }
+        },
+        "MCPHyperTerminal2": {
+          "type": "streamableHttp",
+          "baseUrl": "https://mcp.api-inference.modelscope.net/1/mcp",
+          "headers": {
+            "Authorization": "Bearer ms-f949ac44-b59baae8ffd2"
+          }
+        }
+      }
+    },
+    {
+      "id": "group-2",
+      "name": "分组2",
+      "accessCode": "67890",
+      "defaultProvider": "openai",
+      "defaultModel": "gpt-5",
+      "summaryModel": "claude-5-mini",
+      "enabledModels": {
+        "openai": ["gpt-5", "claude-4"]
+      },
+      "providers": {
+        "openai": {
+          "apiKey": "ah-ced03955634",
+          "baseUrl": "http://192.168.123.179:9009"
+        }
+      },
+      "mcpServers": {}
+    }
+  ]
+}

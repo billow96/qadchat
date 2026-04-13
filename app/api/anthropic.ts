@@ -37,7 +37,7 @@ export async function handle(
     );
   }
 
-  const authResult = auth(req, ModelProvider.Claude);
+  const authResult = await auth(req, ModelProvider.Claude);
   if (authResult.error) {
     return NextResponse.json(authResult, {
       status: 401,
@@ -45,7 +45,13 @@ export async function handle(
   }
 
   try {
-    const response = await request(req, authResult.useServerConfig, subpath);
+    const response = await request(
+      req,
+      authResult.useServerConfig,
+      subpath,
+      authResult.runtimeConfig?.apiKey,
+      authResult.runtimeConfig?.baseUrl,
+    );
     return response;
   } catch (e) {
     console.error("[Anthropic] ", e);
@@ -57,6 +63,8 @@ async function request(
   req: NextRequest,
   useServerConfig?: boolean,
   subpath?: string,
+  serverApiKey?: string,
+  serverBaseUrl?: string,
 ) {
   const controller = new AbortController();
 
@@ -81,7 +89,7 @@ async function request(
   }
 
   if (useServerConfig) {
-    authValue = process.env.ANTHROPIC_API_KEY || "";
+    authValue = serverApiKey || "";
   } else {
     authValue =
       req.headers.get(authHeaderName) ||
@@ -102,8 +110,8 @@ async function request(
   let baseUrl = customEndpoint
     ? customEndpoint
     : useServerConfig
-      ? process.env.ANTHROPIC_BASE_URL || ANTHROPIC_BASE_URL
-      : ANTHROPIC_BASE_URL;
+    ? serverBaseUrl || ANTHROPIC_BASE_URL
+    : ANTHROPIC_BASE_URL;
 
   if (!baseUrl.startsWith("http")) {
     baseUrl = `https://${baseUrl}`;
@@ -173,3 +181,5 @@ async function request(
     clearTimeout(timeoutId);
   }
 }
+
+export const runtime = "nodejs";

@@ -1,25 +1,43 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  getAccessControlStatus,
+  getGroupBootstrap,
+  resolveGroupByAccessCode,
+} from "@/app/server/access-groups";
+import {
+  clearAccessGroupSession,
+  setAccessGroupSession,
+} from "@/app/server/access-session";
 
 // 验证访问码的API端点
 async function handle(req: NextRequest) {
   try {
     const { accessCode } = await req.json();
-    const serverAccessCode = process.env.ACCESS_CODE || "";
+    const controlStatus = await getAccessControlStatus();
 
     // 如果没有设置服务器端访问码，则不需要验证
-    if (!serverAccessCode) {
+    if (!controlStatus.hasServerAccessCode) {
+      clearAccessGroupSession();
       return NextResponse.json({
         valid: true,
         message: "访问码验证已禁用",
+        bootstrap: null,
       });
     }
 
-    // 验证访问码
-    const isValid = accessCode === serverAccessCode;
+    const group = await resolveGroupByAccessCode(accessCode || "");
+    const isValid = !!group;
+
+    if (group) {
+      setAccessGroupSession(group.id);
+    } else {
+      clearAccessGroupSession();
+    }
 
     return NextResponse.json({
       valid: isValid,
       message: isValid ? "访问码验证成功" : "访问码错误",
+      bootstrap: group ? getGroupBootstrap(group) : null,
     });
   } catch (error) {
     return NextResponse.json(
@@ -33,4 +51,4 @@ async function handle(req: NextRequest) {
 }
 
 export const POST = handle;
-export const runtime = "edge";
+export const runtime = "nodejs";

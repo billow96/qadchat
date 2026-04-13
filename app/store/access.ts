@@ -19,6 +19,7 @@ import { createPersistStore } from "../utils/store";
 import { ensure } from "../utils/clone";
 import { DEFAULT_CONFIG } from "./config";
 import { getModelProvider } from "../utils/model";
+import { clearGroupMcpServers, setGroupMcpServers } from "./mcp";
 
 // 自定义服务商类型定义
 export type CustomProviderType = "openai" | "google" | "anthropic";
@@ -39,6 +40,23 @@ export interface CustomProvider {
   enabled: boolean; // 是否启用
   created: number; // 创建时间戳
 }
+
+type ServerProviderFlags = {
+  hasApiKey: boolean;
+  hasBaseUrl: boolean;
+};
+
+type GroupBootstrap = {
+  groupId: string;
+  groupName: string;
+  defaultProvider: string;
+  defaultModel: string;
+  summaryModel: string;
+  enabledModels: Record<string, string[]>;
+  mcpServers: Record<string, any>;
+  serverProviders: Record<string, ServerProviderFlags>;
+  hasServerProviderConfig: boolean;
+};
 
 let fetchState = 0; // 0 not fetch, 1 fetching, 2 done
 
@@ -171,6 +189,7 @@ const DEFAULT_ACCESS_STATE = {
 
   // 是否设置了服务器端访问码
   hasServerAccessCode: false,
+  configLoaded: false,
 
   // 客户端是否已通过验证
   isAuthenticated: false,
@@ -259,6 +278,12 @@ const DEFAULT_ACCESS_STATE = {
     },
   },
 
+  accessMode: "legacy",
+  hasAccessGroupsConfig: false,
+  currentGroupId: "",
+  currentGroupName: "",
+  groupBootstrap: null as GroupBootstrap | null,
+
   // tts config
   edgeTTSVoiceName: "zh-CN-YunxiNeural",
 };
@@ -309,6 +334,7 @@ export type AccessControlStore = typeof DEFAULT_ACCESS_STATE & {
     provider: string,
     availableModels: { name: string }[],
   ) => void;
+  applyGroupBootstrap: (bootstrap: GroupBootstrap | null) => void;
   fetch: () => void;
   updateAccessCode: (code: string) => void;
 };
@@ -350,11 +376,10 @@ export const useAccessStore = createPersistStore(
       }
 
       // 如果没有前端配置，但有服务器配置，使用服务器配置
-      if (state.serverConfig.openai.apiKey) {
+      if (state.serverProviders.openai.hasApiKey) {
         return {
-          apiKey: state.serverConfig.openai.apiKey,
-          baseUrl:
-            state.serverConfig.openai.baseUrl || "https://api.openai.com/v1",
+          apiKey: "__SERVER_CONFIGURED__",
+          baseUrl: state.serverConfig.openai.baseUrl || ApiPath.OpenAI,
           source: "server" as const,
         };
       }
@@ -457,9 +482,12 @@ export const useAccessStore = createPersistStore(
       // 否则使用服务器配置
       const serverConfig =
         state.serverConfig[provider as keyof typeof state.serverConfig];
-      if (serverConfig && serverConfig.apiKey) {
+      const serverProvider =
+        state.serverProviders[provider as keyof typeof state.serverProviders];
+      if (serverConfig && serverProvider?.hasApiKey) {
         return {
           ...serverConfig,
+          apiKey: "__SERVER_CONFIGURED__",
           source: "server" as const,
         };
       }
@@ -584,6 +612,10 @@ export const useAccessStore = createPersistStore(
         const result = await response.json();
         if (result.valid) {
           set({ isAuthenticated: true });
+          this.applyGroupBootstrap(result.bootstrap || null);
+        } else {
+          set({ isAuthenticated: false });
+          this.applyGroupBootstrap(null);
         }
         return result.valid;
       } catch (error) {
@@ -605,6 +637,8 @@ export const useAccessStore = createPersistStore(
 
         const result = await response.json();
         if (result.error) {
+          set({ isAuthenticated: false });
+          this.applyGroupBootstrap(null);
           console.error(
             "[Access] Failed to fetch server config:",
             result.message,
@@ -615,14 +649,136 @@ export const useAccessStore = createPersistStore(
         // 更新服务器端配置缓存
         set((state) => ({
           ...state,
-          serverConfig: result.config,
+          serverConfig: result.config || state.serverConfig,
+          isAuthenticated: !result.error,
         }));
+
+        this.applyGroupBootstrap(result.bootstrap || null);
 
         return true;
       } catch (error) {
         console.error("[Access] Failed to fetch server config:", error);
         return false;
       }
+    },
+
+    applyGroupBootstrap(bootstrap: GroupBootstrap | null) {
+      if (!bootstrap) {
+        clearGroupMcpServers();
+        set((state) => ({
+          ...state,
+          currentGroupId: "",
+          currentGroupName: "",
+          groupBootstrap: null,
+        }));
+        return;
+      }
+
+      const nextProviderMap = {
+        [ServiceProvider.OpenAI]: false,
+        [ServiceProvider.Google]: false,
+        [ServiceProvider.Anthropic]: false,
+        [ServiceProvider.ByteDance]: false,
+        [ServiceProvider.Alibaba]: false,
+        [ServiceProvider.Moonshot]: false,
+        [ServiceProvider.XAI]: false,
+        [ServiceProvider.DeepSeek]: false,
+        [ServiceProvider.SiliconFlow]: false,
+      } as Record<ServiceProvider, boolean>;
+      const isSameGroup = get().currentGroupId === bootstrap.groupId;
+
+      const providerKeyToService: Record<string, ServiceProvider> = {
+        openai: ServiceProvider.OpenAI,
+        google: ServiceProvider.Google,
+        anthropic: ServiceProvider.Anthropic,
+        bytedance: ServiceProvider.ByteDance,
+        alibaba: ServiceProvider.Alibaba,
+        moonshot: ServiceProvider.Moonshot,
+        xai: ServiceProvider.XAI,
+        deepseek: ServiceProvider.DeepSeek,
+        siliconflow: ServiceProvider.SiliconFlow,
+      };
+
+      Object.entries(bootstrap.serverProviders || {}).forEach(
+        ([providerKey, value]) => {
+          const serviceProvider = providerKeyToService[providerKey];
+          if (!serviceProvider) return;
+          nextProviderMap[serviceProvider] = isSameGroup
+            ? get().enabledProviders?.[serviceProvider] || !!value?.hasApiKey
+            : !!value?.hasApiKey;
+        },
+      );
+
+      const nextEnabledModels = { ...(get().enabledModels || {}) };
+      Object.entries(bootstrap.enabledModels || {}).forEach(
+        ([providerKey, models]) => {
+          const serviceProvider = providerKeyToService[providerKey];
+          if (!serviceProvider) return;
+          const incomingModels = Array.isArray(models)
+            ? models.filter(Boolean)
+            : [];
+          nextEnabledModels[serviceProvider] = isSameGroup
+            ? Array.from(
+                new Set([
+                  ...(nextEnabledModels[serviceProvider] || []),
+                  ...incomingModels,
+                ]),
+              )
+            : incomingModels;
+        },
+      );
+
+      const defaultModel = bootstrap.defaultModel || "";
+      let providerName = isSameGroup ? get().provider : ServiceProvider.OpenAI;
+      if (defaultModel) {
+        const [, detectedProvider] = getModelProvider(defaultModel);
+        providerName = isSameGroup
+          ? get().provider || (detectedProvider as ServiceProvider)
+          : (detectedProvider as ServiceProvider);
+      } else if (bootstrap.defaultProvider) {
+        providerName =
+          providerKeyToService[bootstrap.defaultProvider] ||
+          get().provider ||
+          ServiceProvider.OpenAI;
+      }
+
+      if (bootstrap.summaryModel) {
+        DEFAULT_CONFIG.modelConfig.compressModel = bootstrap.summaryModel;
+        DEFAULT_CONFIG.modelConfig.compressProviderName =
+          get().groupBootstrap?.summaryModel && isSameGroup
+            ? DEFAULT_CONFIG.modelConfig.compressProviderName
+            : providerName;
+      }
+
+      if (defaultModel && !isSameGroup) {
+        DEFAULT_CONFIG.modelConfig.model = getModelProvider(defaultModel)[0];
+        DEFAULT_CONFIG.modelConfig.providerName = providerName;
+      }
+
+      setGroupMcpServers(
+        bootstrap.groupId,
+        Object.fromEntries(
+          Object.entries(bootstrap.mcpServers || {}).map(([id, config]) => [
+            `group:${bootstrap.groupId}:${id}`,
+            config,
+          ]),
+        ),
+      );
+
+      set((state) => ({
+        ...state,
+        hasServerProviderConfig: bootstrap.hasServerProviderConfig,
+        serverProviders: bootstrap.serverProviders as any,
+        enabledProviders: nextProviderMap,
+        enabledModels: nextEnabledModels,
+        defaultModel: isSameGroup
+          ? state.defaultModel || defaultModel
+          : defaultModel,
+        currentGroupId: bootstrap.groupId,
+        currentGroupName: bootstrap.groupName,
+        groupBootstrap: bootstrap,
+        provider: isSameGroup ? state.provider || providerName : providerName,
+      }));
     },
 
     // 检查是否有有效的访问码（服务器端验证）
@@ -806,12 +962,17 @@ export const useAccessStore = createPersistStore(
             // 保留用户的自定义模型，除非服务器明确提供了非空的自定义模型
             customModels: res.customModels || userCustomModels || "",
           }));
+
+          if ((res as any).groupBootstrap) {
+            this.applyGroupBootstrap((res as any).groupBootstrap);
+          }
         })
         .catch(() => {
           console.error("[Config] failed to fetch config");
         })
         .finally(() => {
           fetchState = 2;
+          set({ configLoaded: true });
         });
     },
   }),

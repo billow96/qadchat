@@ -4,12 +4,16 @@ import { StoreKey } from "../constant";
 import type { ServerConfig, McpConfigData } from "../mcp/types";
 
 export type McpStoreState = {
-  servers: Record<string, ServerConfig>;
+  userServers: Record<string, ServerConfig>;
+  groupServers: Record<string, ServerConfig>;
+  activeGroupId: string;
 };
 
 export const useMcpStore = createPersistStore(
   {
-    servers: {} as Record<string, ServerConfig>,
+    userServers: {} as Record<string, ServerConfig>,
+    groupServers: {} as Record<string, ServerConfig>,
+    activeGroupId: "",
   },
   (set, get) => ({}) as any,
   {
@@ -20,17 +24,39 @@ export const useMcpStore = createPersistStore(
 
 // Helper functions
 export function getMcpConfigFromStore(): McpConfigData {
-  const servers = useMcpStore.getState().servers || {};
-  return { mcpServers: servers };
+  const state = useMcpStore.getState();
+  return {
+    mcpServers: {
+      ...(state.groupServers || {}),
+      ...(state.userServers || {}),
+    },
+  };
 }
 
 export function setMcpServer(id: string, config: ServerConfig) {
-  const prev = useMcpStore.getState().servers || {};
-  useMcpStore.setState({ servers: { ...prev, [id]: config } });
+  const prev = useMcpStore.getState().userServers || {};
+  useMcpStore.setState({ userServers: { ...prev, [id]: config } });
 }
 
 export function removeMcpServer(id: string) {
-  const next = { ...useMcpStore.getState().servers };
+  const next = { ...useMcpStore.getState().userServers };
   delete next[id];
-  useMcpStore.setState({ servers: next });
+  useMcpStore.setState({ userServers: next });
+}
+
+export function setGroupMcpServers(
+  groupId: string,
+  servers: Record<string, ServerConfig>,
+) {
+  useMcpStore.setState({
+    activeGroupId: groupId,
+    groupServers: { ...servers },
+  });
+}
+
+export function clearGroupMcpServers() {
+  useMcpStore.setState({
+    activeGroupId: "",
+    groupServers: {},
+  });
 }

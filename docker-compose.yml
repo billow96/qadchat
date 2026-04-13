@@ -4,7 +4,14 @@ services:
     image: syferie/qadchat:latest
     ports:
       - 3000:3000
+    volumes:
+      - ./data:/app/data
     # environment:
+    #   # 推荐：通过持久化目录中的 access-groups.json 提供多分组配置
+    #   - ACCESS_GROUPS_DIR=/app/data
+    #   - ACCESS_SESSION_SECRET=replace-with-a-long-random-secret
+    #
+    #   # 旧版单访问码模式（仍然兼容）
     #   # 访问码配置（必需，当设置任何服务商配置时）
     #   - ACCESS_CODE=your-access-code
     #   # WebDAV 端点白名单（可选，逗号分隔，必须为 https）

@@ -16,10 +16,23 @@
 
 支持通过环境变量配置所有主要AI服务商的API密钥和Base URL，并配置访问码，请参考 [.env.example](.env.example) 文件。
 
+#### 分组访问配置
+
+当前版本支持通过独立配置文件为不同访问密码提供不同的服务分组，推荐在 Docker 持久化目录中维护 `access-groups.json`。
+
+- 配置文件优先于旧 `ACCESS_CODE` 逻辑
+- 用户输入访问密码后，会自动加载该分组的默认模型、可用模型列表与 MCP 服务
+- 实际 API Key 与 Base URL 仍由服务端代理转发，不需要用户在浏览器里直接请求上游端点
+- 当配置文件不存在或未命中分组密码时，系统会自动回退到旧环境变量模式
+- 开发环境下如果 `/app/data/access-groups.json` 不存在，会自动回退读取仓库内 `./data/access-groups.json`
+
+可参考示例文件 [data/access-groups.example.json](data/access-groups.example.json)。
+
 #### Docker 部署(推荐)
 
 1. git clone https://github.com/MoonWeSif/qadchat.git
 2. cd qadchat
+3. 将 `data/access-groups.example.json` 复制为 `data/access-groups.json` 并填入你的分组配置，或继续使用旧环境变量方式
 3. docker-compose up -d
 
 #### Vercel 一键部署(推荐)

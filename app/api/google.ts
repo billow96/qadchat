@@ -11,7 +11,7 @@ export async function handle(
     return NextResponse.json({ body: "OK" }, { status: 200 });
   }
 
-  const authResult = auth(req, ModelProvider.GeminiPro);
+  const authResult = await auth(req, ModelProvider.GeminiPro);
   if (authResult.error) {
     return NextResponse.json(authResult, {
       status: 401,
@@ -21,7 +21,7 @@ export async function handle(
   // 获取API密钥（优先使用服务器配置）
   let apiKey = "";
   if (authResult.useServerConfig) {
-    apiKey = process.env.GOOGLE_API_KEY || "";
+    apiKey = authResult.runtimeConfig?.apiKey || "";
   } else {
     const bearToken =
       req.headers.get("x-goog-api-key") ||
@@ -38,6 +38,7 @@ export async function handle(
       apiKey,
       authResult.useServerConfig,
       subpath,
+      authResult.runtimeConfig?.baseUrl,
     );
     return response;
   } catch (e) {
@@ -49,7 +50,7 @@ export async function handle(
 export const GET = handle;
 export const POST = handle;
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 export const preferredRegion = [
   "bom1",
   "cle1",
@@ -70,6 +71,7 @@ async function request(
   apiKey: string,
   useServerConfig?: boolean,
   subpath?: string,
+  serverBaseUrl?: string,
 ) {
   const controller = new AbortController();
 
@@ -94,8 +96,8 @@ async function request(
   let baseUrl = customEndpoint
     ? customEndpoint
     : useServerConfig
-      ? process.env.GOOGLE_BASE_URL || GEMINI_BASE_URL
-      : GEMINI_BASE_URL;
+    ? serverBaseUrl || GEMINI_BASE_URL
+    : GEMINI_BASE_URL;
 
   // 计算子路径：优先使用路由参数，其次从 URL 中截取
   let path =

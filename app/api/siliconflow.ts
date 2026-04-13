@@ -13,7 +13,7 @@ export async function handle(
     return NextResponse.json({ body: "OK" }, { status: 200 });
   }
 
-  const authResult = auth(req, ModelProvider.SiliconFlow);
+  const authResult = await auth(req, ModelProvider.SiliconFlow);
   if (authResult.error) {
     return NextResponse.json(authResult, {
       status: 401,
@@ -21,7 +21,12 @@ export async function handle(
   }
 
   try {
-    const response = await request(req, authResult.useServerConfig);
+    const response = await request(
+      req,
+      authResult.useServerConfig,
+      authResult.runtimeConfig?.apiKey,
+      authResult.runtimeConfig?.baseUrl,
+    );
     return response;
   } catch (e) {
     console.error("[SiliconFlow] ", e);
@@ -29,14 +34,19 @@ export async function handle(
   }
 }
 
-async function request(req: NextRequest, useServerConfig?: boolean) {
+async function request(
+  req: NextRequest,
+  useServerConfig?: boolean,
+  serverApiKey?: string,
+  serverBaseUrl?: string,
+) {
   const controller = new AbortController();
 
   // siliconflow use base url or just remove the path
   let path = `${req.nextUrl.pathname}`.replaceAll(ApiPath.SiliconFlow, "");
 
   let baseUrl = useServerConfig
-    ? process.env.SILICONFLOW_BASE_URL || SILICONFLOW_BASE_URL
+    ? serverBaseUrl || SILICONFLOW_BASE_URL
     : SILICONFLOW_BASE_URL;
 
   if (!baseUrl.startsWith("http")) {
@@ -65,7 +75,6 @@ async function request(req: NextRequest, useServerConfig?: boolean) {
 
   // 设置 Authorization
   if (useServerConfig) {
-    const serverApiKey = process.env.SILICONFLOW_API_KEY || "";
     headers["Authorization"] = `Bearer ${serverApiKey}`;
   } else {
     headers["Authorization"] = req.headers.get("Authorization") ?? "";
@@ -100,3 +109,5 @@ async function request(req: NextRequest, useServerConfig?: boolean) {
     clearTimeout(timeoutId);
   }
 }
+
+export const runtime = "nodejs";

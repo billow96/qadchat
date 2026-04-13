@@ -30,6 +30,7 @@ import {
 import clsx from "clsx";
 import PlayIcon from "../icons/play.svg";
 import StopIcon from "../icons/pause.svg";
+import { getMcpDisplayName } from "../mcp/display";
 
 interface ConfigProperty {
   type: string;
@@ -67,8 +68,8 @@ export function McpMarketPage() {
     description: "",
     baseUrl: "",
     headers: "",
-    longRunning: false,
-    timeout: 60,
+    longRunning: true,
+    timeout: 600,
   });
   const [importJson, setImportJson] = useState("");
 
@@ -205,7 +206,7 @@ export function McpMarketPage() {
         const url = (conf as any).url || (conf as any).baseUrl;
         if (!url) continue;
         const headers = (conf as any).headers;
-        const timeout = Number((conf as any).timeout ?? 60);
+        const timeout = Math.max(600, Number((conf as any).timeout ?? 600));
         const cfg: ServerConfig = {
           type: "streamableHttp",
           baseUrl: url,
@@ -386,7 +387,7 @@ export function McpMarketPage() {
     const customFromConfig = Object.entries(config?.mcpServers ?? {}).map(
       ([id, cfg]) => ({
         id,
-        name: cfg?.name || id,
+        name: cfg?.name || getMcpDisplayName(id),
         description: cfg?.description || "",
         tags: [cfg.type || "streamableHttp"],
         baseUrl: (cfg as any).baseUrl || (cfg as any).url || "",

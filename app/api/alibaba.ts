@@ -13,7 +13,7 @@ export async function handle(
     return NextResponse.json({ body: "OK" }, { status: 200 });
   }
 
-  const authResult = auth(req, ModelProvider.Qwen);
+  const authResult = await auth(req, ModelProvider.Qwen);
   if (authResult.error) {
     return NextResponse.json(authResult, {
       status: 401,
@@ -21,7 +21,12 @@ export async function handle(
   }
 
   try {
-    const response = await request(req, authResult.useServerConfig);
+    const response = await request(
+      req,
+      authResult.useServerConfig,
+      authResult.runtimeConfig?.apiKey,
+      authResult.runtimeConfig?.baseUrl,
+    );
     return response;
   } catch (e) {
     console.error("[Alibaba] ", e);
@@ -29,14 +34,19 @@ export async function handle(
   }
 }
 
-async function request(req: NextRequest, useServerConfig?: boolean) {
+async function request(
+  req: NextRequest,
+  useServerConfig?: boolean,
+  serverApiKey?: string,
+  serverBaseUrl?: string,
+) {
   const controller = new AbortController();
 
   // alibaba use base url or just remove the path
   let path = `${req.nextUrl.pathname}`.replaceAll(ApiPath.Alibaba, "");
 
   let baseUrl = useServerConfig
-    ? process.env.ALIBABA_BASE_URL || ALIBABA_BASE_URL
+    ? serverBaseUrl || ALIBABA_BASE_URL
     : ALIBABA_BASE_URL;
 
   if (!baseUrl.startsWith("http")) {
@@ -65,7 +75,6 @@ async function request(req: NextRequest, useServerConfig?: boolean) {
 
   // 设置 API 密钥和 Authorization
   if (useServerConfig) {
-    const serverApiKey = process.env.ALIBABA_API_KEY || "";
     headers["Authorization"] = `Bearer ${serverApiKey}`;
     if (serverApiKey) {
       headers["x-api-key"] = serverApiKey;
@@ -107,3 +116,5 @@ async function request(req: NextRequest, useServerConfig?: boolean) {
     clearTimeout(timeoutId);
   }
 }
+
+export const runtime = "nodejs";

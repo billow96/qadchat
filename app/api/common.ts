@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { OPENAI_BASE_URL, ServiceProvider } from "../constant";
 import { cloudflareAIGatewayUrl } from "../utils/cloudflare";
 import { getModelProvider } from "../utils/model";
+import type { ProviderRuntimeConfig } from "../server/provider-runtime";
 
 export async function requestOpenai(
   req: NextRequest,
   useServerConfig?: boolean,
   subpath?: string,
+  runtimeConfig?: ProviderRuntimeConfig | null,
 ) {
   const controller = new AbortController();
 
@@ -32,7 +34,7 @@ export async function requestOpenai(
 
   // 如果使用服务器配置，使用服务器端的API密钥
   if (useServerConfig) {
-    authValue = `Bearer ${process.env.OPENAI_API_KEY || ""}`;
+    authValue = `Bearer ${runtimeConfig?.apiKey || ""}`;
     authHeaderName = "Authorization";
   } else {
     authValue = req.headers.get("Authorization") ?? "";
@@ -53,8 +55,8 @@ export async function requestOpenai(
   let baseUrl = customEndpoint
     ? customEndpoint
     : useServerConfig
-      ? process.env.OPENAI_BASE_URL || OPENAI_BASE_URL
-      : OPENAI_BASE_URL;
+    ? runtimeConfig?.baseUrl || OPENAI_BASE_URL
+    : OPENAI_BASE_URL;
 
   if (!baseUrl.startsWith("http")) {
     baseUrl = `https://${baseUrl}`;

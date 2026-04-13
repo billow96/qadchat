@@ -102,6 +102,7 @@ import { ChatControllerPool } from "../client/controller";
 import { DalleQuality, DalleStyle, ModelSize } from "../typing";
 import { Prompt, usePromptStore } from "../store/prompt";
 import Locale from "../locales";
+import { getMcpDisplayName } from "../mcp/display";
 
 import { IconButton } from "./button";
 import styles from "./chat.module.scss";
@@ -284,7 +285,7 @@ function ToolResultCard(props: { tool: any; defaultOpen?: boolean }) {
     : tool.isError
     ? Locale.Chat.MCP.Failed
     : Locale.Chat.MCP.Done;
-  const headerTitle = `${tool.clientId || "mcp"} : ${
+  const headerTitle = `${getMcpDisplayName(tool.clientId)} : ${
     tool.displayName || tool?.function?.name || ""
   }`;
   const argsText =
@@ -1124,7 +1125,7 @@ function MCPPanel(props: { showPanel: boolean; onClose: () => void }) {
                     >
                       <div className={styles["mcp-client-info"]}>
                         <div className={styles["mcp-client-name"]}>
-                          {client.clientId}
+                          {getMcpDisplayName(client.clientId)}
                         </div>
                         <div className={styles["mcp-client-tools"]}>
                           {Locale.Chat.MCP.ToolsCount(toolCount)}

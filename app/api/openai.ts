@@ -37,7 +37,7 @@ export async function handle(
     );
   }
 
-  const authResult = auth(req, ModelProvider.GPT);
+  const authResult = await auth(req, ModelProvider.GPT);
   if (authResult.error) {
     return NextResponse.json(authResult, {
       status: 401,
@@ -49,6 +49,7 @@ export async function handle(
       req,
       authResult.useServerConfig,
       subpath,
+      authResult.runtimeConfig,
     );
 
     // list models
@@ -66,3 +67,5 @@ export async function handle(
     return NextResponse.json(prettyObject(e));
   }
 }
+
+export const runtime = "nodejs";

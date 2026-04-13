@@ -57,6 +57,7 @@ import { getMaskEffectiveModel } from "../utils/model-resolver";
 import clsx from "clsx";
 import chatStyles from "./chat.module.scss";
 import markdownStyles from "./markdown.module.scss";
+import { getMcpDisplayName } from "../mcp/display";
 
 const Markdown = dynamic(async () => (await import("./markdown")).Markdown, {
   loading: () => <LoadingIcon />,
@@ -473,7 +474,7 @@ function ExportToolResultCard(props: { tool: ChatMessageTool }) {
       : tool.isError
       ? Locale.Chat.MCP.Failed
       : Locale.Chat.MCP.Done;
-  const headerTitle = `${tool.clientId || "mcp"} : ${
+  const headerTitle = `${getMcpDisplayName(tool.clientId)} : ${
     tool.displayName || tool?.function?.name || ""
   }`;
   const argsText =

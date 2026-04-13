@@ -1,58 +1,21 @@
 import { NextResponse } from "next/server";
+import {
+  getAccessControlStatus,
+  getGroupBootstrap,
+  loadAccessGroups,
+} from "@/app/server/access-groups";
+import { getCurrentAccessGroup } from "@/app/server/access-session";
 
-// 从环境变量获取配置
-function getServerConfig() {
-  const accessCode = process.env.ACCESS_CODE || "";
-
-  // 各服务商环境变量配置
-  const openaiApiKey = process.env.OPENAI_API_KEY || "";
-  const openaiBaseUrl = process.env.OPENAI_BASE_URL || "";
-
-  const googleApiKey = process.env.GOOGLE_API_KEY || "";
-  const googleBaseUrl = process.env.GOOGLE_BASE_URL || "";
-
-  const anthropicApiKey = process.env.ANTHROPIC_API_KEY || "";
-  const anthropicBaseUrl = process.env.ANTHROPIC_BASE_URL || "";
-
-  const bytedanceApiKey = process.env.BYTEDANCE_API_KEY || "";
-  const bytedanceBaseUrl = process.env.BYTEDANCE_BASE_URL || "";
-
-  const alibabaApiKey = process.env.ALIBABA_API_KEY || "";
-  const alibabaBaseUrl = process.env.ALIBABA_BASE_URL || "";
-
-  const moonshotApiKey = process.env.MOONSHOT_API_KEY || "";
-  const moonshotBaseUrl = process.env.MOONSHOT_BASE_URL || "";
-
-  const deepseekApiKey = process.env.DEEPSEEK_API_KEY || "";
-  const deepseekBaseUrl = process.env.DEEPSEEK_BASE_URL || "";
-
-  const xaiApiKey = process.env.XAI_API_KEY || "";
-  const xaiBaseUrl = process.env.XAI_BASE_URL || "";
-
-  const siliconflowApiKey = process.env.SILICONFLOW_API_KEY || "";
-  const siliconflowBaseUrl = process.env.SILICONFLOW_BASE_URL || "";
-
-  // 检测是否设置了任何服务商环境变量
-  const hasProviderConfig = !!(
-    openaiApiKey ||
-    openaiBaseUrl ||
-    googleApiKey ||
-    googleBaseUrl ||
-    anthropicApiKey ||
-    anthropicBaseUrl ||
-    bytedanceApiKey ||
-    bytedanceBaseUrl ||
-    alibabaApiKey ||
-    alibabaBaseUrl ||
-    moonshotApiKey ||
-    moonshotBaseUrl ||
-    deepseekApiKey ||
-    deepseekBaseUrl ||
-    xaiApiKey ||
-    xaiBaseUrl ||
-    siliconflowApiKey ||
-    siliconflowBaseUrl
-  );
+async function getServerConfig() {
+  const controlStatus = await getAccessControlStatus();
+  const currentGroup = await getCurrentAccessGroup();
+  const bootstrap = currentGroup ? getGroupBootstrap(currentGroup) : null;
+  const { groups, legacyGroup } = await loadAccessGroups();
+  const fallbackBootstrap = groups[0]
+    ? getGroupBootstrap(groups[0])
+    : legacyGroup
+    ? getGroupBootstrap(legacyGroup)
+    : null;
 
   return {
     hideUserApiKey: false,
@@ -60,62 +23,38 @@ function getServerConfig() {
     hideBalanceQuery: false,
     disableFastLink: false,
     customModels: "",
-    defaultModel: "",
+    defaultModel: bootstrap?.defaultModel || "",
     visionModels: "",
-    // 告诉前端是否设置了服务器端访问码（不暴露实际访问码）
-    hasServerAccessCode: !!accessCode,
-    // 告诉前端是否设置了服务商环境变量配置（不暴露实际配置）
-    hasServerProviderConfig: hasProviderConfig,
-    // 各服务商服务器配置状态
-    serverProviders: {
-      openai: {
-        hasApiKey: !!openaiApiKey,
-        hasBaseUrl: !!openaiBaseUrl,
+    hasServerAccessCode: controlStatus.hasServerAccessCode,
+    hasServerProviderConfig:
+      bootstrap?.hasServerProviderConfig ||
+      fallbackBootstrap?.hasServerProviderConfig ||
+      false,
+    serverProviders: bootstrap?.serverProviders ||
+      fallbackBootstrap?.serverProviders || {
+        openai: { hasApiKey: false, hasBaseUrl: false },
+        google: { hasApiKey: false, hasBaseUrl: false },
+        anthropic: { hasApiKey: false, hasBaseUrl: false },
+        bytedance: { hasApiKey: false, hasBaseUrl: false },
+        alibaba: { hasApiKey: false, hasBaseUrl: false },
+        moonshot: { hasApiKey: false, hasBaseUrl: false },
+        deepseek: { hasApiKey: false, hasBaseUrl: false },
+        xai: { hasApiKey: false, hasBaseUrl: false },
+        siliconflow: { hasApiKey: false, hasBaseUrl: false },
       },
-      google: {
-        hasApiKey: !!googleApiKey,
-        hasBaseUrl: !!googleBaseUrl,
-      },
-      anthropic: {
-        hasApiKey: !!anthropicApiKey,
-        hasBaseUrl: !!anthropicBaseUrl,
-      },
-      bytedance: {
-        hasApiKey: !!bytedanceApiKey,
-        hasBaseUrl: !!bytedanceBaseUrl,
-      },
-      alibaba: {
-        hasApiKey: !!alibabaApiKey,
-        hasBaseUrl: !!alibabaBaseUrl,
-      },
-      moonshot: {
-        hasApiKey: !!moonshotApiKey,
-        hasBaseUrl: !!moonshotBaseUrl,
-      },
-      deepseek: {
-        hasApiKey: !!deepseekApiKey,
-        hasBaseUrl: !!deepseekBaseUrl,
-      },
-      xai: {
-        hasApiKey: !!xaiApiKey,
-        hasBaseUrl: !!xaiBaseUrl,
-      },
-      siliconflow: {
-        hasApiKey: !!siliconflowApiKey,
-        hasBaseUrl: !!siliconflowBaseUrl,
-      },
-    },
+    accessMode: controlStatus.hasAccessGroupsConfig ? "group" : "legacy",
+    hasAccessGroupsConfig: controlStatus.hasAccessGroupsConfig,
+    currentGroupId: bootstrap?.groupId || "",
+    currentGroupName: bootstrap?.groupName || "",
+    groupBootstrap: bootstrap,
   };
 }
 
-// 纯前端应用的默认配置
-const DANGER_CONFIG = getServerConfig();
-
 async function handle() {
-  return NextResponse.json(DANGER_CONFIG);
+  return NextResponse.json(await getServerConfig());
 }
 
 export const GET = handle;
 export const POST = handle;
 
-export const runtime = "edge";
+export const runtime = "nodejs";
