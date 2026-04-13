@@ -1,7 +1,7 @@
 services:
-  qadchat:
-    container_name: qadchat
-    image: syferie/qadchat:latest
+  llmchat:
+    container_name: llmchat
+    image: syferie/llmchat:latest
     ports:
       - 3000:3000
     volumes:

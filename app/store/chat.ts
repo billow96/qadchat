@@ -12,6 +12,11 @@ import {
 import { indexedDBStorage } from "@/app/utils/indexedDB-storage";
 import { expandMessagesWithToolHistory } from "@/app/utils/chat";
 import {
+  createStreamTraceId,
+  getLatestMessageTrace,
+  recordStreamTraceStage,
+} from "@/app/utils/stream-trace";
+import {
   StreamUpdateOptimizer,
   createLightweightMessageUpdate,
 } from "@/app/utils/stream-optimizer";
@@ -469,6 +474,36 @@ export const useChatStore = createPersistStore(
       const sessions = get().sessions;
       let hasChanges = false;
 
+      for (const [, update] of updates) {
+        const traceInfo = (
+          update.changes as Partial<ChatMessage> & {
+            _trace?: {
+              traceId: string;
+              seq: number;
+              model?: string;
+              source?: string;
+              sessionId?: string;
+              contentLength: number;
+              chunkLength: number;
+              remainLength: number;
+            };
+          }
+        )._trace;
+        if (!traceInfo) continue;
+
+        recordStreamTraceStage("store_batch_apply_start", {
+          traceId: traceInfo.traceId,
+          sessionId: traceInfo.sessionId,
+          messageId: update.messageId,
+          seq: traceInfo.seq,
+          model: traceInfo.model,
+          source: traceInfo.source,
+          contentLength: traceInfo.contentLength,
+          chunkLength: traceInfo.chunkLength,
+          remainLength: traceInfo.remainLength,
+        });
+      }
+
       const newSessions = sessions.map((session) => {
         for (const [key, update] of updates) {
           if (key.startsWith(session.id)) {
@@ -494,6 +529,36 @@ export const useChatStore = createPersistStore(
 
       if (hasChanges) {
         set({ sessions: newSessions });
+      }
+
+      for (const [, update] of updates) {
+        const traceInfo = (
+          update.changes as Partial<ChatMessage> & {
+            _trace?: {
+              traceId: string;
+              seq: number;
+              model?: string;
+              source?: string;
+              sessionId?: string;
+              contentLength: number;
+              chunkLength: number;
+              remainLength: number;
+            };
+          }
+        )._trace;
+        if (!traceInfo) continue;
+
+        recordStreamTraceStage("store_batch_apply_done", {
+          traceId: traceInfo.traceId,
+          sessionId: traceInfo.sessionId,
+          messageId: update.messageId,
+          seq: traceInfo.seq,
+          model: traceInfo.model,
+          source: traceInfo.source,
+          contentLength: traceInfo.contentLength,
+          chunkLength: traceInfo.chunkLength,
+          remainLength: traceInfo.remainLength,
+        });
       }
     });
 
@@ -758,16 +823,62 @@ export const useChatStore = createPersistStore(
         api.llm.chat({
           messages: sendMessages,
           config: { ...modelConfig, stream: true },
+          trace: {
+            traceId: createStreamTraceId(session.id, botMessage.id),
+            sessionId: session.id,
+            messageId: botMessage.id,
+            model: modelConfig.model,
+            source: "single-model",
+          },
           nativeTools,
           onUpdate(message) {
             botMessage.streaming = true;
             if (message) {
+              const traceId = createStreamTraceId(session.id, botMessage.id);
+              const traceMeta = getLatestMessageTrace(botMessage.id);
+              if (traceMeta) {
+                recordStreamTraceStage("store_onUpdate", {
+                  traceId,
+                  sessionId: session.id,
+                  messageId: botMessage.id,
+                  seq: traceMeta.seq,
+                  model: modelConfig.model,
+                  source: "single-model",
+                  contentLength: traceMeta.contentLength,
+                  chunkLength: traceMeta.chunkLength,
+                  remainLength: traceMeta.remainLength,
+                });
+                recordStreamTraceStage("segment_update_start", {
+                  traceId,
+                  sessionId: session.id,
+                  messageId: botMessage.id,
+                  seq: traceMeta.seq,
+                  model: modelConfig.model,
+                  source: "single-model",
+                  contentLength: traceMeta.contentLength,
+                  chunkLength: traceMeta.chunkLength,
+                  remainLength: traceMeta.remainLength,
+                });
+              }
               botMessage.content = message;
               botMessage.segments = updateMessageSegmentsFromStream(
                 botMessage.segments,
                 message,
                 botMessage.statistic?.reasoningLatency,
               );
+              if (traceMeta) {
+                recordStreamTraceStage("segment_update_done", {
+                  traceId,
+                  sessionId: session.id,
+                  messageId: botMessage.id,
+                  seq: traceMeta.seq,
+                  model: modelConfig.model,
+                  source: "single-model",
+                  contentLength: traceMeta.contentLength,
+                  chunkLength: traceMeta.chunkLength,
+                  remainLength: traceMeta.remainLength,
+                });
+              }
               // 使用流式优化器进行批量更新，减少存储频率
               streamOptimizer.updateStreamingMessage(
                 session.id,
@@ -776,6 +887,18 @@ export const useChatStore = createPersistStore(
                   content: message,
                   streaming: true,
                   segments: cloneMessageSegments(botMessage.segments),
+                  _trace: traceMeta
+                    ? {
+                        traceId,
+                        seq: traceMeta.seq,
+                        model: modelConfig.model,
+                        source: "single-model",
+                        sessionId: session.id,
+                        contentLength: traceMeta.contentLength,
+                        chunkLength: traceMeta.chunkLength,
+                        remainLength: traceMeta.remainLength,
+                      }
+                    : undefined,
                 },
                 session,
               );
@@ -1026,16 +1149,62 @@ export const useChatStore = createPersistStore(
           return api.llm.chat({
             messages: recentMessages,
             config: { ...modelConfig, stream: true },
+            trace: {
+              traceId: createStreamTraceId(session.id, botMessage.id),
+              sessionId: session.id,
+              messageId: botMessage.id,
+              model: modelConfig.model,
+              source: "multi-model",
+            },
             nativeTools,
             onUpdate(message) {
               botMessage.streaming = true;
               if (message) {
+                const traceId = createStreamTraceId(session.id, botMessage.id);
+                const traceMeta = getLatestMessageTrace(botMessage.id);
+                if (traceMeta) {
+                  recordStreamTraceStage("store_onUpdate", {
+                    traceId,
+                    sessionId: session.id,
+                    messageId: botMessage.id,
+                    seq: traceMeta.seq,
+                    model: modelConfig.model,
+                    source: "multi-model",
+                    contentLength: traceMeta.contentLength,
+                    chunkLength: traceMeta.chunkLength,
+                    remainLength: traceMeta.remainLength,
+                  });
+                  recordStreamTraceStage("segment_update_start", {
+                    traceId,
+                    sessionId: session.id,
+                    messageId: botMessage.id,
+                    seq: traceMeta.seq,
+                    model: modelConfig.model,
+                    source: "multi-model",
+                    contentLength: traceMeta.contentLength,
+                    chunkLength: traceMeta.chunkLength,
+                    remainLength: traceMeta.remainLength,
+                  });
+                }
                 botMessage.content = message;
                 botMessage.segments = updateMessageSegmentsFromStream(
                   botMessage.segments,
                   message,
                   botMessage.statistic?.reasoningLatency,
                 );
+                if (traceMeta) {
+                  recordStreamTraceStage("segment_update_done", {
+                    traceId,
+                    sessionId: session.id,
+                    messageId: botMessage.id,
+                    seq: traceMeta.seq,
+                    model: modelConfig.model,
+                    source: "multi-model",
+                    contentLength: traceMeta.contentLength,
+                    chunkLength: traceMeta.chunkLength,
+                    remainLength: traceMeta.remainLength,
+                  });
+                }
                 // 多模型模式也使用流式优化器
                 streamOptimizer.updateStreamingMessage(
                   session.id,
@@ -1044,6 +1213,18 @@ export const useChatStore = createPersistStore(
                     content: message,
                     streaming: true,
                     segments: cloneMessageSegments(botMessage.segments),
+                    _trace: traceMeta
+                      ? {
+                          traceId,
+                          seq: traceMeta.seq,
+                          model: modelConfig.model,
+                          source: "multi-model",
+                          sessionId: session.id,
+                          contentLength: traceMeta.contentLength,
+                          chunkLength: traceMeta.chunkLength,
+                          remainLength: traceMeta.remainLength,
+                        }
+                      : undefined,
                   },
                   session,
                 );
@@ -1547,11 +1728,47 @@ export const useChatStore = createPersistStore(
           await api.llm.chat({
             messages: sendMessages,
             config: { ...modelConfig, stream: true },
+            trace: {
+              traceId: createStreamTraceId(session.id, botMessageId),
+              sessionId: session.id,
+              messageId: botMessageId,
+              model: modelConfig.model,
+              source: "retry",
+            },
             nativeTools,
             onUpdate(message) {
               get().updateTargetSession(session, (session) => {
                 const currentMessage = session.messages[messageIndex];
                 if (currentMessage) {
+                  const traceId = createStreamTraceId(
+                    session.id,
+                    currentMessage.id,
+                  );
+                  const traceMeta = getLatestMessageTrace(currentMessage.id);
+                  if (traceMeta) {
+                    recordStreamTraceStage("store_onUpdate", {
+                      traceId,
+                      sessionId: session.id,
+                      messageId: currentMessage.id,
+                      seq: traceMeta.seq,
+                      model: modelConfig.model,
+                      source: "retry",
+                      contentLength: traceMeta.contentLength,
+                      chunkLength: traceMeta.chunkLength,
+                      remainLength: traceMeta.remainLength,
+                    });
+                    recordStreamTraceStage("segment_update_start", {
+                      traceId,
+                      sessionId: session.id,
+                      messageId: currentMessage.id,
+                      seq: traceMeta.seq,
+                      model: modelConfig.model,
+                      source: "retry",
+                      contentLength: traceMeta.contentLength,
+                      chunkLength: traceMeta.chunkLength,
+                      remainLength: traceMeta.remainLength,
+                    });
+                  }
                   currentMessage.streaming = true;
                   currentMessage.content = message;
                   currentMessage.segments = updateMessageSegmentsFromStream(
@@ -1559,6 +1776,19 @@ export const useChatStore = createPersistStore(
                     message,
                     currentMessage.statistic?.reasoningLatency,
                   );
+                  if (traceMeta) {
+                    recordStreamTraceStage("segment_update_done", {
+                      traceId,
+                      sessionId: session.id,
+                      messageId: currentMessage.id,
+                      seq: traceMeta.seq,
+                      model: modelConfig.model,
+                      source: "retry",
+                      contentLength: traceMeta.contentLength,
+                      chunkLength: traceMeta.chunkLength,
+                      remainLength: traceMeta.remainLength,
+                    });
+                  }
                   // 重试时也使用流式优化器
                   streamOptimizer.updateStreamingMessage(
                     session.id,
@@ -1567,6 +1797,18 @@ export const useChatStore = createPersistStore(
                       content: message,
                       streaming: true,
                       segments: cloneMessageSegments(currentMessage.segments),
+                      _trace: traceMeta
+                        ? {
+                            traceId,
+                            seq: traceMeta.seq,
+                            model: modelConfig.model,
+                            source: "retry",
+                            sessionId: session.id,
+                            contentLength: traceMeta.contentLength,
+                            chunkLength: traceMeta.chunkLength,
+                            remainLength: traceMeta.remainLength,
+                          }
+                        : undefined,
                     },
                     session,
                   );

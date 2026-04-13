@@ -25,7 +25,7 @@ const tw = {
     Confirm: "確認",
     Verifying: "驗證中...",
     Invalid: "存取密碼錯誤",
-    Brand: "QADChat",
+    Brand: "LLMChat",
     BrandSubTitle: "Build your own AI assistant.",
     Description:
       "這是一個受保護的工作台。完成存取碼驗證後，即可使用完整對話與設定能力。",

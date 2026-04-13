@@ -12,8 +12,6 @@ import MinIcon from "../icons/min.svg";
 
 import Locale from "../locales";
 
-import Image from "next/image";
-
 import { createRoot } from "react-dom/client";
 import React, {
   CSSProperties,
@@ -465,21 +463,24 @@ export function showImageModal(
         style={{
           display: "flex",
           justifyContent: "center",
-          position: "relative",
+          alignItems: "center",
+          width: "100%",
+          minHeight: "240px",
           ...boxStyle,
         }}
       >
-        <Image
+        <img
           src={img}
           alt="preview"
-          fill
-          unoptimized
-          style={
-            style ?? {
-              maxWidth: "100%",
-              objectFit: "contain",
-            }
-          }
+          style={{
+            display: "block",
+            maxWidth: "100%",
+            maxHeight: "70vh",
+            width: "auto",
+            height: "auto",
+            objectFit: "contain",
+            ...style,
+          }}
         />
       </div>
     ),

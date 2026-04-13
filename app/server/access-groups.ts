@@ -77,7 +77,7 @@ type AccessSessionPayload = {
   issuedAt: number;
 };
 
-export const ACCESS_SESSION_COOKIE = "qadchat_access_session";
+export const ACCESS_SESSION_COOKIE = "llmchat_access_session";
 const ACCESS_SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const ACCESS_SESSION_SECRET_ENV = "ACCESS_SESSION_SECRET";
 const ACCESS_GROUPS_DIR_ENV = "ACCESS_GROUPS_DIR";
@@ -393,7 +393,7 @@ function getAccessSessionSecret() {
     process.env.ACCESS_CODE ||
     process.env.OPENAI_API_KEY ||
     process.env.NEXTAUTH_SECRET ||
-    "qadchat-default-access-session-secret"
+    "llmchat-default-access-session-secret"
   );
 }
 

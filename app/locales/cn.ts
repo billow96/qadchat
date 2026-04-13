@@ -26,7 +26,7 @@ const cn = {
     Confirm: "确认",
     Verifying: "验证中...",
     Invalid: "访问码错误",
-    Brand: "QADChat",
+    Brand: "LLMChat",
     BrandSubTitle: "Build your own AI assistant.",
     Description:
       "这是一个受保护的工作台。完成访问码验证后，即可进入完整对话与配置能力。",

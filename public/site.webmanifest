@@ -1,6 +1,6 @@
 {
-  "name": "QADChat",
-  "short_name": "QADChat",
+  "name": "LLMChat",
+  "short_name": "LLMChat",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",

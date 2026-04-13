@@ -1,4 +1,18 @@
 import { ChatSession, ChatMessage } from "../store/chat";
+import { getLatestMessageTrace, recordStreamTraceStage } from "./stream-trace";
+
+type StreamingMessageChanges = Partial<ChatMessage> & {
+  _trace?: {
+    traceId: string;
+    seq: number;
+    model?: string;
+    source?: string;
+    sessionId?: string;
+    contentLength: number;
+    chunkLength: number;
+    remainLength: number;
+  };
+};
 
 // 流式更新优化工具
 export class StreamUpdateOptimizer {
@@ -7,7 +21,7 @@ export class StreamUpdateOptimizer {
     {
       session: ChatSession;
       messageId: string;
-      changes: Partial<ChatMessage>;
+      changes: StreamingMessageChanges;
       lastUpdate: number;
     }
   >();
@@ -21,9 +35,24 @@ export class StreamUpdateOptimizer {
   updateStreamingMessage(
     sessionId: string,
     messageId: string,
-    changes: Partial<ChatMessage>,
+    changes: StreamingMessageChanges,
     session: ChatSession,
   ) {
+    const traceMeta = getLatestMessageTrace(messageId);
+    if (traceMeta) {
+      recordStreamTraceStage("optimizer_enqueue", {
+        traceId: traceMeta.traceId,
+        sessionId: traceMeta.sessionId,
+        messageId,
+        seq: traceMeta.seq,
+        model: traceMeta.model,
+        source: traceMeta.source,
+        contentLength: traceMeta.contentLength,
+        chunkLength: traceMeta.chunkLength,
+        remainLength: traceMeta.remainLength,
+      });
+    }
+
     const key = `${sessionId}-${messageId}`;
     const previous = this.pendingUpdates.get(key);
 
@@ -50,6 +79,22 @@ export class StreamUpdateOptimizer {
   flushUpdates() {
     if (this.pendingUpdates.size === 0) return;
 
+    for (const [, update] of this.pendingUpdates) {
+      const traceMeta = getLatestMessageTrace(update.messageId);
+      if (!traceMeta) continue;
+      recordStreamTraceStage("optimizer_flush", {
+        traceId: traceMeta.traceId,
+        sessionId: traceMeta.sessionId,
+        messageId: update.messageId,
+        seq: traceMeta.seq,
+        model: traceMeta.model,
+        source: traceMeta.source,
+        contentLength: traceMeta.contentLength,
+        chunkLength: traceMeta.chunkLength,
+        remainLength: traceMeta.remainLength,
+      });
+    }
+
     if (this.updateTimer) {
       clearTimeout(this.updateTimer);
       this.updateTimer = null;
@@ -72,12 +117,15 @@ export class StreamUpdateOptimizer {
 export function createLightweightMessageUpdate(
   session: ChatSession,
   messageIndex: number,
-  changes: Partial<ChatMessage>,
+  changes: StreamingMessageChanges,
 ): Partial<ChatSession> {
   // 避免深拷贝，只创建必要的浅拷贝
   const newMessages = [...session.messages];
   const targetMessage = { ...newMessages[messageIndex] };
-  Object.assign(targetMessage, changes);
+  const { _trace, ...safeChanges } = changes as Partial<ChatMessage> & {
+    _trace?: unknown;
+  };
+  Object.assign(targetMessage, safeChanges);
   newMessages[messageIndex] = targetMessage;
 
   return {

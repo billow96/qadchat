@@ -27,7 +27,7 @@ const en: LocaleType = {
     Confirm: "Confirm",
     Verifying: "Verifying...",
     Invalid: "Invalid access code",
-    Brand: "QADChat",
+    Brand: "LLMChat",
     BrandSubTitle: "Build your own AI assistant.",
     Description:
       "This workspace is protected. Enter the access code to unlock the full chat and configuration experience.",

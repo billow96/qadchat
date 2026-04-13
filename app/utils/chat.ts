@@ -14,6 +14,12 @@ import { prettyObject } from "./format";
 import { fetch as tauriFetch } from "./stream";
 import { getMessageTextContentWithoutThinkingFromContent } from "../utils";
 import type { ChatMessageSegment, ChatMessageTool } from "../store";
+import {
+  finishStreamTrace,
+  recordStreamTraceStage,
+  setLatestMessageTrace,
+  startStreamTrace,
+} from "./stream-trace";
 
 export type OpenAICompatibleRequestMessage = RequestMessage & {
   role: "developer" | "system" | "user" | "assistant" | "tool";
@@ -491,6 +497,8 @@ export function stream(
   ) => void,
   options: any,
 ) {
+  const traceInfo = options?.trace;
+  let traceSeq = 0;
   let responseText = "";
   let displayText = "";
   let remainText = "";
@@ -498,6 +506,10 @@ export function stream(
   let running = false;
   let runTools: any[] = [];
   let responseRes: Response;
+
+  if (traceInfo) {
+    startStreamTrace(traceInfo);
+  }
 
   // animate response to make it looks smooth
   function animateResponseText() {
@@ -514,6 +526,34 @@ export function stream(
       const fetchText = remainText.slice(0, fetchCount);
       responseText += fetchText;
       remainText = remainText.slice(fetchCount);
+      if (traceInfo) {
+        traceSeq += 1;
+        const meta = {
+          traceId: traceInfo.traceId,
+          sessionId: traceInfo.sessionId,
+          messageId: traceInfo.messageId,
+          seq: traceSeq,
+          emittedAt: performance.now(),
+          contentLength: responseText.length,
+          chunkLength: fetchText.length,
+          remainLength: remainText.length,
+          model: traceInfo.model,
+          source: traceInfo.source,
+        };
+        setLatestMessageTrace(meta);
+        recordStreamTraceStage("anim_emit", {
+          traceId: traceInfo.traceId,
+          sessionId: traceInfo.sessionId,
+          messageId: traceInfo.messageId,
+          seq: traceSeq,
+          model: traceInfo.model,
+          source: traceInfo.source,
+          contentLength: responseText.length,
+          chunkLength: fetchText.length,
+          remainLength: remainText.length,
+          note: `emit ${fetchText.length} chars`,
+        });
+      }
       options.onUpdate?.(responseText, fetchText);
     }
 
@@ -609,6 +649,17 @@ export function stream(
       }
       console.debug("[ChatAPI] end");
       finished = true;
+      if (traceInfo) {
+        finishStreamTrace(traceInfo.traceId, {
+          sessionId: traceInfo.sessionId,
+          messageId: traceInfo.messageId,
+          model: traceInfo.model,
+          source: traceInfo.source,
+          seq: traceSeq,
+          contentLength: (responseText + remainText).length,
+          remainLength: remainText.length,
+        });
+      }
       options.onFinish(responseText + remainText, responseRes); // 将res传递给onFinish
     }
   };
@@ -681,6 +732,19 @@ export function stream(
         }
         try {
           const chunk = parseSSE(text, runTools);
+          if (traceInfo) {
+            recordStreamTraceStage("sse_chunk", {
+              traceId: traceInfo.traceId,
+              sessionId: traceInfo.sessionId,
+              messageId: traceInfo.messageId,
+              model: traceInfo.model,
+              source: traceInfo.source,
+              contentLength: responseText.length,
+              chunkLength: text.length,
+              remainLength: remainText.length,
+              note: "raw SSE message received",
+            });
+          }
           if (chunk) {
             remainText += chunk;
           }
@@ -727,6 +791,8 @@ export function streamWithThink(
   options: any,
   modelHasReasoningCapability: boolean = false, // 新增参数：模型是否具有推理能力
 ) {
+  const traceInfo = options?.trace;
+  let traceSeq = 0;
   let responseText = "";
   let displayText = "";
   let remainText = "";
@@ -750,6 +816,10 @@ export function streamWithThink(
     displayText = responseText + remainText;
   };
 
+  if (traceInfo) {
+    startStreamTrace(traceInfo);
+  }
+
   // animate response to make it looks smooth
   function animateResponseText() {
     if (finished || controller.signal.aborted) {
@@ -767,6 +837,35 @@ export function streamWithThink(
       responseText += fetchText;
       remainText = remainText.slice(fetchCount);
       syncDisplayText();
+      if (traceInfo) {
+        traceSeq += 1;
+        const emittedAt = performance.now();
+        const meta = {
+          traceId: traceInfo.traceId,
+          sessionId: traceInfo.sessionId,
+          messageId: traceInfo.messageId,
+          seq: traceSeq,
+          emittedAt,
+          contentLength: displayText.length,
+          chunkLength: fetchText.length,
+          remainLength: remainText.length,
+          model: traceInfo.model,
+          source: traceInfo.source,
+        };
+        setLatestMessageTrace(meta);
+        recordStreamTraceStage("anim_emit", {
+          traceId: traceInfo.traceId,
+          sessionId: traceInfo.sessionId,
+          messageId: traceInfo.messageId,
+          seq: traceSeq,
+          model: traceInfo.model,
+          source: traceInfo.source,
+          contentLength: displayText.length,
+          chunkLength: fetchText.length,
+          remainLength: remainText.length,
+          note: `emit ${fetchText.length} chars`,
+        });
+      }
       options.onUpdate?.(displayText, fetchText);
     }
 
@@ -898,6 +997,17 @@ export function streamWithThink(
       }
 
       finished = true;
+      if (traceInfo) {
+        finishStreamTrace(traceInfo.traceId, {
+          sessionId: traceInfo.sessionId,
+          messageId: traceInfo.messageId,
+          model: traceInfo.model,
+          source: traceInfo.source,
+          seq: traceSeq,
+          contentLength: finalContent.length,
+          remainLength: remainText.length,
+        });
+      }
       options.onFinish(
         {
           content: finalContent,
@@ -983,6 +1093,19 @@ export function streamWithThink(
         }
         try {
           const chunk = parseSSE(text, runTools);
+          if (traceInfo) {
+            recordStreamTraceStage("sse_chunk", {
+              traceId: traceInfo.traceId,
+              sessionId: traceInfo.sessionId,
+              messageId: traceInfo.messageId,
+              model: traceInfo.model,
+              source: traceInfo.source,
+              contentLength: displayText.length,
+              chunkLength: text.length,
+              remainLength: remainText.length,
+              note: "raw SSE message received",
+            });
+          }
           if (!firstReplyLatency) {
             firstReplyLatency = Date.now() - startRequestTime;
           }

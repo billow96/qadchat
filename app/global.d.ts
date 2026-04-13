@@ -52,6 +52,18 @@ type DangerConfig = {
 };
 
 declare interface Window {
+  __QADCHAT_STREAM_TRACE_ENABLED__?: boolean;
+  __QADCHAT_STREAM_TRACE__?: {
+    enable: () => void;
+    disable: () => void;
+    clear: () => void;
+    isEnabled: () => boolean;
+    events: (traceId?: string) => any[];
+    latestMeta: (messageId: string) => any;
+    summary: (traceId?: string) => any;
+    exportJSON: (traceId?: string) => string;
+    printSummary: (traceId?: string) => void;
+  };
   __TAURI__?: {
     writeText(text: string): Promise<void>;
     invoke(command: string, payload?: Record<string, unknown>): Promise<any>;

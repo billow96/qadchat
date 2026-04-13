@@ -239,7 +239,7 @@ export function Artifacts() {
           shadow
           onClick={() => previewRef.current?.reload()}
         />
-        <div className={styles["artifacts-title"]}>QADChat Artifacts</div>
+        <div className={styles["artifacts-title"]}>LLMChat Artifacts</div>
         <ArtifactsShareButton
           id={id}
           getCode={() => code}

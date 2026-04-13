@@ -7,10 +7,10 @@ import type { Metadata, Viewport } from "next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
-  title: "QADChat",
+  title: "LLMChat",
   description: "Your personal ChatGPT Chat Bot.",
   appleWebApp: {
-    title: "QADChat",
+    title: "LLMChat",
     statusBarStyle: "default",
   },
 };

@@ -7,7 +7,14 @@ import RemarkGfm from "remark-gfm";
 import RehypeHighlight from "rehype-highlight";
 import RehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
-import { useRef, useState, RefObject, useEffect, useMemo } from "react";
+import {
+  useRef,
+  useState,
+  RefObject,
+  useEffect,
+  useMemo,
+  useLayoutEffect,
+} from "react";
 import { copyToClipboard, useWindowSize } from "../utils";
 import mermaid from "mermaid";
 import Locale from "../locales";
@@ -31,6 +38,10 @@ import clsx from "clsx";
 import styles from "./markdown.module.scss";
 import type { ChatMessageSegment } from "../store";
 import { isThinkingTitle } from "../utils/thinking";
+import {
+  getLatestMessageTrace,
+  recordStreamTraceStage,
+} from "../utils/stream-trace";
 
 // 配置安全策略，允许 thinkcollapse 标签，防止html注入造成页面崩溃
 const sanitizeOptions = {
@@ -833,9 +844,69 @@ export function Markdown(
     defaultShow?: boolean;
     thinkingSegments?: ChatMessageSegment[];
     status?: boolean;
+    traceMessageId?: string;
   } & React.DOMAttributes<HTMLDivElement>,
 ) {
   const mdRef = useRef<HTMLDivElement>(null);
+  const lastRenderTraceSeqRef = useRef<number | null>(null);
+
+  useLayoutEffect(() => {
+    if (!props.status || !props.traceMessageId || props.loading) return;
+
+    const traceMeta = getLatestMessageTrace(props.traceMessageId);
+    if (!traceMeta) return;
+    if (lastRenderTraceSeqRef.current === traceMeta.seq) return;
+    lastRenderTraceSeqRef.current = traceMeta.seq;
+
+    recordStreamTraceStage("assistant_render_commit", {
+      traceId: traceMeta.traceId,
+      sessionId: traceMeta.sessionId,
+      messageId: props.traceMessageId,
+      seq: traceMeta.seq,
+      model: traceMeta.model,
+      source: traceMeta.source,
+      contentLength: traceMeta.contentLength,
+      chunkLength: traceMeta.chunkLength,
+      remainLength: traceMeta.remainLength,
+      note: "assistant markdown host committed",
+    });
+
+    recordStreamTraceStage("markdown_render_commit", {
+      traceId: traceMeta.traceId,
+      sessionId: traceMeta.sessionId,
+      messageId: props.traceMessageId,
+      seq: traceMeta.seq,
+      model: traceMeta.model,
+      source: traceMeta.source,
+      contentLength: traceMeta.contentLength,
+      chunkLength: traceMeta.chunkLength,
+      remainLength: traceMeta.remainLength,
+      note: "markdown subtree committed",
+    });
+
+    const frameHandle = window.requestAnimationFrame(() => {
+      recordStreamTraceStage("paint_approx", {
+        traceId: traceMeta.traceId,
+        sessionId: traceMeta.sessionId,
+        messageId: props.traceMessageId,
+        seq: traceMeta.seq,
+        model: traceMeta.model,
+        source: traceMeta.source,
+        contentLength: traceMeta.contentLength,
+        chunkLength: traceMeta.chunkLength,
+        remainLength: traceMeta.remainLength,
+        note: "next frame after markdown commit",
+      });
+    });
+
+    return () => window.cancelAnimationFrame(frameHandle);
+  }, [
+    props.content,
+    props.status,
+    props.traceMessageId,
+    props.thinkingSegments,
+    props.loading,
+  ]);
 
   return (
     <div

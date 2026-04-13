@@ -24,6 +24,7 @@ import type {
   NativeToolDefinition,
   NativeToolProvider,
 } from "../mcp/native-tools";
+import type { StreamTraceStartInfo } from "../utils/stream-trace";
 
 export const ROLES = ["system", "user", "assistant"] as const;
 export type MessageRole = (typeof ROLES)[number];
@@ -100,6 +101,7 @@ export interface RichMessage {
 export interface ChatOptions {
   messages: RequestMessage[];
   config: LLMConfig;
+  trace?: StreamTraceStartInfo;
   nativeTools?: {
     provider: NativeToolProvider;
     tools: any[];
@@ -218,7 +220,7 @@ export class ClientApi {
       .concat([
         {
           from: "human",
-          value: "Share from [QADChat]: https://github.com/MoonWeSif/qadchat",
+          value: "Share from [LLMChat]: https://github.com/MoonWe/llmchat",
         },
       ]);
 

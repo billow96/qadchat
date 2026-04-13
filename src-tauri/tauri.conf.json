@@ -8,8 +8,8 @@
     "withGlobalTauri": true
   },
   "package": {
-    "productName": "QADChat",
-    "version": "2.17.5"
+    "productName": "LLMChat",
+    "version": "2.17.6"
   },
   "tauri": {
     "allowlist": {
@@ -73,7 +73,7 @@
         "icons/icon.ico"
       ],
       "identifier": "com.yida.chatgpt.next.web",
-      "longDescription": "QADChat is a cross-platform ChatGPT client, including Web/Win/Linux/OSX/PWA.",
+      "longDescription": "LLMChat is a cross-platform ChatGPT client, including Web/Win/Linux/OSX/PWA.",
       "macOS": {
         "entitlements": null,
         "exceptionDomain": "",
@@ -82,7 +82,7 @@
         "signingIdentity": null
       },
       "resources": [],
-      "shortDescription": "QADChat App",
+      "shortDescription": "LLMChat App",
       "targets": "all",
       "windows": {
         "certificateThumbprint": null,
@@ -97,7 +97,7 @@
     "updater": {
       "active": true,
       "endpoints": [
-        "https://github.com/MoonWeSif/qadchat/releases/latest/download/latest.json"
+        "https://github.com/MoonWe/llmchat/releases/latest/download/latest.json"
       ],
       "dialog": true,
       "windows": {
@@ -110,7 +110,7 @@
         "fullscreen": false,
         "height": 600,
         "resizable": true,
-        "title": "QADChat",
+        "title": "LLMChat",
         "width": 960,
         "hiddenTitle": true,
         "titleBarStyle": "Overlay"

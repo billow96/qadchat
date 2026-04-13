@@ -681,6 +681,7 @@ function AssistantMessageBody(props: {
             <Markdown
               key={`${message.id}-text-segment-${segment.id}-${segmentIndex}`}
               content={segment.content}
+              traceMessageId={message.id}
               loading={
                 segmentIndex === 0 &&
                 (message.preview || message.streaming) &&
@@ -707,6 +708,7 @@ function AssistantMessageBody(props: {
     <Markdown
       key={message.streaming ? "loading" : "done"}
       content={getMessageDisplayContent(message)}
+      traceMessageId={message.id}
       loading={
         (message.preview || message.streaming) &&
         message.content.length === 0 &&
