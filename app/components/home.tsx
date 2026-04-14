@@ -219,13 +219,6 @@ const SearchChat = dynamic(
   },
 );
 
-const McpMarketPage = dynamic(
-  async () => (await import("./mcp-market")).McpMarketPage,
-  {
-    loading: () => <Loading noLogo />,
-  },
-);
-
 export function useSwitchTheme() {
   const config = useAppConfig();
 
@@ -538,7 +531,7 @@ function Screen() {
             <Route path={Path.Settings} element={<Settings />} />
             {/* 将旧的 /auth 路由指向设置页，避免无效跳转 */}
             <Route path={Path.Auth} element={<Settings />} />
-            <Route path={Path.McpMarket} element={<McpMarketPage />} />
+            <Route path={Path.McpMarket} element={<Settings />} />
           </Routes>
         </WindowContent>
       </>

@@ -9,7 +9,6 @@ import ChatGptIcon from "../icons/chatgpt.svg";
 import AddIcon from "../icons/add.svg";
 import DeleteIcon from "../icons/delete.svg";
 import MaskIcon from "../icons/mask.svg";
-import McpIcon from "../icons/mcp.svg";
 import DragIcon from "../icons/drag.svg";
 import DiscoveryIcon from "../icons/discovery.svg";
 import ChatSettingsIcon from "../icons/chat-settings.svg";
@@ -291,20 +290,9 @@ export function SideBar(props: { className?: string }) {
             onClick={() => setShowChatSettings(true)}
             shadow
           />
-        </div>
-        <div className={styles["sidebar-header-bar"]}>
-          <IconButton
-            icon={<McpIcon />}
-            text={shouldNarrow ? undefined : Locale.Mcp.Name}
-            className={styles["sidebar-bar-button"]}
-            onClick={() => {
-              navigate(Path.McpMarket, { state: { fromHome: true } });
-            }}
-            shadow
-          />
           <IconButton
             icon={<DiscoveryIcon />}
-            text={shouldNarrow ? undefined : Locale.SearchChat.Page.Title}
+            text={shouldNarrow ? undefined : Locale.SearchChat.Name}
             className={styles["sidebar-bar-button"]}
             onClick={() =>
               navigate(Path.SearchChat, { state: { fromHome: true } })

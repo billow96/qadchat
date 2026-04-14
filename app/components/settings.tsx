@@ -81,7 +81,7 @@ import {
 import { Prompt, SearchService, usePromptStore } from "../store/prompt";
 import { ErrorBoundary } from "./error";
 import { InputRange } from "./input-range";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Avatar, AvatarPicker } from "./emoji";
 import { getClientConfig } from "../config/client";
 import { useSyncStore } from "../store/sync";
@@ -94,11 +94,13 @@ import { ModelManager } from "./model-manager";
 import { useAllModels } from "../utils/hooks";
 import { getModelProvider } from "../utils/model";
 import { useEnabledModels } from "../utils/hooks";
+import { MCPSettings } from "./mcp-settings";
 
 // 设置页面的分类枚举
 enum SettingsTab {
   General = "general",
   Sync = "sync",
+  Mcp = "mcp",
   Mask = "mask",
   Prompt = "prompt",
   ModelService = "model-service",
@@ -783,6 +785,7 @@ function SyncItems() {
 
 export function Settings() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [currentTab, setCurrentTab] = useState<SettingsTab>(
     SettingsTab.General,
@@ -810,6 +813,12 @@ export function Settings() {
   useEffect(() => {
     accessStore.fetch();
   }, [accessStore]);
+
+  useEffect(() => {
+    if (location.pathname === Path.McpMarket) {
+      setCurrentTab(SettingsTab.Mcp);
+    }
+  }, [location.pathname]);
 
   const enabledAccessControl = useMemo(
     () => accessStore.enabledAccessControl(),
@@ -1342,6 +1351,7 @@ export function Settings() {
       icon: "⚙️",
     },
     { key: SettingsTab.Sync, label: Locale.Settings.Tab.Sync, icon: "☁️" },
+    { key: SettingsTab.Mcp, label: Locale.Settings.Tab.Mcp, icon: "🧩" },
     { key: SettingsTab.Mask, label: Locale.Settings.Tab.Mask, icon: "🎭" },
     { key: SettingsTab.Prompt, label: Locale.Settings.Tab.Prompt, icon: "💬" },
     {
@@ -1364,6 +1374,8 @@ export function Settings() {
         return renderGeneralSettings();
       case SettingsTab.Sync:
         return renderSyncSettings();
+      case SettingsTab.Mcp:
+        return <MCPSettings />;
       case SettingsTab.Mask:
         return renderMaskSettings();
       case SettingsTab.Prompt:

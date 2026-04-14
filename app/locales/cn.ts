@@ -278,6 +278,7 @@ const cn = {
     Tab: {
       General: "通用配置",
       Sync: "云同步",
+      Mcp: "MCP",
       Mask: "助手",
       Prompt: "提示词",
       ModelService: "模型服务",
@@ -792,6 +793,109 @@ const cn = {
         SubTitle: "值越大，回复越随机",
       },
     },
+    Mcp: {
+      Title: "MCP 服务",
+      SubTitle: "集中管理 MCP 服务、工具开关与连接配置",
+      Global: {
+        Title: "启用 MCP 工具能力",
+        SubTitle:
+          "关闭后不会向模型注入任何 MCP 原生工具；开启后仅注入已启用服务中的已启用工具",
+      },
+      SearchPlaceholder: "搜索 MCP 服务或工具",
+      Empty: "还没有配置 MCP 服务",
+      EmptyDescription:
+        "添加一个 Streamable HTTP MCP 服务后，即可在聊天中调用其工具",
+      Tools: "工具",
+      ToolsCount: (count: number, enabled: number) =>
+        `${enabled}/${count} 个工具已启用`,
+      NoDescription: "暂无描述",
+      Disabled: "已停用",
+      Enabled: "已启用",
+      Status: {
+        active: "运行中",
+        paused: "已暂停",
+        initializing: "初始化中",
+        error: "异常",
+        undefined: "未初始化",
+      },
+      Actions: {
+        Add: "添加 MCP 服务",
+        Import: "导入 JSON",
+        Edit: "编辑",
+        Test: "测试",
+        Start: "启动",
+        Stop: "暂停",
+        Delete: "删除",
+        RestartAll: "重启全部",
+        ViewResponse: "查看结果",
+      },
+      Modal: {
+        AddTitle: "添加 MCP 服务",
+        EditTitle: "编辑 MCP 服务",
+        ImportTitle: "导入 MCP 配置",
+        TestTitle: (name: string) => `连接测试 - ${name}`,
+        DeleteConfirm: (name: string) => `确认删除 MCP 服务「${name}」？`,
+      },
+      Form: {
+        Id: {
+          Title: "服务标识",
+          SubTitle: "唯一标识，用于区分不同 MCP 服务",
+          Placeholder: "life-service",
+        },
+        Name: {
+          Title: "显示名称",
+          SubTitle: "用于设置页与聊天中的展示名称",
+          Placeholder: "生活服务",
+        },
+        Description: {
+          Title: "描述",
+          SubTitle: "用于解释该 MCP 服务的主要能力",
+          Placeholder: "天气、出行等生活服务工具",
+        },
+        Type: {
+          Title: "传输类型",
+          SubTitle: "当前仅支持 Streamable HTTP",
+        },
+        BaseUrl: {
+          Title: "服务地址",
+          SubTitle:
+            "例如：https://example.com/mcp 或 http://host:port/mcp/name",
+          Placeholder: "https://host/mcp",
+        },
+        Headers: {
+          Title: "请求头",
+          SubTitle: "支持 JSON 或 key=value 多行格式",
+          Placeholder: "Authorization=Bearer token\nX-Api-Key=demo-key",
+        },
+        LongRunning: {
+          Title: "长任务模式",
+          SubTitle: "启用后会将超时至少提升到 600 秒，适合耗时工具",
+        },
+        Timeout: {
+          Title: "超时时间",
+          SubTitle: "单位：秒",
+        },
+        Import: {
+          Title: "配置 JSON",
+          SubTitle: "可粘贴包含 mcpServers 的 JSON 配置",
+          Placeholder:
+            '{\n  "mcpServers": {\n    "life-service": {\n      "type": "streamableHttp",\n      "baseUrl": "https://host/mcp/life-service"\n    }\n  }\n}',
+        },
+      },
+      Toast: {
+        Added: "MCP 服务已添加",
+        Updated: "MCP 服务已更新",
+        Imported: "MCP 配置已导入",
+        Deleted: "MCP 服务已删除",
+        Paused: "MCP 服务已暂停",
+        Resumed: "MCP 服务已启动",
+        Restarted: "已触发 MCP 全部重启",
+        TestFailed: "连接测试失败",
+        SaveFailed: "保存失败，请检查配置",
+        ImportFailed: "JSON 解析失败或内容无效",
+        LoadToolsFailed: "加载工具列表失败",
+      },
+    },
   },
   Store: {
     DefaultTopic: "新的聊天",
@@ -831,7 +935,7 @@ const cn = {
     Sysmessage: "你是一个助手",
   },
   SearchChat: {
-    Name: "搜索聊天记录",
+    Name: "搜索聊天",
     Page: {
       Title: "搜索聊天记录",
       Search: "输入搜索关键词",

@@ -61,6 +61,7 @@ export const DEFAULT_CONFIG = {
 
   mcpEnabled: false,
   mcpEnabledClients: {} as Record<string, boolean>,
+  mcpDisabledTools: {} as Record<string, string[]>,
 
   useModelIconAsAvatar: false, // use model icon as AI avatar instead of emoji
   enableMultiModel: false,

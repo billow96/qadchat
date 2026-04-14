@@ -117,6 +117,7 @@ export async function getEnabledMcpNativeTools(
   modelName: string,
   mcpEnabled: boolean = false,
   enabledClients?: Record<string, boolean>,
+  disabledToolsByClient?: Record<string, string[]>,
   provider: NativeToolProvider = "openai",
 ): Promise<NativeToolSet> {
   const capabilities = getModelCapabilitiesWithCustomConfig(modelName);
@@ -137,8 +138,12 @@ export async function getEnabledMcpNativeTools(
   for (const entry of allTools) {
     if (!entry.tools?.tools?.length) continue;
     if (enabledClients && enabledClients[entry.clientId] === false) continue;
+    const disabledTools = new Set(
+      disabledToolsByClient?.[entry.clientId] || [],
+    );
 
     for (const rawTool of entry.tools.tools) {
+      if (rawTool?.name && disabledTools.has(rawTool.name)) continue;
       const nativeTool = convertMcpTool(entry.clientId, rawTool);
       if (!nativeTool) continue;
 

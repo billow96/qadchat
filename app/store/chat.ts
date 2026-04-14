@@ -816,6 +816,7 @@ export const useChatStore = createPersistStore(
           modelConfig.model,
           useAppConfig.getState().mcpEnabled ?? false,
           useAppConfig.getState().mcpEnabledClients,
+          useAppConfig.getState().mcpDisabledTools,
           resolveNativeToolProvider(modelConfig.providerName),
         );
 
@@ -1143,6 +1144,7 @@ export const useChatStore = createPersistStore(
             modelConfig.model,
             useAppConfig.getState().mcpEnabled ?? false,
             useAppConfig.getState().mcpEnabledClients,
+            useAppConfig.getState().mcpDisabledTools,
             resolveNativeToolProvider(modelConfig.providerName),
           );
 
@@ -1722,6 +1724,7 @@ export const useChatStore = createPersistStore(
           modelConfig.model,
           useAppConfig.getState().mcpEnabled ?? false,
           useAppConfig.getState().mcpEnabledClients,
+          useAppConfig.getState().mcpDisabledTools,
           resolveNativeToolProvider(modelConfig.providerName),
         );
 
@@ -1983,6 +1986,40 @@ export const useChatStore = createPersistStore(
       /** 获取当前对话中所有 MCP 客户端的启用状态 */
       getSessionMcpClients(): Record<string, boolean> {
         return useAppConfig.getState().mcpEnabledClients ?? {};
+      },
+
+      /** 更新指定 MCP 客户端下某个工具的启用状态 */
+      updateSessionMcpTool(
+        clientId: string,
+        toolName: string,
+        enabled: boolean,
+      ) {
+        useAppConfig.setState((state) => {
+          const disabledToolsByClient = { ...(state.mcpDisabledTools ?? {}) };
+          const disabledTools = new Set(disabledToolsByClient[clientId] ?? []);
+
+          if (enabled) {
+            disabledTools.delete(toolName);
+          } else {
+            disabledTools.add(toolName);
+          }
+
+          if (disabledTools.size === 0) {
+            delete disabledToolsByClient[clientId];
+          } else {
+            disabledToolsByClient[clientId] = Array.from(disabledTools);
+          }
+
+          return {
+            ...state,
+            mcpDisabledTools: disabledToolsByClient,
+          };
+        });
+      },
+
+      /** 获取指定 MCP 客户端下被关闭的工具名列表 */
+      getSessionMcpDisabledTools(clientId: string): string[] {
+        return useAppConfig.getState().mcpDisabledTools?.[clientId] ?? [];
       },
 
       /** 更新当前对话的 MCP 功能总开关 */

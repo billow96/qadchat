@@ -285,6 +285,7 @@ const en: LocaleType = {
     Tab: {
       General: "General",
       Sync: "Sync",
+      Mcp: "MCP",
       Mask: "Assistant",
       Prompt: "Prompts",
       ModelService: "Model Service",
@@ -806,6 +807,110 @@ const en: LocaleType = {
       Temperature: {
         Title: "Randomness (temperature)",
         SubTitle: "Higher values result in more random responses",
+      },
+    },
+    Mcp: {
+      Title: "MCP Services",
+      SubTitle: "Manage MCP services, tool toggles, and connection settings",
+      Global: {
+        Title: "Enable MCP tools",
+        SubTitle:
+          "When disabled, no MCP native tools are injected into models. When enabled, only enabled tools from enabled services are injected.",
+      },
+      SearchPlaceholder: "Search MCP services or tools",
+      Empty: "No MCP services configured",
+      EmptyDescription:
+        "Add a Streamable HTTP MCP service to make its tools available in chat",
+      Tools: "Tools",
+      ToolsCount: (count: number, enabled: number) =>
+        `${enabled}/${count} tools enabled`,
+      NoDescription: "No description",
+      Disabled: "Disabled",
+      Enabled: "Enabled",
+      Status: {
+        active: "Running",
+        paused: "Paused",
+        initializing: "Initializing",
+        error: "Error",
+        undefined: "Idle",
+      },
+      Actions: {
+        Add: "Add MCP Service",
+        Import: "Import JSON",
+        Edit: "Edit",
+        Test: "Test",
+        Start: "Start",
+        Stop: "Pause",
+        Delete: "Delete",
+        RestartAll: "Restart All",
+        ViewResponse: "View Result",
+      },
+      Modal: {
+        AddTitle: "Add MCP Service",
+        EditTitle: "Edit MCP Service",
+        ImportTitle: "Import MCP Config",
+        TestTitle: (name: string) => `Connection Test - ${name}`,
+        DeleteConfirm: (name: string) => `Delete MCP service "${name}"?`,
+      },
+      Form: {
+        Id: {
+          Title: "Service ID",
+          SubTitle: "Unique identifier for the MCP service",
+          Placeholder: "life-service",
+        },
+        Name: {
+          Title: "Display Name",
+          SubTitle: "Shown in settings and chat",
+          Placeholder: "Life Service",
+        },
+        Description: {
+          Title: "Description",
+          SubTitle: "Explain what this MCP service is for",
+          Placeholder: "Weather, travel, and daily life tools",
+        },
+        Type: {
+          Title: "Transport Type",
+          SubTitle: "Only Streamable HTTP is supported currently",
+        },
+        BaseUrl: {
+          Title: "Service URL",
+          SubTitle:
+            "Example: https://example.com/mcp or http://host:port/mcp/name",
+          Placeholder: "https://host/mcp",
+        },
+        Headers: {
+          Title: "Headers",
+          SubTitle: "Supports JSON or multi-line key=value format",
+          Placeholder: "Authorization=Bearer token\nX-Api-Key=demo-key",
+        },
+        LongRunning: {
+          Title: "Long-running Mode",
+          SubTitle:
+            "Raises timeout to at least 600 seconds for long-running tools",
+        },
+        Timeout: {
+          Title: "Timeout",
+          SubTitle: "Unit: seconds",
+        },
+        Import: {
+          Title: "Config JSON",
+          SubTitle: "Paste a JSON payload containing mcpServers",
+          Placeholder:
+            '{\n  "mcpServers": {\n    "life-service": {\n      "type": "streamableHttp",\n      "baseUrl": "https://host/mcp/life-service"\n    }\n  }\n}',
+        },
+      },
+      Toast: {
+        Added: "MCP service added",
+        Updated: "MCP service updated",
+        Imported: "MCP config imported",
+        Deleted: "MCP service deleted",
+        Paused: "MCP service paused",
+        Resumed: "MCP service started",
+        Restarted: "Restarted all MCP services",
+        TestFailed: "Connection test failed",
+        SaveFailed: "Failed to save, please check the config",
+        ImportFailed: "Invalid JSON or unsupported content",
+        LoadToolsFailed: "Failed to load tools",
       },
     },
   },
